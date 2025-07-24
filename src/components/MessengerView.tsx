@@ -317,6 +317,7 @@ export function MessengerView() {
           </div>
         )}
       </div>
+      </div>
     </TooltipProvider>
   )
 }
