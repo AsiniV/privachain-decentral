@@ -59,6 +59,17 @@ export function VideoCall({ contact, onEndCall, isIncoming = false }: VideoCallP
   const [showSettings, setShowSettings] = useState(false)
   const [callDuration, setCallDuration] = useState(0)
   const [audioLevel, setAudioLevel] = useState([50])
+  const [connectionStats, setConnectionStats] = useState({
+    bitrate: '2.5 Mbps',
+    latency: '45ms',
+    packetLoss: '0.1%',
+    codec: 'AV1'
+  })
+  const [blockchainStatus, setBlockchainStatus] = useState({
+    sessionId: '',
+    gasUsed: '0.0012 PRIV',
+    turnNodes: 3
+  })
   
   const localVideoRef = useRef<HTMLVideoElement>(null)
   const remoteVideoRef = useRef<HTMLVideoElement>(null)
@@ -77,21 +88,55 @@ export function VideoCall({ contact, onEndCall, isIncoming = false }: VideoCallP
     }
   ])
 
-  // Simulate WebRTC connection process
+  // Simulate WebRTC connection process with realistic phases
   useEffect(() => {
-    if (isIncoming) {
-      // Simulate incoming call
-      setTimeout(() => {
+    const connectionPhases = async () => {
+      if (isIncoming) {
+        // Simulate incoming call connection phases
+        toast.info('🔐 Establishing secure connection...')
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        toast.info('🌐 Connecting to TURN servers...')
+        await new Promise(resolve => setTimeout(resolve, 800))
+        
+        toast.info('🔑 Exchanging encryption keys...')
+        await new Promise(resolve => setTimeout(resolve, 600))
+        
         setCallStatus('connected')
-        toast.success('Call connected with E2E encryption')
-      }, 2000)
-    } else {
-      // Simulate outgoing call
-      setTimeout(() => {
+        toast.success('✅ Call connected with AES-256 E2E encryption')
+        
+        // Simulate blockchain session initialization
+        const sessionId = `0x${Math.random().toString(16).substr(2, 8)}`
+        setBlockchainStatus({
+          sessionId,
+          gasUsed: '0.0012 PRIV',
+          turnNodes: 3
+        })
+      } else {
+        // Simulate outgoing call connection phases
+        toast.info('📡 Finding optimal TURN nodes...')
+        await new Promise(resolve => setTimeout(resolve, 1200))
+        
+        toast.info('🤝 Performing WebRTC handshake...')
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        toast.info('🔐 Establishing encrypted channel...')
+        await new Promise(resolve => setTimeout(resolve, 800))
+        
         setCallStatus('connected')
-        toast.success('Call established via decentralized TURN nodes')
-      }, 3000)
+        toast.success('✅ Call established via decentralized TURN infrastructure')
+        
+        // Simulate blockchain session initialization
+        const sessionId = `0x${Math.random().toString(16).substr(2, 8)}`
+        setBlockchainStatus({
+          sessionId,
+          gasUsed: '0.0015 PRIV',
+          turnNodes: 3
+        })
+      }
     }
+
+    connectionPhases()
 
     // Start call duration timer
     const timer = setInterval(() => {
@@ -100,12 +145,30 @@ export function VideoCall({ contact, onEndCall, isIncoming = false }: VideoCallP
 
     // Simulate getting user media
     if (localVideoRef.current && isVideoOn) {
-      // In a real app, this would be getUserMedia()
+      // In a real app, this would be navigator.mediaDevices.getUserMedia()
       localVideoRef.current.src = '' // Placeholder for demo
     }
 
-    return () => clearInterval(timer)
-  }, [isIncoming, isVideoOn])
+    // Simulate audio level monitoring and connection stats
+    const audioTimer = setInterval(() => {
+      if (!isMuted) {
+        setAudioLevel([Math.floor(Math.random() * 80) + 20])
+      }
+      
+      // Update connection stats
+      setConnectionStats({
+        bitrate: `${(2.1 + Math.random() * 0.8).toFixed(1)} Mbps`,
+        latency: `${Math.floor(40 + Math.random() * 20)}ms`,
+        packetLoss: `${(Math.random() * 0.3).toFixed(2)}%`,
+        codec: Math.random() > 0.5 ? 'AV1' : 'VP9'
+      })
+    }, 2000)
+
+    return () => {
+      clearInterval(timer)
+      clearInterval(audioTimer)
+    }
+  }, [isIncoming, isVideoOn, isMuted])
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
@@ -210,7 +273,11 @@ export function VideoCall({ contact, onEndCall, isIncoming = false }: VideoCallP
           
           <Badge variant="outline" className="text-xs">
             <VideoCamera className="w-3 h-3 mr-1" />
-            AV1 Codec • 1080p
+            {connectionStats.codec} • {connectionStats.bitrate}
+          </Badge>
+          
+          <Badge variant="outline" className="text-xs">
+            🔗 Session: {blockchainStatus.sessionId}
           </Badge>
           
           <Badge variant="outline" className="text-xs">
@@ -413,22 +480,67 @@ export function VideoCall({ contact, onEndCall, isIncoming = false }: VideoCallP
 
       {/* Settings Panel */}
       {showSettings && (
-        <div className="absolute right-4 top-16 w-80 bg-card border border-border rounded-lg p-4 shadow-lg">
-          <h3 className="font-semibold mb-4">Call Settings</h3>
+        <div className="absolute right-4 top-16 w-96 bg-card border border-border rounded-lg p-4 shadow-lg max-h-[80vh] overflow-y-auto">
+          <h3 className="font-semibold mb-4">Call Settings & Network Status</h3>
           
-          <div className="space-y-4">
+          <div className="space-y-6">
+            {/* Blockchain Session Info */}
             <div>
-              <label className="text-sm font-medium">Video Quality</label>
-              <select className="w-full mt-1 p-2 bg-background border border-border rounded">
+              <h4 className="text-sm font-medium mb-3 text-primary">Blockchain Session</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Session ID:</span>
+                  <span className="font-mono text-xs">{blockchainStatus.sessionId}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Gas Used:</span>
+                  <span className="font-mono">{blockchainStatus.gasUsed}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">TURN Nodes:</span>
+                  <span>{blockchainStatus.turnNodes} active</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Connection Stats */}
+            <div>
+              <h4 className="text-sm font-medium mb-3 text-primary">Network Performance</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Bitrate:</span>
+                  <span className="text-green-500">{connectionStats.bitrate}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Latency:</span>
+                  <span className="text-blue-500">{connectionStats.latency}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Packet Loss:</span>
+                  <span className="text-yellow-500">{connectionStats.packetLoss}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Codec:</span>
+                  <span>{connectionStats.codec}</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Video Quality Settings */}
+            <div>
+              <h4 className="text-sm font-medium mb-3">Video Quality</h4>
+              <select className="w-full p-2 bg-background border border-border rounded text-sm">
                 <option>1080p (Recommended)</option>
                 <option>720p</option>
                 <option>480p</option>
+                <option>Auto (Adaptive)</option>
               </select>
             </div>
             
+            {/* Bandwidth Control */}
             <div>
-              <label className="text-sm font-medium">Bandwidth Limit</label>
-              <div className="mt-1">
+              <h4 className="text-sm font-medium mb-2">Bandwidth Limit</h4>
+              <div>
                 <Slider
                   defaultValue={[75]}
                   max={100}
@@ -436,19 +548,51 @@ export function VideoCall({ contact, onEndCall, isIncoming = false }: VideoCallP
                   className="w-full"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Current: 2.5 Mbps
+                  Current: {connectionStats.bitrate}
                 </p>
               </div>
             </div>
             
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Noise Cancellation</span>
-              <Button variant="outline" size="sm">Enabled</Button>
+            {/* Advanced Features */}
+            <div>
+              <h4 className="text-sm font-medium mb-3">Advanced Features</h4>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Noise Cancellation</span>
+                  <Button variant="outline" size="sm" className="h-7 text-xs">Enabled</Button>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Background Blur</span>
+                  <Button variant="outline" size="sm" className="h-7 text-xs">Disabled</Button>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">ZK-Privacy Mode</span>
+                  <Button variant="outline" size="sm" className="h-7 text-xs bg-green-100 text-green-700">Active</Button>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Quantum Encryption</span>
+                  <Button variant="outline" size="sm" className="h-7 text-xs bg-blue-100 text-blue-700">CRYSTALS-Kyber</Button>
+                </div>
+              </div>
             </div>
-            
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Background Blur</span>
-              <Button variant="outline" size="sm">Disabled</Button>
+
+            {/* Emergency Actions */}
+            <div>
+              <h4 className="text-sm font-medium mb-3 text-destructive">Emergency Actions</h4>
+              <div className="space-y-2">
+                <Button variant="outline" size="sm" className="w-full text-xs">
+                  Switch to Audio Only
+                </Button>
+                <Button variant="outline" size="sm" className="w-full text-xs">
+                  Use Backup TURN Server
+                </Button>
+                <Button variant="destructive" size="sm" className="w-full text-xs">
+                  Burn Session Keys
+                </Button>
+              </div>
             </div>
           </div>
         </div>

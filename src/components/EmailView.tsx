@@ -41,21 +41,22 @@ export function EmailView() {
   const [emails, setEmails] = useKV<Email[]>('emails', [
     {
       id: '1',
-      from: 'anonymous.prv',
+      from: 'whistleblower.prv',
       to: 'you.prv',
-      subject: 'Welcome to PrivaChain',
-      content: 'This is your first encrypted email on the PrivaChain network. All communications are end-to-end encrypted and routed through anonymous relays.',
+      subject: 'Secure Communication Test',
+      content: 'This message was sent via PrivaChain\'s anonymous .prv domain system. The sender\'s identity is protected through ZK-SNARKs, and the message was routed through 3 anonymous relay nodes. Content hash: QmXyZ123...',
       timestamp: Date.now() - 3600000,
       encrypted: true,
-      read: false
+      read: false,
+      attachments: ['encrypted_document.asc']
     },
     {
-      id: '2', 
-      from: 'newsletter.prv',
+      id: '2',
+      from: 'demo-sender.prv',
       to: 'you.prv',
-      subject: 'Weekly Security Update',
-      content: 'New quantum-resistant encryption protocols have been deployed. Your communications are now protected against future quantum attacks.',
-      timestamp: Date.now() - 86400000,
+      subject: 'Blockchain Mail Demo',
+      content: 'Welcome to PrivaChain Mail! This demonstration shows:\n\n• Anonymous .prv domains\n• PGP/GPG encryption\n• IPFS content storage\n• Zero-knowledge sender verification\n• Decentralized relay routing\n\nYour communications are truly private and censorship-resistant.',
+      timestamp: Date.now() - 7200000,
       encrypted: true,
       read: true
     }
@@ -64,7 +65,7 @@ export function EmailView() {
   const [privDomains, setPrivDomains] = useKV<PrivDomain[]>('priv-domains', [
     {
       domain: 'you.prv',
-      publicKey: 'pk_1A2B3C4D5E6F...',
+      publicKey: 'pk_1A2B3C4D5E6F7G8H9I0J1K2L3M4N5O6P7Q8R9S0T1U2V3W4X5Y6Z',
       created: Date.now() - 2592000000
     }
   ])
@@ -80,11 +81,24 @@ export function EmailView() {
 
   const selectedEmailData = emails.find(e => e.id === selectedEmail)
 
-  const sendEmail = () => {
+  const sendEmail = async () => {
     if (!newEmail.to.trim() || !newEmail.subject.trim() || !newEmail.content.trim()) {
       toast.error('Please fill in all fields')
       return
     }
+
+    // Simulate blockchain email sending process
+    toast.info('🔐 Encrypting content with PGP...')
+    await new Promise(resolve => setTimeout(resolve, 800))
+    
+    toast.info('📦 Uploading to IPFS...')
+    await new Promise(resolve => setTimeout(resolve, 600))
+    
+    toast.info('🌐 Routing through anonymous relays...')
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    toast.info('⛽ Processing transaction (0.001 PRIV)...')
+    await new Promise(resolve => setTimeout(resolve, 500))
 
     const email: Email = {
       id: Date.now().toString(),
@@ -101,10 +115,10 @@ export function EmailView() {
     setNewEmail({ to: '', subject: '', content: '' })
     setComposing(false)
     
-    toast.success('Email sent with E2E encryption via anonymous relays')
+    toast.success('✅ Email sent via decentralized anonymous relays')
   }
 
-  const createPrivDomain = () => {
+  const createPrivDomain = async () => {
     if (!newDomain.trim()) {
       toast.error('Please enter a domain name')
       return
@@ -115,15 +129,25 @@ export function EmailView() {
       return
     }
 
+    // Simulate blockchain domain registration process
+    toast.info('🔐 Generating ZK-SNARK proof...')
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    toast.info('📡 Submitting to PrivaChain...')
+    await new Promise(resolve => setTimeout(resolve, 800))
+    
+    toast.info('⛽ Processing gas fee (0.05 PRIV)...')
+    await new Promise(resolve => setTimeout(resolve, 600))
+
     const domain: PrivDomain = {
       domain: newDomain,
-      publicKey: `pk_${Math.random().toString(36).substring(2)}`,
+      publicKey: `pk_${Math.random().toString(36).substring(2).toUpperCase()}${Math.random().toString(36).substring(2).toUpperCase()}`,
       created: Date.now()
     }
 
     setPrivDomains(current => [...current, domain])
     setNewDomain('')
-    toast.success('Anonymous domain created with ZK-proof')
+    toast.success(`✅ Anonymous domain ${newDomain} registered with ZK-proof verification`)
   }
 
   const markAsRead = (emailId: string) => {

@@ -7,6 +7,7 @@ import { Badge } from './ui/badge'
 import { Avatar, AvatarFallback } from './ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
+import { BlockchainStatus } from './BlockchainStatus'
 import { 
   User,
   Shield,
@@ -206,6 +207,9 @@ export function ProfileView() {
                 </div>
               </Card>
             </div>
+
+            {/* Blockchain Status Section */}
+            <BlockchainStatus />
           </TabsContent>
 
           <TabsContent value="security" className="space-y-6">

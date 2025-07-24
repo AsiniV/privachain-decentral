@@ -39,9 +39,9 @@ export function SearchView() {
     {
       id: '1',
       type: 'message',
-      title: 'Conversation with Alice Chen',
-      content: 'Thanks for your message! This is a demo response.',
-      source: 'alice.prv',
+      title: 'Encrypted Message Thread',
+      content: 'Zero-knowledge proof verification successful. Anonymous communication established.',
+      source: 'whistleblower.prv',
       timestamp: Date.now() - 300000,
       encrypted: true,
       relevance: 0.95
@@ -49,32 +49,32 @@ export function SearchView() {
     {
       id: '2',
       type: 'email',
-      title: 'Welcome to PrivaChain',
-      content: 'This is your first encrypted email on the PrivaChain network...',
-      source: 'anonymous.prv',
-      timestamp: Date.now() - 3600000,
+      title: 'PrivaChain Network Update',
+      content: 'New TURN nodes deployed globally. Enhanced quantum-resistant encryption protocols active.',
+      source: 'network@privachain.prv',
+      timestamp: Date.now() - 600000,
       encrypted: true,
-      relevance: 0.87
+      relevance: 0.88
     },
     {
       id: '3',
       type: 'contact',
-      title: 'Bob Wilson',
-      content: 'Contact information and conversation history',
-      source: 'bob.prv',
-      timestamp: Date.now() - 86400000,
+      title: 'Anonymous Journalist',
+      content: 'Verified journalist on PrivaChain network. Specializes in secure communications.',
+      source: 'journalist.prv',
+      timestamp: Date.now() - 900000,
       encrypted: true,
-      relevance: 0.72
+      relevance: 0.92
     },
     {
       id: '4',
       type: 'file',
-      title: 'Security_Report_2024.pdf',
-      content: 'Quarterly security audit and recommendations',
-      source: 'ipfs://Qm...',
-      timestamp: Date.now() - 604800000,
-      encrypted: true,
-      relevance: 0.68
+      title: 'Blockchain Whitepaper',
+      content: 'Technical specification for anonymous communication protocol with ZK-SNARKs.',
+      source: 'ipfs://QmXyZ123...',
+      timestamp: Date.now() - 1200000,
+      encrypted: false,
+      relevance: 0.85
     }
   ]
 
@@ -174,10 +174,20 @@ export function SearchView() {
                 <Card className="p-4">
                   <div className="flex items-center gap-3 mb-2">
                     <MessageCircle className="w-5 h-5 text-accent" />
-                    <span className="font-medium">Content Types</span>
+                    <span className="font-medium">Blockchain Search</span>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Messages, emails, contacts, files, and more
+                    Search .prv domains, IPFS content, and transaction history
+                  </p>
+                </Card>
+                
+                <Card className="p-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Globe className="w-5 h-5 text-accent" />
+                    <span className="font-medium">.onion Network</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Access dark web resources and hidden services
                   </p>
                 </Card>
               </div>
