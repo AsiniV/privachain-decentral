@@ -6,6 +6,8 @@ import { Card } from './ui/card'
 import { Badge } from './ui/badge'
 import { Avatar, AvatarFallback } from './ui/avatar'
 import { ScrollArea } from './ui/scroll-area'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip'
+import { useVideoCall } from './VideoCallProvider'
 import { 
   PaperPlaneTilt, 
   Lock, 
@@ -66,6 +68,21 @@ export function MessengerView() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   
   const selectedContactData = contacts.find(c => c.id === selectedContact)
+  
+  // Use video call hook
+  const { initiateCall, isInCall } = useVideoCall()
+
+  const initiateVideoCall = () => {
+    if (selectedContactData) {
+      initiateCall(selectedContactData, 'video')
+    }
+  }
+
+  const initiateAudioCall = () => {
+    if (selectedContactData) {
+      initiateCall(selectedContactData, 'audio')
+    }
+  }
 
   const sendMessage = () => {
     if (!newMessage.trim() || !selectedContact) return
@@ -106,14 +123,30 @@ export function MessengerView() {
   }, [contactMessages])
 
   return (
-    <div className="flex h-full">
+    <TooltipProvider>
+      <div className="flex h-full">
       <div className="w-80 border-r border-border flex flex-col">
         <div className="p-4 border-b border-border">
           <h2 className="text-lg font-semibold mb-3">Conversations</h2>
           <Input 
             placeholder="Search conversations..." 
-            className="w-full"
+            className="w-full mb-3"
           />
+          
+          {/* Demo Video Call Button */}
+          <Button 
+            onClick={() => initiateCall({
+              id: 'demo-video',
+              name: 'Demo Video Call',
+              address: 'demo.prv',
+              online: true
+            }, 'video')}
+            className="w-full mb-2 bg-accent text-accent-foreground hover:bg-accent/90"
+            size="sm"
+          >
+            <VideoCamera className="w-4 h-4 mr-2" />
+            Start Demo Video Call
+          </Button>
         </div>
         
         <ScrollArea className="flex-1">
@@ -173,17 +206,49 @@ export function MessengerView() {
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Lock className="w-3 h-3" />
                       <span>End-to-end encrypted</span>
+                      {isInCall && (
+                        <>
+                          <span>•</span>
+                          <span className="text-accent">Call active</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon">
-                    <Phone className="w-5 h-5" />
-                  </Button>
-                  <Button variant="ghost" size="icon">
-                    <VideoCamera className="w-5 h-5" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={initiateAudioCall}
+                        disabled={!selectedContactData?.online}
+                      >
+                        <Phone className="w-5 h-5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{selectedContactData?.online ? 'Start audio call' : 'User is offline'}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={initiateVideoCall}
+                        disabled={!selectedContactData?.online}
+                      >
+                        <VideoCamera className="w-5 h-5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{selectedContactData?.online ? 'Start video call' : 'User is offline'}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  
                   <Button variant="ghost" size="icon">
                     <DotsThree className="w-5 h-5" />
                   </Button>
@@ -252,6 +317,6 @@ export function MessengerView() {
           </div>
         )}
       </div>
-    </div>
+    </TooltipProvider>
   )
 }

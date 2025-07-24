@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useKV } from '@github/spark/hooks'
+import { VideoCallProvider } from './components/VideoCallProvider'
 import { Sidebar } from './components/Sidebar'
 import { MessengerView } from './components/MessengerView'
 import { EmailView } from './components/EmailView'
@@ -29,20 +30,22 @@ function App() {
   }
 
   return (
-    <div className="h-screen bg-background text-foreground flex overflow-hidden">
-      <Sidebar 
-        currentView={currentView}
-        onViewChange={setCurrentView}
-        open={sidebarOpen}
-        onOpenChange={setSidebarOpen}
-      />
-      
-      <main className="flex-1 flex flex-col min-w-0">
-        {renderView()}
-      </main>
-      
-      <Toaster />
-    </div>
+    <VideoCallProvider>
+      <div className="h-screen bg-background text-foreground flex overflow-hidden">
+        <Sidebar 
+          currentView={currentView}
+          onViewChange={setCurrentView}
+          open={sidebarOpen}
+          onOpenChange={setSidebarOpen}
+        />
+        
+        <main className="flex-1 flex flex-col min-w-0">
+          {renderView()}
+        </main>
+        
+        <Toaster />
+      </div>
+    </VideoCallProvider>
   )
 }
 
