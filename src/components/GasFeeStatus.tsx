@@ -4,18 +4,18 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useKV } from '@github/spark/hooks';
+import { useKV } from '../hooks/useKV';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
 import { 
   CreditCard, 
-  Zap, 
+  Lightning, 
   Shield, 
   Clock, 
-  TrendingUp,
-  AlertTriangle,
+  TrendUp,
+  Warning,
   CheckCircle,
   Wallet 
 } from '@phosphor-icons/react';
@@ -94,7 +94,7 @@ export function GasFeeStatus() {
       <Card>
         <CardContent className="flex items-center justify-center py-8">
           <div className="text-center">
-            <Zap className="h-8 w-8 mx-auto mb-2 animate-pulse" />
+            <Lightning className="h-8 w-8 mx-auto mb-2 animate-pulse" />
             <p>Loading payment status...</p>
           </div>
         </CardContent>
@@ -169,7 +169,7 @@ export function GasFeeStatus() {
             {/* Free Quota Status */}
             <div className="space-y-3">
               <h4 className="font-semibold flex items-center gap-2">
-                <Zap className="w-4 h-4" />
+                <Lightning className="w-4 h-4" />
                 Free Daily Quota
               </h4>
               
@@ -202,7 +202,7 @@ export function GasFeeStatus() {
 
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span>Video (min)</span>
+                    <span>VideoCamera (min)</span>
                     <span className={getQuotaUsageColor(60 - paymentStatus.freeQuotaRemaining.videoMinutes, 60)}>
                       {paymentStatus.freeQuotaRemaining.videoMinutes}/60
                     </span>
@@ -237,7 +237,7 @@ export function GasFeeStatus() {
               ) : (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                    <Warning className="w-4 h-4 text-yellow-600" />
                     <span className="text-sm">Not Active</span>
                   </div>
                   <Button 
@@ -276,7 +276,7 @@ export function GasFeeStatus() {
           {paymentStatus.recommendedAction !== 'You have sufficient access for current usage' && (
             <div className="mt-6 p-4 border rounded-lg bg-muted/50">
               <div className="flex items-start gap-3">
-                <TrendingUp className="w-5 h-5 mt-0.5 text-primary" />
+                <TrendUp className="w-5 h-5 mt-0.5 text-primary" />
                 <div>
                   <h5 className="font-medium mb-1">Recommendation</h5>
                   <p className="text-sm text-muted-foreground">
@@ -308,11 +308,11 @@ export function GasFeeStatus() {
               <span className="font-mono">0.01 PRIV</span>
             </div>
             <div className="flex justify-between p-3 border rounded">
-              <span>Video Call</span>
+              <span>VideoCamera Call</span>
               <span className="font-mono">0.1 PRIV/session</span>
             </div>
             <div className="flex justify-between p-3 border rounded">
-              <span>Search Query</span>
+              <span>MagnifyingGlass Query</span>
               <span className="font-mono">0.0005 PRIV</span>
             </div>
             <div className="flex justify-between p-3 border rounded">

@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
-import { useKV } from '@github/spark/hooks'
+import { useKV } from '../hooks/useKV'
 import { Button } from './ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { Badge } from './ui/badge'
 import { Slider } from './ui/slider'
 import { Progress } from './ui/progress'
 import { 
-  Phone, 
+  PhoneCall, 
   PhoneDisconnect, 
   VideoCamera, 
   VideoCameraSlash, 
@@ -182,7 +182,7 @@ export function VideoCallSimulator({ onBack }: VideoCallSimulatorProps) {
           if (videoRef.current) {
             videoRef.current.srcObject = stream
           }
-          toast.success('Camera and microphone access granted')
+          toast.success('CameraPlus and microphone access granted')
         } catch (error) {
           toast.warning('Using simulated video stream')
         }
@@ -216,7 +216,7 @@ export function VideoCallSimulator({ onBack }: VideoCallSimulatorProps) {
 
   const toggleVideo = () => {
     setIsVideoEnabled(!isVideoEnabled)
-    toast.info(isVideoEnabled ? 'Video disabled' : 'Video enabled')
+    toast.info(isVideoEnabled ? 'VideoCamera disabled' : 'VideoCamera enabled')
   }
 
   const toggleAudio = () => {
@@ -267,7 +267,7 @@ export function VideoCallSimulator({ onBack }: VideoCallSimulatorProps) {
     <div className="max-w-6xl mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Video Call Simulator</h1>
+          <h1 className="text-2xl font-bold">VideoCamera Call Simulator</h1>
           <p className="text-muted-foreground">
             Experience PrivaChain's decentralized video calling with WebRTC
           </p>
@@ -278,14 +278,14 @@ export function VideoCallSimulator({ onBack }: VideoCallSimulatorProps) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Video Area */}
+        {/* VideoCamera Area */}
         <div className="lg:col-span-2 space-y-4">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <VideoCamera className="w-5 h-5" />
-                  Video Call Interface
+                  VideoCamera Call Interface
                 </CardTitle>
                 <div className={`flex items-center gap-2 ${getConnectionStatusColor()}`}>
                   {getConnectionStatusIcon()}
@@ -299,7 +299,7 @@ export function VideoCallSimulator({ onBack }: VideoCallSimulatorProps) {
               )}
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Local and Remote Video */}
+              {/* Local and Remote VideoCamera */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="relative">
                   <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden">
@@ -397,7 +397,7 @@ export function VideoCallSimulator({ onBack }: VideoCallSimulatorProps) {
 
                 {!isCallActive ? (
                   <Button onClick={startCall} className="px-6">
-                    <Phone className="w-4 h-4 mr-2" />
+                    <PhoneCall className="w-4 h-4 mr-2" />
                     Start Call
                   </Button>
                 ) : (
@@ -413,12 +413,12 @@ export function VideoCallSimulator({ onBack }: VideoCallSimulatorProps) {
 
         {/* Sidebar */}
         <div className="space-y-4">
-          {/* TURN Server Status */}
+          {/* TURN Desktop Status */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Network className="w-5 h-5" />
-                TURN Server
+                TURN Desktop
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -434,7 +434,7 @@ export function VideoCallSimulator({ onBack }: VideoCallSimulatorProps) {
                   
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span>Server Load</span>
+                      <span>Desktop Load</span>
                       <span>{selectedTurnServer.load}%</span>
                     </div>
                     <Progress value={selectedTurnServer.load} />

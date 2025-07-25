@@ -184,7 +184,7 @@ export class IPFSService {
     }
   }
 
-  // Pin file to ensure persistence
+  // MapPin file to ensure persistence
   async pinFile(cid: string): Promise<boolean> {
     try {
       const response = await fetch(`${this.config.apiEndpoint}/api/v0/pin/add?arg=${cid}`, {

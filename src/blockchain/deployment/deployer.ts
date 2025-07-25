@@ -86,7 +86,7 @@ export class PrivaChainDeployer {
         `PrivaChain ${contractType} contract`
       )
 
-      console.log(`✅ Code uploaded. Code ID: ${uploadResult.codeId}`)
+      console.log(`✅ CodeSimple uploaded. CodeSimple ID: ${uploadResult.codeId}`)
 
       // Instantiate contract
       console.log(`🏗️  Instantiating ${contractType} contract...`)
@@ -158,7 +158,7 @@ export class PrivaChainDeployer {
       max_email_size: 1048576 // 1MB
     }
 
-    return await this.deployContract('mail', initMsg, 'Anonymous Mail')
+    return await this.deployContract('mail', initMsg, 'Anonymous Envelope')
   }
 
   async deployDomainContract(): Promise<ContractAddress> {
@@ -178,7 +178,7 @@ export class PrivaChainDeployer {
       max_participants: 50
     }
 
-    return await this.deployContract('videoSignaling', initMsg, 'Video Signaling')
+    return await this.deployContract('videoSignaling', initMsg, 'VideoCamera Signaling')
   }
 
   async deployRewardsContract(prvTokenAddress: string): Promise<ContractAddress> {
@@ -189,7 +189,7 @@ export class PrivaChainDeployer {
       min_stake: '10000000000000000000000' // 10,000 PRIV
     }
 
-    return await this.deployContract('rewards', initMsg, 'Video Rewards')
+    return await this.deployContract('rewards', initMsg, 'VideoCamera Rewards')
   }
 
   async deployConsensusContract(): Promise<ContractAddress> {
@@ -227,7 +227,7 @@ export class PrivaChainDeployer {
       const nft = await this.deployNFTContract(prvToken.contractAddress)
       
       // Deploy mail contract
-      console.log('3/8 Deploying Mail Contract...')
+      console.log('3/8 Deploying Envelope Contract...')
       const mail = await this.deployMailContract()
       
       // Deploy domain contract
@@ -235,7 +235,7 @@ export class PrivaChainDeployer {
       const domain = await this.deployDomainContract()
       
       // Deploy video signaling
-      console.log('5/8 Deploying Video Signaling...')
+      console.log('5/8 Deploying VideoCamera Signaling...')
       const videoSignaling = await this.deployVideoSignalingContract()
       
       // Deploy rewards contract (depends on PRIV token)

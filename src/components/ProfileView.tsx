@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useKV } from '@github/spark/hooks'
+import { useKV } from '../hooks/useKV'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Card } from './ui/card'
@@ -272,7 +272,7 @@ export function ProfileView() {
                     <span className="font-medium">End-to-End Encryption</span>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    All messages and emails are encrypted with Signal Protocol
+                    All messages and emails are encrypted with WaveTriangle Protocol
                   </p>
                 </div>
                 

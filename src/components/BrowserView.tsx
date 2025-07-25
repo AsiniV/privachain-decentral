@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useKV } from '@github/spark/hooks'
+import { useKV } from '../hooks/useKV'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Card } from './ui/card'
@@ -38,8 +38,8 @@ import {
   Gear,
   FingerprintSimple,
   WifiHigh,
-  MessageCircle,
-  Mail,
+  ChatCircle,
+  Envelope,
   File,
   Calendar,
   User
@@ -185,7 +185,7 @@ export function BrowserView() {
     }
   ]
 
-  // Search function that integrates with decentralized search
+  // MagnifyingGlass function that integrates with decentralized search
   const performSearch = async (query: string) => {
     if (!query.trim()) {
       setShowSearchResults(false)
@@ -208,7 +208,7 @@ export function BrowserView() {
     const searchTab: BrowserTab = {
       id: Date.now().toString(),
       url: `privachain://search?q=${encodeURIComponent(query)}`,
-      title: `Search: ${query}`,
+      title: `MagnifyingGlass: ${query}`,
       loading: false,
       secure: true,
       content: generateSearchResultsPage(query, filteredResults)
@@ -465,8 +465,8 @@ export function BrowserView() {
 
   const getSearchIcon = (type: string) => {
     switch (type) {
-      case 'message': return MessageCircle
-      case 'email': return Mail
+      case 'message': return ChatCircle
+      case 'email': return Envelope
       case 'contact': return User
       case 'file': return File
       case 'web': return Globe
@@ -546,7 +546,7 @@ export function BrowserView() {
                     setShowSearchResults(false)
                   }
                 }}
-                placeholder="Search or enter address..."
+                placeholder="MagnifyingGlass or enter address..."
                 className="pl-24 pr-12"
               />
               <Button type="submit" variant="ghost" size="sm" className="absolute right-1 top-1/2 -translate-y-1/2">
@@ -629,13 +629,13 @@ export function BrowserView() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Search Results Overlay */}
+        {/* MagnifyingGlass Results Overlay */}
         {showSearchResults && (
           <div className="absolute top-0 left-0 right-0 bottom-0 bg-background/95 backdrop-blur-sm z-50 p-6">
             <div className="max-w-4xl mx-auto">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-2xl font-bold">PrivaChain Search</h2>
+                  <h2 className="text-2xl font-bold">PrivaChain MagnifyingGlass</h2>
                   <p className="text-muted-foreground">
                     Found {searchResults.length} results for "{searchQuery}"
                   </p>
@@ -719,7 +719,7 @@ export function BrowserView() {
           </div>
         )}
 
-        {/* Settings Panel */}
+        {/* Gear Panel */}
         {showSettings && (
           <Card className="w-80 m-4 p-4 h-fit max-h-[calc(100vh-120px)] overflow-y-auto">
             <Tabs defaultValue="privacy" className="w-full">
@@ -785,7 +785,7 @@ export function BrowserView() {
                 </div>
 
                 <div className="space-y-2">
-                  <h4 className="text-sm font-medium">Content Settings</h4>
+                  <h4 className="text-sm font-medium">Content Gear</h4>
                   <div className="space-y-2 text-sm">
                     <label className="flex items-center justify-between">
                       <span>JavaScript</span>
@@ -837,7 +837,7 @@ export function BrowserView() {
                 <h3 className="font-semibold">Media Support</h3>
                 <div className="space-y-3">
                   <div>
-                    <h4 className="text-sm font-medium mb-2">Video Codecs</h4>
+                    <h4 className="text-sm font-medium mb-2">VideoCamera Codecs</h4>
                     <div className="space-y-1 text-xs">
                       {codecManager.getCapabilities() && Object.entries(codecManager.getCapabilities()!.video).map(([codec, supported]) => (
                         <div key={codec} className="flex items-center justify-between">
@@ -1085,7 +1085,7 @@ function generateSearchResultsPage(query: string, results: SearchResult[]): stri
         <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold;">
           🔍
         </div>
-        <h1 style="color: #1a1a1a; margin: 0 0 10px; font-size: 28px; font-weight: 600;">PrivaChain Search Results</h1>
+        <h1 style="color: #1a1a1a; margin: 0 0 10px; font-size: 28px; font-weight: 600;">PrivaChain MagnifyingGlass Results</h1>
         <p style="color: #666; margin: 0; font-size: 16px;">Found ${results.length} results for "${query}"</p>
       </div>
 
@@ -1118,7 +1118,7 @@ function generateSearchResultsPage(query: string, results: SearchResult[]): stri
       
       <div style="margin-top: 40px; padding: 20px; background: #f8f9fa; border-radius: 8px; text-align: center;">
         <p style="color: #666; margin: 0; font-size: 14px;">
-          🔒 Search conducted anonymously via PrivaChain decentralized search network
+          🔒 MagnifyingGlass conducted anonymously via PrivaChain decentralized search network
         </p>
       </div>
     </div>
@@ -1265,7 +1265,7 @@ function generateGitHubPage(): string {
       <div style="background: #24292f; color: white; padding: 16px 0;">
         <div style="max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; align-items: center; gap: 20px;">
           <div style="font-size: 24px; font-weight: bold;">GitHub</div>
-          <input style="flex: 1; max-width: 400px; padding: 8px 12px; border: 1px solid #444; border-radius: 6px; background: #1c2128; color: white;" placeholder="Search or jump to..." />
+          <input style="flex: 1; max-width: 400px; padding: 8px 12px; border: 1px solid #444; border-radius: 6px; background: #1c2128; color: white;" placeholder="MagnifyingGlass or jump to..." />
         </div>
       </div>
       
@@ -1281,7 +1281,7 @@ function generateGitHubPage(): string {
             <div style="space-y: 10px;">
               <div style="padding: 10px; background: #f8f9fa; border-radius: 6px; margin-bottom: 8px;">
                 <div style="font-weight: 600; color: #0969da;">microsoft/vscode</div>
-                <div style="font-size: 12px; color: #666;">Visual Studio Code</div>
+                <div style="font-size: 12px; color: #666;">Visual Studio CodeSimple</div>
               </div>
               <div style="padding: 10px; background: #f8f9fa; border-radius: 6px; margin-bottom: 8px;">
                 <div style="font-weight: 600; color: #0969da;">facebook/react</div>
@@ -1322,14 +1322,14 @@ function generateYouTubePage(): string {
         <div style="display: flex; align-items: center; gap: 8px;">
           <div style="color: #ff0000; font-size: 24px; font-weight: bold;">YouTube</div>
         </div>
-        <input style="flex: 1; max-width: 500px; padding: 8px 16px; border: 1px solid #ccc; border-radius: 20px;" placeholder="Search" />
+        <input style="flex: 1; max-width: 500px; padding: 8px 16px; border: 1px solid #ccc; border-radius: 20px;" placeholder="MagnifyingGlass" />
       </div>
       
       <div style="padding: 20px;">
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
           <div style="background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
             <div style="width: 100%; height: 180px; background: linear-gradient(45deg, #ff6b6b, #4ecdc4); display: flex; align-items: center; justify-content: center; color: white; font-size: 18px;">
-              📹 Video Thumbnail
+              📹 VideoCamera Thumbnail
             </div>
             <div style="padding: 15px;">
               <h3 style="margin: 0 0 8px; font-size: 16px; font-weight: 500; line-height: 1.3;">Privacy-First Web Browsing in 2024</h3>
@@ -1372,7 +1372,7 @@ function generateWikipediaPage(): string {
       <div style="background: white; padding: 12px 20px; border-bottom: 1px solid #a2a9b1;">
         <div style="display: flex; align-items: center; gap: 20px;">
           <h1 style="margin: 0; font-size: 24px; font-weight: normal;">Wikipedia</h1>
-          <input style="flex: 1; max-width: 400px; padding: 6px 12px; border: 1px solid #a2a9b1; border-radius: 2px;" placeholder="Search Wikipedia" />
+          <input style="flex: 1; max-width: 400px; padding: 6px 12px; border: 1px solid #a2a9b1; border-radius: 2px;" placeholder="MagnifyingGlass Wikipedia" />
         </div>
       </div>
       

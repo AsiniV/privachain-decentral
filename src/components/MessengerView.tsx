@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useKV } from '@github/spark/hooks'
+import { useKV } from '../hooks/useKV'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Card } from './ui/card'
@@ -12,7 +12,7 @@ import {
   PaperPlaneTilt, 
   Lock, 
   VideoCamera, 
-  Phone,
+  PhoneCall,
   DotsThree,
   User
 } from '@phosphor-icons/react'
@@ -129,15 +129,15 @@ export function MessengerView() {
         <div className="p-4 border-b border-border">
           <h2 className="text-lg font-semibold mb-3">Conversations</h2>
           <Input 
-            placeholder="Search conversations..." 
+            placeholder="MagnifyingGlass conversations..." 
             className="w-full mb-3"
           />
           
-          {/* Demo Video Call Button */}
+          {/* Demo VideoCamera Call Button */}
           <Button 
             onClick={() => initiateCall({
               id: 'demo-video',
-              name: 'Demo Video Call',
+              name: 'Demo VideoCamera Call',
               address: 'demo.prv',
               online: true
             }, 'video')}
@@ -145,7 +145,7 @@ export function MessengerView() {
             size="sm"
           >
             <VideoCamera className="w-4 h-4 mr-2" />
-            Start Demo Video Call
+            Start Demo VideoCamera Call
           </Button>
         </div>
         
@@ -225,7 +225,7 @@ export function MessengerView() {
                         onClick={initiateAudioCall}
                         disabled={!selectedContactData?.online}
                       >
-                        <Phone className="w-5 h-5" />
+                        <PhoneCall className="w-5 h-5" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>

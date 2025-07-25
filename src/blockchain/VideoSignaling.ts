@@ -1,5 +1,5 @@
 /**
- * Blockchain-based Video Call Signaling
+ * Blockchain-based VideoCamera Call Signaling
  * Implements decentralized call initiation and TURN relay incentives
  */
 
@@ -16,7 +16,7 @@ const COSMOS_CONFIG = {
   addressPrefix: 'osmo',
   gasPrice: GasPrice.fromString('0.025uosmo'),
   denom: 'uosmo',
-  // Video signaling contract (would be deployed)
+  // VideoCamera signaling contract (would be deployed)
   videoSignalingContract: 'osmo1videocontractaddresshere...'
 }
 
@@ -282,10 +282,10 @@ export class VideoSignalingContract {
         COSMOS_CONFIG.videoSignalingContract,
         msg,
         fee,
-        `Video signaling: ${action}`
+        `VideoCamera signaling: ${action}`
       )
 
-      console.log(`🔗 Video Signaling Blockchain Transaction:`, {
+      console.log(`🔗 VideoCamera Signaling Blockchain Transaction:`, {
         action,
         txHash: result.transactionHash,
         gasUsed: result.gasUsed,

@@ -6,13 +6,13 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Warning, AlertDescription } from '@/components/ui/alert'
 import { useZKAuth } from '@/hooks/useZKAuth'
 import { useCosmos } from '@/hooks/useCosmos'
 import { BlockchainUtils } from '@/lib/crypto'
 import { CosmosWallet } from './CosmosWallet'
 import { toast } from 'sonner'
-import { Shield, Key, Eye, EyeOff, Copy, Fingerprint, Zap, CheckCircle, AlertCircle, ExternalLink } from '@phosphor-icons/react'
+import { Shield, Key, Eye, EyeSlash, Copy, Fingerprint, Lightning, CheckCircle, Warning, ArrowSquareOut } from '@phosphor-icons/react'
 
 export function ZKAuthPanel() {
   const {
@@ -194,7 +194,7 @@ export function ZKAuthPanel() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ExternalLink className="h-5 w-5" />
+            <ArrowSquareOut className="h-5 w-5" />
             Cosmos Blockchain Integration
           </CardTitle>
         </CardHeader>
@@ -205,12 +205,12 @@ export function ZKAuthPanel() {
 
       {/* ZK Authentication Status */}
       {!cosmosConnected && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
+        <Warning>
+          <Warning className="h-4 w-4" />
           <AlertDescription>
             Connect to Cosmos testnet above to enable blockchain-based ZK authentication.
           </AlertDescription>
-        </Alert>
+        </Warning>
       )}
 
       {!isAuthenticated ? (
@@ -332,7 +332,7 @@ export function ZKAuthPanel() {
                       variant="outline"
                       onClick={() => setShowPrivateKey(!showPrivateKey)}
                     >
-                      {showPrivateKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showPrivateKey ? <EyeSlash className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                     <Button
                       size="sm"
@@ -362,7 +362,7 @@ export function ZKAuthPanel() {
                 </Button>
                 {cosmosConnected && cosmosAccount && (
                   <Button onClick={handleRegisterOnBlockchain} variant="default" size="sm">
-                    <ExternalLink className="h-4 w-4 mr-2" />
+                    <ArrowSquareOut className="h-4 w-4 mr-2" />
                     Register on Blockchain
                   </Button>
                 )}
@@ -399,7 +399,7 @@ export function ZKAuthPanel() {
                     ) : registrationStatus === 'success' ? (
                       <CheckCircle className="h-4 w-4" />
                     ) : registrationStatus === 'error' ? (
-                      <AlertCircle className="h-4 w-4" />
+                      <Warning className="h-4 w-4" />
                     ) : (
                       'Register'
                     )}
@@ -489,7 +489,7 @@ export function ZKAuthPanel() {
                     variant="outline"
                     size="sm"
                   >
-                    <Zap className="h-4 w-4 mr-2" />
+                    <Lightning className="h-4 w-4 mr-2" />
                     {powStatus === 'loading' ? 'Generating...' : 'Generate PoW'}
                   </Button>
                   {powStatus === 'success' && (

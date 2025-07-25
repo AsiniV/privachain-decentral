@@ -12,10 +12,10 @@ import {
   Clock,
   Wallet,
   Shield,
-  Zap,
-  TrendingUp,
+  Lightning,
+  TrendUp,
   Copy,
-  ExternalLink,
+  ArrowSquareOut,
   Coins
 } from '@phosphor-icons/react'
 import { toast } from 'sonner'
@@ -199,7 +199,7 @@ export function TestWalletIntegrationStatus() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Zap className="w-5 h-5" />
+              <Lightning className="w-5 h-5" />
               Gas Fee Statistics
             </CardTitle>
             <CardDescription>
@@ -239,7 +239,7 @@ export function TestWalletIntegrationStatus() {
 
               <div className="p-4 border rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="w-4 h-4 text-purple-500" />
+                  <TrendUp className="w-4 h-4 text-purple-500" />
                   <span className="font-medium">Premium Payments</span>
                 </div>
                 <div className="text-2xl font-bold text-purple-600">

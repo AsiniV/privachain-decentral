@@ -1,10 +1,10 @@
 /**
- * Smart Contract for Decentralized Video Quality Optimization
+ * Smart Contract for Decentralized VideoCamera Quality Optimization
  * Manages TURN server selection, quality metrics, and economic incentives
  */
 
 export interface VideoQualityContract {
-  // Server registration and management
+  // Desktop registration and management
   registerTurnServer: (url: string, region: string, stake: number) => Promise<string>
   updateServerMetrics: (serverId: string, latency: number, reliability: number) => Promise<void>
   deactivateServer: (serverId: string) => Promise<void>
@@ -174,7 +174,7 @@ export class MockVideoQualityContract implements VideoQualityContract {
 
   async updateServerMetrics(serverId: string, latency: number, reliability: number): Promise<void> {
     const server = this.servers.get(serverId)
-    if (!server) throw new Error('Server not found')
+    if (!server) throw new Error('Desktop not found')
 
     server.latency = latency
     server.reliability = reliability
@@ -186,7 +186,7 @@ export class MockVideoQualityContract implements VideoQualityContract {
 
   async deactivateServer(serverId: string): Promise<void> {
     const server = this.servers.get(serverId)
-    if (!server) throw new Error('Server not found')
+    if (!server) throw new Error('Desktop not found')
 
     server.isActive = false
     this.servers.set(serverId, server)
@@ -300,7 +300,7 @@ export class MockVideoQualityContract implements VideoQualityContract {
       optimizedServer: failoverServer.id,
       qualityImprovement: 20, // Estimated improvement
       costSavings: 0,
-      reason: 'Server failover due to quality issues'
+      reason: 'Desktop failover due to quality issues'
     })
 
     console.log(`Failover completed: switched to ${failoverServer.id}`)
@@ -309,7 +309,7 @@ export class MockVideoQualityContract implements VideoQualityContract {
 
   async stakeForServer(serverId: string, amount: number): Promise<void> {
     const server = this.servers.get(serverId)
-    if (!server) throw new Error('Server not found')
+    if (!server) throw new Error('Desktop not found')
 
     server.stake += amount
     this.servers.set(serverId, server)
@@ -318,7 +318,7 @@ export class MockVideoQualityContract implements VideoQualityContract {
 
   async claimRewards(serverId: string): Promise<number> {
     const server = this.servers.get(serverId)
-    if (!server) throw new Error('Server not found')
+    if (!server) throw new Error('Desktop not found')
 
     // Calculate rewards based on performance
     const baseReward = 10
@@ -331,7 +331,7 @@ export class MockVideoQualityContract implements VideoQualityContract {
 
   async penalizeServer(serverId: string, penalty: number): Promise<void> {
     const server = this.servers.get(serverId)
-    if (!server) throw new Error('Server not found')
+    if (!server) throw new Error('Desktop not found')
 
     server.stake = Math.max(0, server.stake - penalty)
     server.reputation = Math.max(0, server.reputation - penalty / 10)
@@ -346,7 +346,7 @@ export class MockVideoQualityContract implements VideoQualityContract {
 
   async reportServerIssue(serverId: string, issueType: string, evidence: string): Promise<void> {
     const server = this.servers.get(serverId)
-    if (!server) throw new Error('Server not found')
+    if (!server) throw new Error('Desktop not found')
 
     console.log(`Issue reported for server ${serverId}: ${issueType}`)
     
@@ -357,7 +357,7 @@ export class MockVideoQualityContract implements VideoQualityContract {
 
   async voteOnReputation(serverId: string, vote: boolean): Promise<void> {
     const votes = this.reputationVotes.get(serverId)
-    if (!votes) throw new Error('Server not found')
+    if (!votes) throw new Error('Desktop not found')
 
     if (vote) {
       votes.positive++
@@ -383,7 +383,7 @@ export class MockVideoQualityContract implements VideoQualityContract {
 
   async getServerStats(serverId: string): Promise<ServerStats> {
     const server = this.servers.get(serverId)
-    if (!server) throw new Error('Server not found')
+    if (!server) throw new Error('Desktop not found')
 
     // Mock statistics - in production would come from blockchain data
     return {

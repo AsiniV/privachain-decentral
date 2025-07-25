@@ -192,7 +192,7 @@ class CodecManager {
     if (!this.capabilities) return []
 
     const codecs: CodecInfo[] = [
-      // Video Codecs
+      // VideoCamera Codecs
       {
         name: 'H.264 (AVC)',
         type: 'video',

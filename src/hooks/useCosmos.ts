@@ -204,7 +204,7 @@ export function useCosmos() {
     try {
       const txHash = await cosmosClient.startVideoSession(receiver, stunTurnServer)
       if (txHash) {
-        toast.success('Video session started on blockchain!')
+        toast.success('VideoCamera session started on blockchain!')
         await refreshAccount() // Refresh balance after transaction
       }
       return txHash

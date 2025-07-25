@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Copy, ExternalLink, RefreshCw, Wifi, WifiOff, Activity, Coins, Users, Globe } from '@phosphor-icons/react'
+import { Warning, AlertDescription } from '@/components/ui/alert'
+import { Copy, ArrowSquareOut, ArrowClockwise, WifiHigh, WifiSlash, Activity, Coins, Users, Globe } from '@phosphor-icons/react'
 import { useCosmosTestnet, TESTNET_ENDPOINTS, TESTNET_EXPLORERS, FAUCET_ENDPOINTS } from '../blockchain/CosmosTestnet'
 import { toast } from 'sonner'
 
@@ -113,7 +113,7 @@ export function TestnetDashboard() {
         </div>
         <div className="flex items-center gap-2">
           <Badge variant={isTestnetConnected ? "default" : "secondary"} className="flex items-center gap-1">
-            {isTestnetConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+            {isTestnetConnected ? <WifiHigh className="w-3 h-3" /> : <WifiSlash className="w-3 h-3" />}
             {isTestnetConnected ? 'Connected' : 'Disconnected'}
           </Badge>
           <Button
@@ -121,7 +121,7 @@ export function TestnetDashboard() {
             onClick={isTestnetConnected ? disconnectFromTestnet : handleConnect}
             disabled={loading}
           >
-            {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : null}
+            {loading ? <ArrowClockwise className="w-4 h-4 animate-spin" /> : null}
             {isTestnetConnected ? 'Disconnect' : 'Connect to Testnet'}
           </Button>
         </div>
@@ -203,7 +203,7 @@ export function TestnetDashboard() {
                   onClick={() => window.open(TESTNET_EXPLORERS.PRIVACHAIN, '_blank')}
                   className="flex-1"
                 >
-                  <ExternalLink className="w-4 h-4 mr-2" />
+                  <ArrowSquareOut className="w-4 h-4 mr-2" />
                   Open Explorer
                 </Button>
                 <Button
@@ -225,18 +225,18 @@ export function TestnetDashboard() {
               <CardTitle className="flex items-center justify-between">
                 Network Status
                 <Button variant="ghost" size="sm" onClick={refreshStatus} disabled={!isTestnetConnected || loading}>
-                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                  <ArrowClockwise className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                 </Button>
               </CardTitle>
               <CardDescription>Real-time testnet network information</CardDescription>
             </CardHeader>
             <CardContent>
               {!isTestnetConnected ? (
-                <Alert>
+                <Warning>
                   <AlertDescription>
                     Please connect to the testnet to view network status.
                   </AlertDescription>
-                </Alert>
+                </Warning>
               ) : status ? (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="space-y-2">
@@ -274,7 +274,7 @@ export function TestnetDashboard() {
                 </div>
               ) : (
                 <div className="flex items-center justify-center py-8">
-                  <RefreshCw className="w-6 h-6 animate-spin" />
+                  <ArrowClockwise className="w-6 h-6 animate-spin" />
                 </div>
               )}
             </CardContent>
@@ -288,11 +288,11 @@ export function TestnetDashboard() {
               <CardDescription>Request test PRIV tokens for development</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Alert>
+              <Warning>
                 <AlertDescription>
                   You can request test tokens every 24 hours. Each request provides 1000 PRIV tokens.
                 </AlertDescription>
-              </Alert>
+              </Warning>
 
               <div className="space-y-2">
                 <Label htmlFor="faucet-address">Your PrivaChain Address</Label>
@@ -309,7 +309,7 @@ export function TestnetDashboard() {
                 disabled={loading || !faucetAddress.trim()}
                 className="w-full"
               >
-                {loading ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Coins className="w-4 h-4 mr-2" />}
+                {loading ? <ArrowClockwise className="w-4 h-4 mr-2 animate-spin" /> : <Coins className="w-4 h-4 mr-2" />}
                 Request Test Tokens
               </Button>
             </CardContent>

@@ -26,7 +26,7 @@ export const CONTRACT_ADDRESSES = {
   zkAuth: 'osmo1...',  // ZK authentication contract
   mailService: 'osmo1...',  // Anonymous mail contract
   domainRegistry: 'osmo1...',  // .prv domain registry
-  videoSignaling: 'osmo1...'  // Video call signaling
+  videoSignaling: 'osmo1...'  // VideoCamera call signaling
 }
 
 export interface CosmosAccount {
@@ -279,7 +279,7 @@ export class CosmosClient {
         'Start video session'
       )
 
-      console.log('Video session started:', result.transactionHash)
+      console.log('VideoCamera session started:', result.transactionHash)
       return result.transactionHash
     } catch (error) {
       console.error('Failed to start video session:', error)

@@ -18,7 +18,7 @@ import {
   Globe, 
   Clock,
   FileText,
-  Video,
+  VideoCamera,
   Image,
   CheckCircle
 } from '@phosphor-icons/react'
@@ -126,7 +126,7 @@ export function IPFSIntegrationDemo() {
 
       setFiles(prev => [newFile, ...prev])
 
-      // Pin content for availability
+      // MapPin content for availability
       await ipfsService.pinContent(result.cid)
 
       toast.success(`Uploaded to IPFS: ${result.cid.slice(0, 10)}...`)
@@ -205,12 +205,12 @@ export function IPFSIntegrationDemo() {
       )
 
       if (result.success) {
-        toast.success(`Video call initiated with IPFS signaling: ${result.sessionId}`)
+        toast.success(`VideoCamera call initiated with IPFS signaling: ${result.sessionId}`)
       } else {
         toast.error(result.error || 'Call failed')
       }
     } catch (error) {
-      toast.error('Video call demo failed')
+      toast.error('VideoCamera call demo failed')
     }
   }
 
@@ -238,7 +238,7 @@ export function IPFSIntegrationDemo() {
   }
 
   const getFileIcon = (type: string) => {
-    if (type.startsWith('video/')) return <Video className="w-4 h-4" />
+    if (type.startsWith('video/')) return <VideoCamera className="w-4 h-4" />
     if (type.startsWith('image/')) return <Image className="w-4 h-4" />
     return <FileText className="w-4 h-4" />
   }
@@ -316,8 +316,8 @@ export function IPFSIntegrationDemo() {
               onClick={demoVideoCall}
               className="flex items-center gap-2"
             >
-              <Video className="w-4 h-4" />
-              Demo Video Call
+              <VideoCamera className="w-4 h-4" />
+              Demo VideoCamera Call
             </Button>
             
             <Button 

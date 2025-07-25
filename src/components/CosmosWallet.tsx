@@ -6,18 +6,18 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Warning, AlertDescription } from '@/components/ui/alert'
 import { useCosmos } from '@/hooks/useCosmos'
 import { toast } from 'sonner'
 import { 
   Wallet, 
   Copy, 
-  ExternalLink, 
-  AlertCircle, 
+  ArrowSquareOut, 
+  Warning, 
   CheckCircle, 
   Coins,
   Globe,
-  RefreshCw
+  ArrowClockwise
 } from '@phosphor-icons/react'
 
 export function CosmosWallet() {
@@ -74,12 +74,12 @@ export function CosmosWallet() {
 
   if (error) {
     return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
+      <Warning variant="destructive">
+        <Warning className="h-4 w-4" />
         <AlertDescription>
           Failed to connect to Cosmos testnet: {error}
         </AlertDescription>
-      </Alert>
+      </Warning>
     )
   }
 
@@ -96,12 +96,12 @@ export function CosmosWallet() {
 
   if (!isConnected) {
     return (
-      <Alert>
-        <AlertCircle className="h-4 w-4" />
+      <Warning>
+        <Warning className="h-4 w-4" />
         <AlertDescription>
           Not connected to Cosmos testnet. The blockchain features require a connection.
         </AlertDescription>
-      </Alert>
+      </Warning>
     )
   }
 
@@ -212,7 +212,7 @@ export function CosmosWallet() {
                   variant="outline"
                   size="sm"
                 >
-                  <RefreshCw className="h-4 w-4" />
+                  <ArrowClockwise className="h-4 w-4" />
                 </Button>
               </CardTitle>
             </CardHeader>
@@ -326,7 +326,7 @@ export function CosmosWallet() {
                   variant="outline"
                   size="sm"
                 >
-                  <ExternalLink className="h-4 w-4 mr-2" />
+                  <ArrowSquareOut className="h-4 w-4 mr-2" />
                   Get Testnet Tokens
                 </Button>
                 <Button 
@@ -342,12 +342,12 @@ export function CosmosWallet() {
 
           {/* Balance Warning */}
           {parseInt(account.balance) < 1000000 && (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
+            <Warning>
+              <Warning className="h-4 w-4" />
               <AlertDescription>
                 Your balance is low. Use the faucet to get testnet tokens for blockchain operations.
               </AlertDescription>
-            </Alert>
+            </Warning>
           )}
         </div>
       )}

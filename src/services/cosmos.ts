@@ -15,8 +15,8 @@ const COSMOS_CONFIG = {
 
 // Contract addresses (will be populated after deployment)
 const CONTRACTS = {
-  videoSignaling: 'cosmos1...',  // Video signaling contract
-  mail: 'cosmos1...',           // Mail contract
+  videoSignaling: 'cosmos1...',  // VideoCamera signaling contract
+  mail: 'cosmos1...',           // Envelope contract
   messaging: 'cosmos1...',      // Messaging contract
   identity: 'cosmos1...'        // Identity contract
 }
@@ -54,7 +54,7 @@ export class CosmosBlockchainService {
     }
   }
 
-  // Video Call Signaling on Blockchain
+  // VideoCamera Call Signaling on Blockchain
   async initiateVideoCall(recipientAddress: string, turnServers: string[]) {
     if (!this.signingClient || !this.wallet) {
       throw new Error('Signing client not initialized')
@@ -85,7 +85,7 @@ export class CosmosBlockchainService {
 
       const sessionId = this.extractSessionId(result)
       
-      console.log('📞 Video call initiated on blockchain:', sessionId)
+      console.log('📞 VideoCamera call initiated on blockchain:', sessionId)
       return {
         sessionId,
         transactionHash: result.transactionHash,

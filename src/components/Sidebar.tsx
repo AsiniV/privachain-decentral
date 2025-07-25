@@ -1,18 +1,18 @@
 import { 
-  MessageCircle, 
-  Mail, 
-  Search, 
+  ChatCircle, 
+  Envelope, 
+  MagnifyingGlass, 
   User, 
   Shield,
   Plus,
-  Menu,
+  List,
   X,
   Rocket
 } from '@phosphor-icons/react'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { cn } from '../lib/utils'
-import { useKV } from '@github/spark/hooks'
+import { useKV } from '../hooks/useKV'
 import { useIsMobile } from '../hooks/use-mobile'
 
 interface SidebarProps {
@@ -31,19 +31,19 @@ export function Sidebar({ currentView, onViewChange, open, onOpenChange }: Sideb
     {
       id: 'messenger',
       label: 'Messenger',
-      icon: MessageCircle,
+      icon: ChatCircle,
       badge: unreadMessages > 0 ? unreadMessages : null
     },
     {
       id: 'email',
       label: 'Email',
-      icon: Mail,
+      icon: Envelope,
       badge: unreadEmails > 0 ? unreadEmails : null
     },
     {
       id: 'search',
-      label: 'Search',
-      icon: Search,
+      label: 'MagnifyingGlass',
+      icon: MagnifyingGlass,
       badge: null
     },
     {
@@ -117,7 +117,7 @@ export function Sidebar({ currentView, onViewChange, open, onOpenChange }: Sideb
           className="fixed top-4 left-4 z-50 md:hidden"
           onClick={() => onOpenChange(!open)}
         >
-          {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          {open ? <X className="w-5 h-5" /> : <List className="w-5 h-5" />}
         </Button>
         
         {open && (

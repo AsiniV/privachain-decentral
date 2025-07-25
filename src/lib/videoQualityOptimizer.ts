@@ -1,5 +1,5 @@
 /**
- * Advanced Video Quality Optimizer for Decentralized TURN Servers
+ * Advanced VideoCamera Quality Optimizer for Decentralized TURN Servers
  * Implements intelligent server selection and adaptive quality management
  */
 
@@ -236,7 +236,7 @@ export class VideoQualityOptimizer {
 
   updateSettings(newSettings: Partial<OptimizationSettings>) {
     this.settings = { ...this.settings, ...newSettings }
-    console.log('Video quality optimizer settings updated')
+    console.log('VideoCamera quality optimizer settings updated')
   }
 
   startSession() {
@@ -310,7 +310,7 @@ export class VideoQualityOptimizer {
 
   endSession() {
     this.isActive = false
-    console.log('Video quality optimizer session ended')
+    console.log('VideoCamera quality optimizer session ended')
   }
 
   destroy() {
