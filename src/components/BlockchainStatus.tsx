@@ -44,7 +44,7 @@ export function BlockchainStatus() {
         blockHeight: prev.blockHeight + Math.floor(Math.random() * 3) + 1,
         validators: 125 + Math.floor(Math.random() * 5),
         gasPrice: (0.020 + Math.random() * 0.015).toFixed(3),
-        privBalance: (parseFloat(prev.privBalance.replace(',', '')) + (Math.random() - 0.5) * 0.1).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        privBalance: (parseFloat(prev.privBalance.replace(',', '')) + (Math.random() - 0.5) * 0.1).toFixed(2),
         pendingTx: Math.floor(Math.random() * 3)
       }))
     }, 3000)
@@ -67,7 +67,7 @@ export function BlockchainStatus() {
     setBlockchainState(prev => ({
       ...prev,
       staked: (parseFloat(prev.staked) + amount).toFixed(2),
-      privBalance: (parseFloat(prev.privBalance.replace(',', '')) - amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      privBalance: (parseFloat(prev.privBalance.replace(',', '')) - amount).toFixed(2)
     }))
     toast.success(`Staked ${amount} PRIV tokens`)
   }
@@ -93,7 +93,7 @@ export function BlockchainStatus() {
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Block Height</p>
-            <p className="font-mono text-sm">{blockchainState.blockHeight.toLocaleString()}</p>
+            <p className="font-mono text-sm">{blockchainState.blockHeight?.toLocaleString() ?? '0'}</p>
           </div>
         </div>
 

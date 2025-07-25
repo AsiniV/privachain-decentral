@@ -261,7 +261,7 @@ export function ZKAuthPanel() {
                 <div className="space-y-2">
                   <Label>Created</Label>
                   <Input 
-                    value={identity ? new Date(identity.timestamp).toLocaleString() : ''} 
+                    value={identity && identity.timestamp ? new Date(identity.timestamp).toLocaleString() : 'Not available'} 
                     readOnly 
                   />
                 </div>

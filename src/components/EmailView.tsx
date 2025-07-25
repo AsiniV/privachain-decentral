@@ -357,7 +357,7 @@ export function EmailView() {
                   </p>
                   
                   <p className="text-xs text-muted-foreground">
-                    {new Date(email.timestamp).toLocaleDateString()}
+                    {email.timestamp ? new Date(email.timestamp).toLocaleDateString() : 'No date'}
                   </p>
                 </div>
               </Card>
@@ -419,7 +419,7 @@ export function EmailView() {
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <span className="font-mono">From: {selectedEmailData.from}</span>
                   <span className="font-mono">To: {selectedEmailData.to}</span>
-                  <span>{new Date(selectedEmailData.timestamp).toLocaleString()}</span>
+                  <span>{selectedEmailData.timestamp ? new Date(selectedEmailData.timestamp).toLocaleString() : 'No date'}</span>
                 </div>
               </div>
             </div>

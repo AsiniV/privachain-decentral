@@ -114,7 +114,7 @@ export function ProfileView() {
               <span className="font-mono">{profile.address}</span>
               <span className="flex items-center gap-1">
                 <Star className="w-3 h-3" />
-                {profile.reputation.toLocaleString()} reputation
+                {(profile?.reputation ?? 0).toLocaleString()} reputation
               </span>
             </div>
           </div>
@@ -168,7 +168,7 @@ export function ProfileView() {
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Member since</span>
-                    <span>{new Date(profile.joinDate).toLocaleDateString()}</span>
+                    <span>{profile?.joinDate ? new Date(profile.joinDate).toLocaleDateString() : 'Unknown'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Account type</span>
@@ -178,7 +178,7 @@ export function ProfileView() {
                     <span className="text-muted-foreground">Reputation</span>
                     <span className="flex items-center gap-1">
                       <Star className="w-4 h-4 text-yellow-500" />
-                      {profile.reputation.toLocaleString()}
+                      {(profile?.reputation ?? 0).toLocaleString()}
                     </span>
                   </div>
                 </div>
