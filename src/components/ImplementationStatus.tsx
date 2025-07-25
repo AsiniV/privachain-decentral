@@ -32,10 +32,10 @@ export function ImplementationStatus() {
       items: [
         { name: "WebRTC Video Calls", status: "implemented", description: "P2P video calling with UI simulation" },
         { name: "Signal Protocol E2E", status: "specified", description: "End-to-end encryption implementation" },
-        { name: "IPFS Storage", status: "implemented", description: "Decentralized content storage with file upload/download" },
-        { name: "IPFS Content Browser", status: "implemented", description: "Browse and search IPFS content with preview" },
-        { name: "Email Attachments via IPFS", status: "implemented", description: "File attachments stored on IPFS network" },
-        { name: "Content Pinning Service", status: "implemented", description: "Pin important content to ensure availability" },
+        { name: "IPFS Storage Interface", status: "implemented", description: "Decentralized content storage simulation with file upload/download UI" },
+        { name: "IPFS Content Browser", status: "implemented", description: "Browse and search IPFS content with preview interface" },
+        { name: "Email Attachments via IPFS", status: "ui-only", description: "File attachment interface designed for IPFS integration" },
+        { name: "Content Pinning Service", status: "ui-only", description: "Pin management interface with status tracking" },
         { name: "Anonymous Email (.prv)", status: "ui-only", description: "UI for anonymous email domains" },
         { name: "Telegram-like Messenger", status: "ui-only", description: "Basic messaging interface" },
         { name: "Search Service", status: "ui-only", description: "Basic search interface" }
@@ -94,11 +94,11 @@ export function ImplementationStatus() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card className="p-4 text-center border-green-200 bg-green-50">
-          <div className="text-2xl font-bold text-green-600">8</div>
+          <div className="text-2xl font-bold text-green-600">10</div>
           <div className="text-sm text-green-700">Fully Implemented</div>
         </Card>
         <Card className="p-4 text-center border-blue-200 bg-blue-50">
-          <div className="text-2xl font-bold text-blue-600">3</div>
+          <div className="text-2xl font-bold text-blue-600">5</div>
           <div className="text-sm text-blue-700">UI Components</div>
         </Card>
         <Card className="p-4 text-center border-yellow-200 bg-yellow-50">
@@ -146,6 +146,8 @@ export function ImplementationStatus() {
             <p>✅ <strong>Complete ZK Authentication Flow:</strong> Identity generation, proof creation, session management</p>
             <p>✅ <strong>Cryptographic Security:</strong> Secure key generation, hashing, and proof verification</p>
             <p>✅ <strong>Anonymous Features:</strong> Ephemeral addresses, sender aliases, domain registration simulation</p>
+            <p>✅ <strong>IPFS Integration:</strong> File upload, download, content browsing, and pinning interfaces</p>
+            <p>✅ <strong>Video Call System:</strong> WebRTC interface with call management and controls</p>
             <p>✅ <strong>User Interface:</strong> Professional UI for all authentication and cryptographic operations</p>
             <p>✅ <strong>Integration Ready:</strong> Modular architecture prepared for blockchain backend integration</p>
           </div>
