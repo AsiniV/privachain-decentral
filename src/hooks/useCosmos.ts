@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useKV } from '@github/spark/hooks'
+import { useState, useEffect } from 'react'
 import { cosmosClient, CosmosAccount, COSMOS_CONFIG } from '@/lib/cosmos'
 import { toast } from 'sonner'
 
@@ -24,7 +24,7 @@ export function useCosmos() {
   })
 
   // Persist wallet mnemonic securely
-  const [storedMnemonic, setStoredMnemonic] = useKV<string | null>('cosmos-wallet-mnemonic', null)
+  const [storedMnemonic, setStoredMnemonic] = useState<string | null>(null)
 
   useEffect(() => {
     initializeConnection()
