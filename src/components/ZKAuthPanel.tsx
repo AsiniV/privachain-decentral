@@ -6,10 +6,13 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useZKAuth } from '@/hooks/useZKAuth'
+import { useCosmos } from '@/hooks/useCosmos'
 import { BlockchainUtils } from '@/lib/crypto'
+import { CosmosWallet } from './CosmosWallet'
 import { toast } from 'sonner'
-import { Shield, Key, Eye, EyeOff, Copy, Fingerprint, Zap, CheckCircle, AlertCircle } from '@phosphor-icons/react'
+import { Shield, Key, Eye, EyeOff, Copy, Fingerprint, Zap, CheckCircle, AlertCircle, ExternalLink } from '@phosphor-icons/react'
 
 export function ZKAuthPanel() {
   const {
@@ -24,11 +27,20 @@ export function ZKAuthPanel() {
     zkInstance
   } = useZKAuth()
 
+  const {
+    isConnected: cosmosConnected,
+    account: cosmosAccount,
+    registerZKIdentity,
+    registerDomain,
+    queryDomain
+  } = useCosmos()
+
   const [showPrivateKey, setShowPrivateKey] = useState(false)
   const [importIdentity, setImportIdentity] = useState('')
   const [testDomain, setTestDomain] = useState('journalist.prv')
   const [registrationStatus, setRegistrationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [powStatus, setPowStatus] = useState<'idle' | 'loading' | 'success'>('idle')
+  const [blockchainRegistrationTx, setBlockchainRegistrationTx] = useState<string | null>(null)
 
   const handleGenerateIdentity = async () => {
     try {
@@ -78,21 +90,42 @@ export function ZKAuthPanel() {
   const handleRegisterDomain = async () => {
     if (!identity) return
 
+    if (!cosmosConnected || !cosmosAccount) {
+      toast.error('Please connect your Cosmos wallet first')
+      return
+    }
+
     setRegistrationStatus('loading')
     try {
       const domain = await zkInstance.registerAnonymousDomain(testDomain.replace('.prv', ''))
-      const result = await BlockchainUtils.registerDomain(
+      
+      // Register on blockchain first
+      const txHash = await registerDomain(
         domain.domain,
         domain.zkProofHash,
         domain.publicKey
       )
-      
-      if (result.success) {
-        setRegistrationStatus('success')
-        toast.success(`Domain ${domain.domain} registered successfully!`)
+
+      if (txHash) {
+        setBlockchainRegistrationTx(txHash)
+        
+        // Also register in local simulation for UI feedback
+        const result = await BlockchainUtils.registerDomain(
+          domain.domain,
+          domain.zkProofHash,
+          domain.publicKey
+        )
+        
+        if (result.success) {
+          setRegistrationStatus('success')
+          toast.success(`Domain ${domain.domain} registered on Cosmos blockchain!`)
+        } else {
+          setRegistrationStatus('error')
+          toast.error('Local registration failed')
+        }
       } else {
         setRegistrationStatus('error')
-        toast.error('Domain registration failed')
+        toast.error('Blockchain registration failed')
       }
     } catch (error) {
       setRegistrationStatus('error')
@@ -101,16 +134,46 @@ export function ZKAuthPanel() {
     }
   }
 
-  const handleGeneratePoW = async () => {
-    setPowStatus('loading')
+  const handleQueryDomain = async () => {
+    if (!cosmosConnected) {
+      toast.error('Not connected to Cosmos')
+      return
+    }
+
     try {
-      const pow = await BlockchainUtils.generateProofOfWork(4)
-      setPowStatus('success')
-      toast.success('Proof of Work generated')
-      console.log('PoW:', pow)
+      const result = await queryDomain(testDomain.replace('.prv', ''))
+      if (result) {
+        toast.success('Domain found on blockchain!')
+        console.log('Domain data:', result)
+      } else {
+        toast.info('Domain not found on blockchain')
+      }
     } catch (error) {
-      toast.error('PoW generation failed')
-      console.error(error)
+      console.error('Query failed:', error)
+      toast.error('Failed to query domain')
+    }
+  }
+
+  const handleRegisterOnBlockchain = async () => {
+    if (!identity || !cosmosConnected || !cosmosAccount) {
+      toast.error('Please connect your Cosmos wallet first')
+      return
+    }
+
+    try {
+      const ephemeralKey = generateEphemeralAddress()
+      const txHash = await registerZKIdentity(
+        identity.publicHash,
+        identity.zkProof,
+        ephemeralKey
+      )
+
+      if (txHash) {
+        toast.success('ZK Identity registered on Cosmos blockchain!')
+      }
+    } catch (error) {
+      console.error('Blockchain registration failed:', error)
+      toast.error('Failed to register on blockchain')
     }
   }
 
@@ -127,6 +190,29 @@ export function ZKAuthPanel() {
 
   return (
     <div className="space-y-6">
+      {/* Cosmos Wallet Integration */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ExternalLink className="h-5 w-5" />
+            Cosmos Blockchain Integration
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <CosmosWallet />
+        </CardContent>
+      </Card>
+
+      {/* ZK Authentication Status */}
+      {!cosmosConnected && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Connect to Cosmos testnet above to enable blockchain-based ZK authentication.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {!isAuthenticated ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Generate New Identity */}
@@ -274,6 +360,12 @@ export function ZKAuthPanel() {
                   <Copy className="h-4 w-4 mr-2" />
                   Export Identity
                 </Button>
+                {cosmosConnected && cosmosAccount && (
+                  <Button onClick={handleRegisterOnBlockchain} variant="default" size="sm">
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Register on Blockchain
+                  </Button>
+                )}
                 <Button onClick={logout} variant="destructive" size="sm">
                   Logout
                 </Button>
@@ -299,7 +391,7 @@ export function ZKAuthPanel() {
                   <span className="text-sm text-muted-foreground">.prv</span>
                   <Button 
                     onClick={handleRegisterDomain}
-                    disabled={registrationStatus === 'loading'}
+                    disabled={registrationStatus === 'loading' || !cosmosConnected}
                     size="sm"
                   >
                     {registrationStatus === 'loading' ? (
@@ -312,7 +404,39 @@ export function ZKAuthPanel() {
                       'Register'
                     )}
                   </Button>
+                  <Button
+                    onClick={handleQueryDomain}
+                    disabled={!cosmosConnected}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Query
+                  </Button>
                 </div>
+                {blockchainRegistrationTx && (
+                  <div className="mt-2">
+                    <Label className="text-sm text-muted-foreground">Blockchain Transaction:</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Input 
+                        value={blockchainRegistrationTx} 
+                        readOnly 
+                        className="font-mono text-xs"
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleCopyToClipboard(blockchainRegistrationTx, 'Transaction hash')}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                {!cosmosConnected && (
+                  <p className="text-sm text-muted-foreground">
+                    Connect to Cosmos testnet to register domains on blockchain
+                  </p>
+                )}
               </div>
 
               <Separator />
