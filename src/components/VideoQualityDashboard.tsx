@@ -176,7 +176,7 @@ export function VideoQualityDashboard({ onServerSelected, currentSessionId, isIn
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Lightning className="w-5 h-5" />
-            Video Quality Optimization
+            VideoCamera Quality Optimization
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -224,14 +224,14 @@ export function VideoQualityDashboard({ onServerSelected, currentSessionId, isIn
         </CardContent>
       </Card>
 
-      {/* Selected Server Status */}
+      {/* Selected Desktop Status */}
       {optimalServer && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-green-500" />
-                Active Server: {optimalServer.region}
+                Active Desktop: {optimalServer.region}
               </span>
               <Badge variant="outline">{optimalServer.url}</Badge>
             </CardTitle>

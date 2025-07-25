@@ -5,12 +5,12 @@ import { Badge } from '../ui/badge'
 import { 
   Upload, 
   CheckCircle, 
-  AlertCircle, 
-  ExternalLink,
-  RefreshCw,
-  DollarSign
+  Warning, 
+  ArrowSquareOut,
+  ArrowClockwise,
+  CurrencyDollar
 } from '@phosphor-icons/react'
-import { useKV } from '@github/spark/hooks'
+import { useKV } from '../../hooks/useKV'
 import { DeploymentState } from '../../blockchain/deployment/config'
 
 interface DeploymentManagerProps {
@@ -32,9 +32,9 @@ export function DeploymentManager({ onDeploy, onVerify }: DeploymentManagerProps
   const contracts = [
     { key: 'prvToken', name: 'PRIV Token', description: 'Native utility token' },
     { key: 'nft', name: 'Identity NFT', description: 'Premium access and identity' },
-    { key: 'mail', name: 'Anonymous Mail', description: 'Encrypted email service' },
+    { key: 'mail', name: 'Anonymous Envelope', description: 'Encrypted email service' },
     { key: 'domain', name: 'Domain Registry', description: '.prv domain registration' },
-    { key: 'videoSignaling', name: 'Video Signaling', description: 'WebRTC coordination' },
+    { key: 'videoSignaling', name: 'VideoCamera Signaling', description: 'WebRTC coordination' },
     { key: 'rewards', name: 'Node Rewards', description: 'Incentivization system' },
     { key: 'consensus', name: 'Consensus Manager', description: 'Validator governance' },
     { key: 'zkRollup', name: 'ZK Rollup', description: 'Layer 2 scaling' }
@@ -126,9 +126,9 @@ export function DeploymentManager({ onDeploy, onVerify }: DeploymentManagerProps
       case 'deployed':
         return <Badge variant="default" className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Deployed</Badge>
       case 'deploying':
-        return <Badge variant="secondary"><RefreshCw className="w-3 h-3 mr-1 animate-spin" />Deploying</Badge>
+        return <Badge variant="secondary"><ArrowClockwise className="w-3 h-3 mr-1 animate-spin" />Deploying</Badge>
       default:
-        return <Badge variant="outline"><AlertCircle className="w-3 h-3 mr-1" />Not Deployed</Badge>
+        return <Badge variant="outline"><Warning className="w-3 h-3 mr-1" />Not Deployed</Badge>
     }
   }
 
@@ -168,7 +168,7 @@ export function DeploymentManager({ onDeploy, onVerify }: DeploymentManagerProps
           {/* Cost Estimation */}
           <div className="bg-muted p-4 rounded-lg">
             <h4 className="flex items-center gap-2 font-medium mb-2">
-              <DollarSign className="w-4 h-4" />
+              <CurrencyDollar className="w-4 h-4" />
               Estimated Deployment Costs ({selectedNetwork})
             </h4>
             <div className="grid grid-cols-3 gap-4 text-sm">
@@ -196,7 +196,7 @@ export function DeploymentManager({ onDeploy, onVerify }: DeploymentManagerProps
             >
               {isDeploying ? (
                 <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  <ArrowClockwise className="w-4 h-4 mr-2 animate-spin" />
                   Deploying...
                 </>
               ) : (
@@ -253,7 +253,7 @@ export function DeploymentManager({ onDeploy, onVerify }: DeploymentManagerProps
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          <ExternalLink className="w-4 h-4" />
+                          <ArrowSquareOut className="w-4 h-4" />
                         </a>
                       </Button>
                     )}

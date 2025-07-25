@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useKV } from '@github/spark/hooks'
+import { useKV } from '../hooks/useKV'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Card } from './ui/card'
@@ -11,8 +11,8 @@ import {
   MagnifyingGlass,
   Lock,
   Globe,
-  MessageCircle,
-  Mail,
+  ChatCircle,
+  Envelope,
   File,
   Calendar,
   User,
@@ -45,7 +45,7 @@ export function SearchView() {
       const searchResults = await zkSearch(searchQuery, filters)
       setResults(searchResults)
     } catch (error) {
-      console.error('Search failed:', error)
+      console.error('MagnifyingGlass failed:', error)
       setResults([])
     } finally {
       setIsSearching(false)
@@ -69,8 +69,8 @@ export function SearchView() {
 
   const getIcon = (type: string) => {
     switch (type) {
-      case 'message': return MessageCircle
-      case 'email': return Mail
+      case 'message': return ChatCircle
+      case 'email': return Envelope
       case 'contact': return User
       case 'file': return File
       case 'domain': return Globe
@@ -96,8 +96,8 @@ export function SearchView() {
       <div className="p-6 border-b border-border bg-card">
         <div className="space-y-4">
           <div>
-            <h2 className="text-2xl font-bold mb-2">Decentralized Search</h2>
-            <p className="text-muted-foreground">Search across your encrypted communications and network content</p>
+            <h2 className="text-2xl font-bold mb-2">Decentralized MagnifyingGlass</h2>
+            <p className="text-muted-foreground">MagnifyingGlass across your encrypted communications and network content</p>
           </div>
           
           <div className="relative">
@@ -112,7 +112,7 @@ export function SearchView() {
                   setResults([])
                 }
               }}
-              placeholder="Search messages, emails, contacts, and files..."
+              placeholder="MagnifyingGlass messages, emails, contacts, and files..."
               className="pl-12 h-12 text-lg"
             />
             {isSearching && (
@@ -154,15 +154,15 @@ export function SearchView() {
             <p className="text-muted-foreground mb-6">Enter a search term to find content across your encrypted network</p>
             
             <div className="max-w-2xl mx-auto">
-              <h4 className="font-semibold mb-3">Search Features</h4>
+              <h4 className="font-semibold mb-3">MagnifyingGlass Features</h4>
               <div className="grid md:grid-cols-2 gap-4 text-left">
                 <Card className="p-4">
                   <div className="flex items-center gap-3 mb-2">
                     <Lock className="w-5 h-5 text-accent" />
-                    <span className="font-medium">Encrypted Search</span>
+                    <span className="font-medium">Encrypted MagnifyingGlass</span>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Search through encrypted content without exposing data to servers
+                    MagnifyingGlass through encrypted content without exposing data to servers
                   </p>
                 </Card>
                 
@@ -188,11 +188,11 @@ export function SearchView() {
                 
                 <Card className="p-4">
                   <div className="flex items-center gap-3 mb-2">
-                    <MessageCircle className="w-5 h-5 text-accent" />
-                    <span className="font-medium">Blockchain Search</span>
+                    <ChatCircle className="w-5 h-5 text-accent" />
+                    <span className="font-medium">Blockchain MagnifyingGlass</span>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Search .prv domains, IPFS content, and transaction history
+                    MagnifyingGlass .prv domains, IPFS content, and transaction history
                   </p>
                 </Card>
                 

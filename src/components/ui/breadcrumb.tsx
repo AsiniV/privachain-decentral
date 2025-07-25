@@ -1,6 +1,6 @@
 import { ComponentProps } from "react"
 import { Slot } from "@radix-ui/react-slot"
-import ChevronRight from "lucide-react/dist/esm/icons/chevron-right"
+import CaretRight from "lucide-react/dist/esm/icons/chevron-right"
 import MoreHorizontal from "lucide-react/dist/esm/icons/more-horizontal"
 
 import { cn } from "@/lib/utils"
@@ -76,7 +76,7 @@ function BreadcrumbSeparator({
       className={cn("[&>svg]:size-3.5", className)}
       {...props}
     >
-      {children ?? <ChevronRight />}
+      {children ?? <CaretRight />}
     </li>
   )
 }

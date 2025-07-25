@@ -32,7 +32,7 @@ interface TestResult {
 export function SystemIntegrationTest() {
   const [tests, setTests] = useState<TestResult[]>([
     {
-      name: 'Blockchain Video Signaling',
+      name: 'Blockchain VideoCamera Signaling',
       status: 'pending',
       message: 'Ready to test'
     },
@@ -42,7 +42,7 @@ export function SystemIntegrationTest() {
       message: 'Ready to test'
     },
     {
-      name: 'Zero-Knowledge Search',
+      name: 'Zero-Knowledge MagnifyingGlass',
       status: 'pending',
       message: 'Ready to test'
     },
@@ -73,13 +73,13 @@ export function SystemIntegrationTest() {
 
     try {
       switch (testIndex) {
-        case 0: // Blockchain Video Signaling
+        case 0: // Blockchain VideoCamera Signaling
           await testVideoSignaling()
           break
         case 1: // TURN Relay Selection  
           await testTurnRelay()
           break
-        case 2: // Zero-Knowledge Search
+        case 2: // Zero-Knowledge MagnifyingGlass
           await testZKSearch()
           break
         case 3: // IPFS Content Indexing
@@ -120,7 +120,7 @@ export function SystemIntegrationTest() {
     // Test session termination
     await endSession(sessionId, 50) // 50MB transferred
     
-    toast.success('Video signaling test completed')
+    toast.success('VideoCamera signaling test completed')
   }
 
   const testTurnRelay = async () => {

@@ -22,7 +22,7 @@ import {
   Gauge
 } from '@phosphor-icons/react'
 import { videoQualityContract, TurnServerInfo, ServerStats, GlobalMetrics } from '../blockchain/videoQualityContract'
-import { useKV } from '@github/spark/hooks'
+import { useKV } from '../hooks/useKV'
 import { toast } from 'sonner'
 
 export function ServerManagementDashboard() {
@@ -128,7 +128,7 @@ export function ServerManagementDashboard() {
         parseFloat(stakeAmount)
       )
       
-      toast.success(`Server registered successfully: ${serverId}`)
+      toast.success(`Desktop registered successfully: ${serverId}`)
       setNewServerUrl('')
       setNewServerRegion('')
       setStakeAmount('')
@@ -241,16 +241,16 @@ export function ServerManagementDashboard() {
 
       <Tabs defaultValue="servers" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="servers">Server List</TabsTrigger>
-          <TabsTrigger value="register">Register Server</TabsTrigger>
+          <TabsTrigger value="servers">Desktop List</TabsTrigger>
+          <TabsTrigger value="register">Register Desktop</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="servers" className="space-y-4">
-          {/* Server List */}
+          {/* Desktop List */}
           <Card>
             <CardHeader>
-              <CardTitle>TURN Server Network</CardTitle>
+              <CardTitle>TURN Desktop Network</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -334,11 +334,11 @@ export function ServerManagementDashboard() {
             </CardContent>
           </Card>
 
-          {/* Selected Server Details */}
+          {/* Selected Desktop Details */}
           {selectedServer && serverStats && (
             <Card>
               <CardHeader>
-                <CardTitle>Server Statistics: {selectedServer}</CardTitle>
+                <CardTitle>Desktop Statistics: {selectedServer}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -387,11 +387,11 @@ export function ServerManagementDashboard() {
         <TabsContent value="register">
           <Card>
             <CardHeader>
-              <CardTitle>Register New TURN Server</CardTitle>
+              <CardTitle>Register New TURN Desktop</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label className="text-sm font-medium">Server URL</label>
+                <label className="text-sm font-medium">Desktop URL</label>
                 <Input
                   placeholder="turn:your-server.com:3478"
                   value={newServerUrl}
@@ -431,7 +431,7 @@ export function ServerManagementDashboard() {
 
               <Button onClick={handleRegisterServer} className="w-full">
                 <Plus className="w-4 h-4 mr-2" />
-                Register Server
+                Register Desktop
               </Button>
             </CardContent>
           </Card>
@@ -476,7 +476,7 @@ export function ServerManagementDashboard() {
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <span>Server Uptime</span>
+                    <span>Desktop Uptime</span>
                     <span className="font-bold text-green-600">99.2%</span>
                   </div>
 

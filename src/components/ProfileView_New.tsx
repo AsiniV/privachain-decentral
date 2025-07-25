@@ -18,7 +18,7 @@ export function ProfileView() {
         <TabsContent value="profile" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Profile Settings</CardTitle>
+              <CardTitle>Profile Gear</CardTitle>
             </CardHeader>
             <CardContent>
               <p>Profile view placeholder - rebuilding component</p>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useKV } from '@github/spark/hooks'
+import { useKV } from './useKV'
 import { toast } from 'sonner'
 import { TEST_WALLET_ADDRESS, TEST_WALLET_CONFIG } from '../blockchain/CosmosTestnet'
 

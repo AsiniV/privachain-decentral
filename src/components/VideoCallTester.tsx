@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useKV } from '@github/spark/hooks'
+import { useKV } from '../hooks/useKV'
 import { useVideoCall } from './VideoCallProvider'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
@@ -7,7 +7,7 @@ import { Badge } from './ui/badge'
 import { Progress } from './ui/progress'
 import { Slider } from './ui/slider'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
-import { Alert, AlertDescription } from './ui/alert'
+import { Warning, AlertDescription } from './ui/alert'
 import { 
   Play,
   Stop,
@@ -23,10 +23,10 @@ import {
   Globe,
   TrendUp,
   Activity,
-  Zap,
+  Lightning,
   Target,
-  RefreshCw,
-  AlertTriangle
+  ArrowClockwise,
+  Warning
 } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 
@@ -166,7 +166,7 @@ export function VideoCallTester() {
 
   const runQualityTest = async (scenario: TestScenario) => {
     if (!optimizer) {
-      toast.error('Video quality optimizer not available')
+      toast.error('VideoCamera quality optimizer not available')
       return
     }
 
@@ -243,7 +243,7 @@ export function VideoCallTester() {
 
           setOptimizationHistory(prev => [...prev.slice(-9), {
             timestamp: Date.now(),
-            action: 'Server Switch',
+            action: 'Desktop Switch',
             server: newServer.region,
             quality: prev[prev.length - 1]?.quality || 'HD',
             latency: currentLatency
@@ -348,7 +348,7 @@ export function VideoCallTester() {
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Video Call Quality Testing</h1>
+          <h1 className="text-3xl font-bold">VideoCamera Call Quality Testing</h1>
           <p className="text-muted-foreground">Test automatic TURN server optimization and quality adaptation</p>
         </div>
         <div className="flex items-center gap-2">
@@ -414,7 +414,7 @@ export function VideoCallTester() {
               className="flex items-center gap-2"
               size="lg"
             >
-              {isTestRunning ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+              {isTestRunning ? <ArrowClockwise className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
               {isTestRunning ? 'Testing...' : 'Run Optimization Test'}
             </Button>
 
@@ -543,7 +543,7 @@ export function VideoCallTester() {
 
             <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
               <div>
-                <p className="text-sm text-muted-foreground">Current Server</p>
+                <p className="text-sm text-muted-foreground">Current Desktop</p>
                 <div className="flex items-center gap-1">
                   <Globe className="w-3 h-3 text-primary" />
                   <p className="font-semibold text-sm">{realTimeMetrics.currentServer || 'Selecting...'}</p>
@@ -565,14 +565,14 @@ export function VideoCallTester() {
               <div>
                 <p className="text-sm text-muted-foreground">Adaptations</p>
                 <div className="flex items-center gap-1">
-                  <Zap className="w-3 h-3 text-yellow-500" />
+                  <Lightning className="w-3 h-3 text-yellow-500" />
                   <p className="font-semibold text-sm">{realTimeMetrics.adaptations}</p>
                 </div>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Server Switches</p>
+                <p className="text-sm text-muted-foreground">Desktop Switches</p>
                 <div className="flex items-center gap-1">
-                  <RefreshCw className="w-3 h-3 text-blue-500" />
+                  <ArrowClockwise className="w-3 h-3 text-blue-500" />
                   <p className="font-semibold text-sm">{realTimeMetrics.switches}</p>
                 </div>
               </div>
@@ -629,12 +629,12 @@ export function VideoCallTester() {
                     {result.success ? (
                       <CheckCircle className="w-5 h-5 text-green-500" />
                     ) : (
-                      <AlertTriangle className="w-5 h-5 text-yellow-500" />
+                      <Warning className="w-5 h-5 text-yellow-500" />
                     )}
                     <div>
                       <p className="font-semibold">{result.scenario}</p>
                       <p className="text-sm text-muted-foreground">
-                        Server: {result.selectedServer} • 
+                        Desktop: {result.selectedServer} • 
                         Adaptations: {result.qualityAdaptations} • 
                         Switches: {result.serverSwitches}
                       </p>
@@ -687,11 +687,11 @@ export function VideoCallTester() {
         </Card>
       )}
 
-      <Alert>
+      <Warning>
         <Lightning className="w-4 h-4" />
         <AlertDescription>
           <div className="space-y-2">
-            <p className="font-semibold">🚀 Try the Video Call Optimization System:</p>
+            <p className="font-semibold">🚀 Try the VideoCamera Call Optimization System:</p>
             <ol className="list-decimal list-inside space-y-1 text-sm">
               <li>Select a test scenario above (try "Unstable Connection" for dramatic results)</li>
               <li>Click "Run Test" to see automatic server selection and quality adaptation</li>
@@ -704,7 +704,7 @@ export function VideoCallTester() {
             </p>
           </div>
         </AlertDescription>
-      </Alert>
+      </Warning>
     </div>
   )
 }

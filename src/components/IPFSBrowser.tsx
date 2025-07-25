@@ -6,17 +6,17 @@ import { Badge } from './ui/badge'
 import { ScrollArea } from './ui/scroll-area'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
 import { 
-  Search, 
+  MagnifyingGlass, 
   Download, 
   Eye, 
   Copy, 
-  Pin, 
+  MapPin, 
   FileText, 
   Image, 
   VideoCamera,
-  Music,
-  Archive,
-  Code
+  MusicNote,
+  Package,
+  CodeSimple
 } from '@phosphor-icons/react'
 import { ipfs, ipfsUtils } from '../lib/ipfs'
 import { toast } from 'sonner'
@@ -107,7 +107,7 @@ export function IPFSBrowser() {
         toast.info('No matching content found in IPFS')
       }
     } catch (error) {
-      console.error('Search failed:', error)
+      console.error('MagnifyingGlass failed:', error)
       toast.error('IPFS search failed')
     } finally {
       setLoading(false)
@@ -159,7 +159,7 @@ export function IPFSBrowser() {
       await loadPinnedContent()
       toast.success('Content pinned to IPFS')
     } catch (error) {
-      console.error('Pin failed:', error)
+      console.error('MapPin failed:', error)
       toast.error('Failed to pin content')
     }
   }
@@ -176,9 +176,9 @@ export function IPFSBrowser() {
   const getFileIcon = (type: string) => {
     if (type.startsWith('image/')) return <Image className="w-4 h-4 text-blue-500" />
     if (type.startsWith('video/')) return <VideoCamera className="w-4 h-4 text-purple-500" />
-    if (type.startsWith('audio/')) return <Music className="w-4 h-4 text-green-500" />
-    if (type.includes('zip') || type.includes('tar')) return <Archive className="w-4 h-4 text-orange-500" />
-    if (type.includes('json') || type.includes('javascript')) return <Code className="w-4 h-4 text-yellow-500" />
+    if (type.startsWith('audio/')) return <MusicNote className="w-4 h-4 text-green-500" />
+    if (type.includes('zip') || type.includes('tar')) return <Package className="w-4 h-4 text-orange-500" />
+    if (type.includes('json') || type.includes('javascript')) return <CodeSimple className="w-4 h-4 text-yellow-500" />
     return <FileText className="w-4 h-4 text-gray-500" />
   }
 
@@ -189,15 +189,15 @@ export function IPFSBrowser() {
         
         <div className="flex gap-2 mb-4">
           <Input
-            placeholder="Search IPFS content by CID..."
+            placeholder="MagnifyingGlass IPFS content by CID..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && searchIPFS()}
             className="flex-1"
           />
           <Button onClick={searchIPFS} disabled={loading} className="gap-2">
-            <Search className="w-4 h-4" />
-            Search
+            <MagnifyingGlass className="w-4 h-4" />
+            MagnifyingGlass
           </Button>
           <Button 
             variant="outline" 
@@ -235,7 +235,7 @@ export function IPFSBrowser() {
                   </div>
                   {result.pinned && (
                     <Badge variant="secondary" className="gap-1">
-                      <Pin className="w-3 h-3" />
+                      <MapPin className="w-3 h-3" />
                       Pinned
                     </Badge>
                   )}
@@ -291,9 +291,9 @@ export function IPFSBrowser() {
                       variant="ghost"
                       size="sm"
                       onClick={() => pinContent(result.cid)}
-                      title="Pin content"
+                      title="MapPin content"
                     >
-                      <Pin className="w-4 h-4" />
+                      <MapPin className="w-4 h-4" />
                     </Button>
                   )}
                 </div>
@@ -305,7 +305,7 @@ export function IPFSBrowser() {
       
       {searchResults.length === 0 && !loading && (
         <Card className="p-8 text-center">
-          <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
+          <MagnifyingGlass className="w-12 h-12 mx-auto mb-4 opacity-50" />
           <h3 className="text-lg font-semibold mb-2">No IPFS Content Found</h3>
           <p className="text-muted-foreground mb-4">
             Upload files via email attachments or pin content to see it here

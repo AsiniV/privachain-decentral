@@ -64,7 +64,7 @@ export interface Domain {
 export function useSmartContracts() {
   const { sendTransaction, walletAddress, isConnected } = useCosmos()
 
-  // Mail Contract Implementation
+  // Envelope Contract Implementation
   const mailContract: MailContract = {
     sendMail: async (recipient: string, contentCID: string, zkProof: string) => {
       if (!isConnected) throw new Error('Wallet not connected')
@@ -149,7 +149,7 @@ mQENBF...${domainName}...example...key
     }
   }
 
-  // Video Signaling Contract Implementation
+  // VideoCamera Signaling Contract Implementation
   const videoContract: VideoSignalingContract = {
     startSession: async (receiver: string, stunServer: string) => {
       if (!isConnected) throw new Error('Wallet not connected')

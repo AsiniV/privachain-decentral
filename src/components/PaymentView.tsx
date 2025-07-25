@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useKV } from '@github/spark/hooks'
+import { useKV } from '../hooks/useKV'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
-import { CreditCard, Shield, Clock, Copy, ExternalLink, CheckCircle, AlertCircle } from '@phosphor-icons/react'
+import { CreditCard, Shield, Clock, Copy, ArrowSquareOut, CheckCircle, Warning } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { paymentService, SUPPORTED_CRYPTOS, type CryptoCurrency, type PaymentInvoice, type PremiumOrder } from '@/services/PaymentService'
 
@@ -365,7 +365,7 @@ export function PaymentView({ onBack }: PaymentViewProps) {
                   </div>
                   
                   <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                    <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <Warning className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
                     <div className="text-sm text-amber-800">
                       <strong>Privacy Notice:</strong> Card payments are processed through traditional banking systems. 
                       Your purchase details will be visible to payment processors and banks.
@@ -477,7 +477,7 @@ export function PaymentView({ onBack }: PaymentViewProps) {
             </div>
             <Separator />
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <AlertCircle className="w-4 h-4" />
+              <Warning className="w-4 h-4" />
               <span>Card payments are processed through traditional banking systems</span>
             </div>
           </CardContent>
@@ -549,7 +549,7 @@ export function PaymentView({ onBack }: PaymentViewProps) {
                   <div className="p-4 bg-white rounded-lg border">
                     <img 
                       src={currentInvoice.qrCode} 
-                      alt="Payment QR Code" 
+                      alt="Payment QR CodeSimple" 
                       className="w-48 h-48"
                     />
                   </div>
@@ -584,7 +584,7 @@ export function PaymentView({ onBack }: PaymentViewProps) {
                         className="font-mono text-xs"
                       />
                       <Button size="sm" variant="outline">
-                        <ExternalLink className="w-4 h-4" />
+                        <ArrowSquareOut className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>

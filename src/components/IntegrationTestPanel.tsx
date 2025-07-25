@@ -5,11 +5,11 @@ import { Input } from './ui/input'
 import { Badge } from './ui/badge'
 import { Separator } from './ui/separator'
 import { 
-  Phone, 
   PhoneCall, 
-  Search,
+  PhoneCall, 
+  MagnifyingGlass,
   Shield,
-  Zap,
+  Lightning,
   Globe
 } from '@phosphor-icons/react'
 import { toast } from 'sonner'
@@ -48,7 +48,7 @@ export function IntegrationTestPanel() {
         }
       }))
       
-      toast.success('Video call blockchain signaling test passed!')
+      toast.success('VideoCamera call blockchain signaling test passed!')
       
     } catch (error) {
       setTestResults(prev => ({
@@ -59,7 +59,7 @@ export function IntegrationTestPanel() {
           timestamp: new Date().toISOString()
         }
       }))
-      toast.error('Video call test failed')
+      toast.error('VideoCamera call test failed')
     } finally {
       setIsRunning(false)
     }
@@ -110,7 +110,7 @@ export function IntegrationTestPanel() {
           timestamp: new Date().toISOString()
         }
       }))
-      toast.error('Search test failed')
+      toast.error('MagnifyingGlass test failed')
     } finally {
       setIsRunning(false)
     }
@@ -128,17 +128,17 @@ export function IntegrationTestPanel() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Zap className="w-5 h-5" />
-            Video Calling & Search Integration Test
+            <Lightning className="w-5 h-5" />
+            VideoCamera Calling & MagnifyingGlass Integration Test
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Video Call Test */}
+            {/* VideoCamera Call Test */}
             <div className="space-y-3">
               <h3 className="font-semibold flex items-center gap-2">
-                <Phone className="w-4 h-4" />
-                Video Call Test
+                <PhoneCall className="w-4 h-4" />
+                VideoCamera Call Test
               </h3>
               <Input 
                 placeholder="test.prv"
@@ -175,11 +175,11 @@ export function IntegrationTestPanel() {
               )}
             </div>
 
-            {/* Search Test */}
+            {/* MagnifyingGlass Test */}
             <div className="space-y-3">
               <h3 className="font-semibold flex items-center gap-2">
-                <Search className="w-4 h-4" />
-                Search Test
+                <MagnifyingGlass className="w-4 h-4" />
+                MagnifyingGlass Test
               </h3>
               <Input 
                 placeholder="blockchain"
@@ -192,7 +192,7 @@ export function IntegrationTestPanel() {
                 className="w-full"
               >
                 <Globe className="w-4 h-4 mr-2" />
-                Test ZK Search
+                Test ZK MagnifyingGlass
               </Button>
               
               {testResults.search && (
@@ -240,7 +240,7 @@ export function IntegrationTestPanel() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold">{sessions.length}</div>
-              <div className="text-sm text-muted-foreground">Active Video Sessions</div>
+              <div className="text-sm text-muted-foreground">Active VideoCamera Sessions</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold">{turnRelays.length}</div>

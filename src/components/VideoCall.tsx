@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useKV } from '@github/spark/hooks'
+import { useKV } from '../hooks/useKV'
 import { Button } from './ui/button'
 import { Card } from './ui/card'
 import { Badge } from './ui/badge'
@@ -10,7 +10,7 @@ import {
   VideoCameraSlash,
   Microphone,
   MicrophoneSlash,
-  Phone,
+  PhoneCall,
   PhoneX,
   Monitor,
   SpeakerHigh,
@@ -184,7 +184,7 @@ export function VideoCall({ contact, onEndCall, isIncoming = false }: VideoCallP
 
   const toggleVideo = () => {
     setIsVideoOn(prev => !prev)
-    toast.info(isVideoOn ? 'Camera turned off' : 'Camera turned on')
+    toast.info(isVideoOn ? 'CameraPlus turned off' : 'CameraPlus turned on')
   }
 
   const toggleMute = () => {
@@ -237,7 +237,7 @@ export function VideoCall({ contact, onEndCall, isIncoming = false }: VideoCallP
             <div className="flex justify-center gap-4">
               {isIncoming && (
                 <Button size="lg" className="bg-green-600 hover:bg-green-700">
-                  <Phone className="w-5 h-5 mr-2" />
+                  <PhoneCall className="w-5 h-5 mr-2" />
                   Accept
                 </Button>
               )}
@@ -300,9 +300,9 @@ export function VideoCall({ contact, onEndCall, isIncoming = false }: VideoCallP
         </div>
       </div>
 
-      {/* Video Area */}
+      {/* VideoCamera Area */}
       <div className="flex-1 relative bg-black">
-        {/* Remote Video (Main) */}
+        {/* Remote VideoCamera (Main) */}
         <div className="w-full h-full relative">
           {participants[0]?.isVideoOn ? (
             <div className="w-full h-full bg-gradient-to-br from-blue-900 via-purple-900 to-blue-800 flex items-center justify-center relative">
@@ -314,7 +314,7 @@ export function VideoCall({ contact, onEndCall, isIncoming = false }: VideoCallP
                     {participants[0]?.name?.split(' ').map(n => n[0]).join('') || 'U'}
                   </AvatarFallback>
                 </Avatar>
-                <p className="text-white text-lg opacity-75">Video Stream Active</p>
+                <p className="text-white text-lg opacity-75">VideoCamera Stream Active</p>
               </div>
               {/* Simulated video noise/grain effect */}
               <div className="absolute inset-0 opacity-5 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGZpbHRlciBpZD0ibm9pc2UiPgogIDxmZVR1cmJ1bGVuY2UgdHlwZT0iZnJhY3RhbE5vaXNlIiBiYXNlRnJlcXVlbmN5PSIwLjkiIG51bU9jdGF2ZXM9IjEiIHNlZWQ9IjIiLz4KICA8ZmVDb2xvck1hdHJpeCB0eXBlPSJzYXR1cmF0ZSIgdmFsdWVzPSIwIi8+CjwvZmlsdGVyPgo8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWx0ZXI9InVybCgjbm9pc2UpIiBvcGFjaXR5PSIwLjQiLz4KPC9zdmc+')]"></div>
@@ -328,7 +328,7 @@ export function VideoCall({ contact, onEndCall, isIncoming = false }: VideoCallP
                   </AvatarFallback>
                 </Avatar>
                 <p className="text-white text-lg">{participants[0]?.name}</p>
-                <p className="text-gray-400">Camera is off</p>
+                <p className="text-gray-400">CameraPlus is off</p>
               </div>
             </div>
           )}
@@ -352,7 +352,7 @@ export function VideoCall({ contact, onEndCall, isIncoming = false }: VideoCallP
           )}
         </div>
 
-        {/* Local Video (Picture-in-Picture) */}
+        {/* Local VideoCamera (Picture-in-Picture) */}
         <div className={cn(
           "absolute bottom-20 right-4 w-48 h-36 bg-gray-900 rounded-lg overflow-hidden border-2 border-white/20",
           isPiPMode && "top-4 right-4 w-64 h-48"
@@ -400,7 +400,7 @@ export function VideoCall({ contact, onEndCall, isIncoming = false }: VideoCallP
             {isMuted ? <MicrophoneSlash className="w-6 h-6" /> : <Microphone className="w-6 h-6" />}
           </Button>
 
-          {/* Video */}
+          {/* VideoCamera */}
           <Button
             variant={!isVideoOn ? "destructive" : "secondary"}
             size="lg"
@@ -478,10 +478,10 @@ export function VideoCall({ contact, onEndCall, isIncoming = false }: VideoCallP
         )}
       </div>
 
-      {/* Settings Panel */}
+      {/* Gear Panel */}
       {showSettings && (
         <div className="absolute right-4 top-16 w-96 bg-card border border-border rounded-lg p-4 shadow-lg max-h-[80vh] overflow-y-auto">
-          <h3 className="font-semibold mb-4">Call Settings & Network Status</h3>
+          <h3 className="font-semibold mb-4">Call Gear & Network Status</h3>
           
           <div className="space-y-6">
             {/* Blockchain Session Info */}
@@ -526,9 +526,9 @@ export function VideoCall({ contact, onEndCall, isIncoming = false }: VideoCallP
               </div>
             </div>
             
-            {/* Video Quality Settings */}
+            {/* VideoCamera Quality Gear */}
             <div>
-              <h4 className="text-sm font-medium mb-3">Video Quality</h4>
+              <h4 className="text-sm font-medium mb-3">VideoCamera Quality</h4>
               <select className="w-full p-2 bg-background border border-border rounded text-sm">
                 <option>1080p (Recommended)</option>
                 <option>720p</option>
@@ -587,7 +587,7 @@ export function VideoCall({ contact, onEndCall, isIncoming = false }: VideoCallP
                   Switch to Audio Only
                 </Button>
                 <Button variant="outline" size="sm" className="w-full text-xs">
-                  Use Backup TURN Server
+                  Use Backup TURN Desktop
                 </Button>
                 <Button variant="destructive" size="sm" className="w-full text-xs">
                   Burn Session Keys

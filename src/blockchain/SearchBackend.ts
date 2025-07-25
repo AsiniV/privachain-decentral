@@ -1,5 +1,5 @@
 /**
- * Decentralized Search Backend Integration
+ * Decentralized MagnifyingGlass Backend Integration
  * Connects to SubQuery Cosmos, ComposeDB, and implements ZK queries
  */
 
@@ -80,14 +80,14 @@ export class DecentralizedSearchBackend {
       // Initialize ComposeDB connection
       await this.initializeComposeDB()
 
-      console.log('✅ Search backends initialized:', {
+      console.log('✅ MagnifyingGlass backends initialized:', {
         subquery: 'Connected',
         composedb: this.composeDbInitialized ? 'Connected' : 'Simulated',
         zkProofs: 'Ready'
       })
 
     } catch (error) {
-      console.error('Search backend initialization failed:', error)
+      console.error('MagnifyingGlass backend initialization failed:', error)
       console.warn('Falling back to simulated search backend')
     }
   }
@@ -148,7 +148,7 @@ export class DecentralizedSearchBackend {
         contentHash: 'QmXyZ123abc456def789',
         metadata: {
           title: 'Encrypted Communication Protocol',
-          description: 'Discussion about implementing Signal Protocol for E2E encryption',
+          description: 'Discussion about implementing WaveTriangle Protocol for E2E encryption',
           tags: ['encryption', 'signal', 'protocol'],
           timestamp: Date.now() - 3600000,
           source: 'whistleblower.prv',
@@ -239,7 +239,7 @@ export class DecentralizedSearchBackend {
       // Generate ZK query proof
       const zkQuery = await this.generateZKQuery(query)
       
-      // Search through multiple backends
+      // MagnifyingGlass through multiple backends
       const [localResults, subqueryResults, composeDbResults] = await Promise.all([
         this.searchLocalIndex(query, filters),
         this.searchSubQuery(query, filters),
@@ -265,13 +265,13 @@ export class DecentralizedSearchBackend {
       return allResults
       
     } catch (error) {
-      toast.error(`Search failed: ${error}`)
+      toast.error(`MagnifyingGlass failed: ${error}`)
       throw error
     }
   }
 
   /**
-   * Search SubQuery Cosmos indexer
+   * MagnifyingGlass SubQuery Cosmos indexer
    */
   private async searchSubQuery(query: string, filters: any): Promise<SearchIndexEntry[]> {
     try {
@@ -345,7 +345,7 @@ export class DecentralizedSearchBackend {
   }
 
   /**
-   * Search ComposeDB content database
+   * MagnifyingGlass ComposeDB content database
    */
   private async searchComposeDB(query: string, filters: any): Promise<SearchIndexEntry[]> {
     try {
@@ -385,7 +385,7 @@ export class DecentralizedSearchBackend {
   }
 
   /**
-   * Search local encrypted index
+   * MagnifyingGlass local encrypted index
    */
   private async searchLocalIndex(query: string, filters: any): Promise<SearchIndexEntry[]> {
     // Use existing searchEncryptedIndex method
@@ -474,7 +474,7 @@ export class DecentralizedSearchBackend {
   }
 
   /**
-   * Search through encrypted index
+   * MagnifyingGlass through encrypted index
    */
   private async searchEncryptedIndex(
     query: string,
@@ -496,7 +496,7 @@ export class DecentralizedSearchBackend {
             entry.metadata.timestamp > filters.timeRange.end) continue
       }
       
-      // Search in title, description, and tags
+      // MagnifyingGlass in title, description, and tags
       const searchableText = [
         entry.metadata.title,
         entry.metadata.description,
@@ -531,7 +531,7 @@ export class DecentralizedSearchBackend {
     
     const txHash = `cosmos_search_${Math.random().toString(36).substring(2, 15)}`
     
-    console.log(`🔍 Search Query Verified on Cosmos:`, {
+    console.log(`🔍 MagnifyingGlass Query Verified on Cosmos:`, {
       queryId: zkQuery.queryId,
       queryHash: zkQuery.queryHash,
       txHash,
@@ -748,7 +748,7 @@ export class DecentralizedSearchBackend {
   }
 
   /**
-   * Search IPFS content
+   * MagnifyingGlass IPFS content
    */
   async searchIPFS(query: string): Promise<SearchIndexEntry[]> {
     const ipfsResults = Array.from(this.searchIndex.values())

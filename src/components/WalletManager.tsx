@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Warning, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
-import { Wallet, Shield, AlertTriangle, Zap, ArrowRight, Coins } from '@phosphor-icons/react';
-import { useKV } from '@github/spark/hooks';
+import { Wallet, Shield, Warning, Lightning, ArrowRight, Coins } from '@phosphor-icons/react';
+import { useKV } from '../hooks/useKV';
 
 interface PaymentMethod {
   id: string;
@@ -270,21 +270,21 @@ export function WalletManager() {
 
       {/* Privacy Warning for ATOM */}
       {showPrivacyWarning && (
-        <Alert className="border-yellow-200 bg-yellow-50">
-          <AlertTriangle className="h-4 w-4 text-yellow-600" />
+        <Warning className="border-yellow-200 bg-yellow-50">
+          <Warning className="h-4 w-4 text-yellow-600" />
           <AlertDescription className="text-yellow-800">
             <strong>Privacy Notice:</strong> Using ATOM for payments will create public transaction records 
             that can be linked to your wallet address. Your PrivaChain usage patterns may become visible. 
             For maximum privacy, consider using PRIV tokens instead.
           </AlertDescription>
-        </Alert>
+        </Warning>
       )}
 
       {/* Usage Status */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Zap className="w-5 h-5" />
+            <Lightning className="w-5 h-5" />
             Daily Usage Status
           </CardTitle>
           <CardDescription>
@@ -309,7 +309,7 @@ export function WalletManager() {
             </div>
             <div>
               <div className="flex justify-between text-sm mb-1">
-                <span>Video (min)</span>
+                <span>VideoCamera (min)</span>
                 <span>{paymentStatus.freeQuotaRemaining.videoMinutes}/10</span>
               </div>
               <Progress value={(10 - paymentStatus.freeQuotaRemaining.videoMinutes) * 10} />

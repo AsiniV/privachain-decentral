@@ -8,8 +8,8 @@ import {
   CloudCheck, 
   CloudSlash, 
   Copy, 
-  Pin, 
-  Trash2,
+  MapPin, 
+  Trash,
   Database,
   Globe,
   Link
@@ -147,7 +147,7 @@ export function IPFSStatus({ className }: IPFSStatusProps) {
 
       <div className="p-4">
         <h4 className="font-medium mb-3 flex items-center gap-2">
-          <Pin className="w-4 h-4" />
+          <MapPin className="w-4 h-4" />
           Pinned Content
         </h4>
         
@@ -192,7 +192,7 @@ export function IPFSStatus({ className }: IPFSStatusProps) {
                       onClick={() => unpinContent(cid)}
                       title="Unpin content"
                     >
-                      <Trash2 className="w-3 h-3" />
+                      <Trash className="w-3 h-3" />
                     </Button>
                   </div>
                 </div>

@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { useTestWallet } from '../hooks/useTestWallet'
 import { useCosmosTestnet } from '../blockchain/CosmosTestnet'
 import { GasSponsorshipDemo } from './GasSponsorshipDemo'
-import { Wallet, Copy, ExternalLink, RefreshCw, TrendingUp, TrendingDown, Clock } from '@phosphor-icons/react'
+import { Wallet, Copy, ArrowSquareOut, ArrowClockwise, TrendUp, TrendingDown, Clock } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 
 export function TestWalletPanel() {
@@ -110,7 +110,7 @@ export function TestWalletPanel() {
                 onClick={refreshBalances}
                 disabled={isLoading}
               >
-                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                <ArrowClockwise className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
               </Button>
             </div>
           </CardContent>
@@ -202,11 +202,11 @@ export function TestWalletPanel() {
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <Button variant="outline" size="sm" className="flex items-center gap-2">
-                  <ExternalLink className="h-4 w-4" />
+                  <ArrowSquareOut className="h-4 w-4" />
                   Explorer
                 </Button>
                 <Button variant="outline" size="sm" className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4" />
+                  <TrendUp className="h-4 w-4" />
                   Faucet
                 </Button>
                 <Button variant="outline" size="sm" className="flex items-center gap-2">

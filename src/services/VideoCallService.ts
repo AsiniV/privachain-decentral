@@ -1,5 +1,5 @@
 /**
- * Video Call Service for PrivaChain
+ * VideoCamera Call Service for PrivaChain
  * Implements WebRTC P2P calls with blockchain signaling and decentralized TURN servers
  */
 
@@ -44,7 +44,7 @@ interface WebRTCConfig {
 }
 
 /**
- * Decentralized Video Call Service
+ * Decentralized VideoCamera Call Service
  */
 export class VideoCallService {
   private localStream: MediaStream | null = null
@@ -66,12 +66,12 @@ export class VideoCallService {
       // Load available TURN server nodes from network
       await this.loadTurnServerNodes()
       
-      console.log('📹 PrivaChain Video Service initialized')
+      console.log('📹 PrivaChain VideoCamera Service initialized')
       console.log('🌐 Decentralized TURN servers:', this.turnNodes.length)
       console.log('🔒 End-to-end DTLS-SRTP encryption enabled')
       console.log('⚡ WebRTC P2P optimization active')
     } catch (error) {
-      console.error('Video service initialization failed:', error)
+      console.error('VideoCamera service initialization failed:', error)
     }
   }
 
@@ -174,7 +174,7 @@ export class VideoCallService {
       // Update session status
       session.status = 'ringing'
 
-      console.log(`📞 Video call initiated:`, {
+      console.log(`📞 VideoCamera call initiated:`, {
         session: sessionId,
         from: callerDomain,
         to: calleeDomain,
@@ -189,7 +189,7 @@ export class VideoCallService {
       }
 
     } catch (error) {
-      console.error('Video call initiation failed:', error)
+      console.error('VideoCamera call initiation failed:', error)
       
       // Clean up on failure
       if (this.localStream) {
@@ -288,7 +288,7 @@ export class VideoCallService {
         // Update session status
         session.status = 'connected'
 
-        console.log(`✅ Video call answered:`, {
+        console.log(`✅ VideoCamera call answered:`, {
           session: sessionId,
           receiver: receiverDomain,
           quality: session.quality

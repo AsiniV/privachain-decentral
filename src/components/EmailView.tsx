@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { useKV } from '@github/spark/hooks'
+import { useKV } from '../hooks/useKV'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Textarea } from './ui/textarea'
@@ -73,8 +73,8 @@ export function EmailView() {
       id: '2',
       from: 'demo-sender.prv',
       to: 'you.prv',
-      subject: 'Blockchain Mail Demo',
-      content: 'Welcome to PrivaChain Mail! This demonstration shows:\n\n• Anonymous .prv domains\n• PGP/GPG encryption\n• IPFS content storage\n• Zero-knowledge sender verification\n• Decentralized relay routing\n\nYour communications are truly private and censorship-resistant.',
+      subject: 'Blockchain Envelope Demo',
+      content: 'Welcome to PrivaChain Envelope! This demonstration shows:\n\n• Anonymous .prv domains\n• PGP/GPG encryption\n• IPFS content storage\n• Zero-knowledge sender verification\n• Decentralized relay routing\n\nYour communications are truly private and censorship-resistant.',
       timestamp: Date.now() - 7200000,
       encrypted: true,
       read: true,
@@ -144,7 +144,7 @@ export function EmailView() {
         // Upload to IPFS with encryption
         const result = await ipfsUtils.uploadEncrypted(attachment.file, 'encryption-key')
         
-        // Pin the content to ensure availability
+        // MapPin the content to ensure availability
         await ipfs.pin(result.cid)
         
         uploadedAttachments.push({

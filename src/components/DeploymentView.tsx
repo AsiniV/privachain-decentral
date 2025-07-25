@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useKV } from '@github/spark/hooks'
+import { useKV } from '../hooks/useKV'
 import { DeploymentManager } from './deployment/DeploymentManager'
 import { SystemIntegrationTest } from './SystemIntegrationTest'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
@@ -10,15 +10,15 @@ import { Progress } from './ui/progress'
 import { 
   Rocket, 
   Shield, 
-  Zap, 
+  Lightning, 
   Globe,
-  Code,
-  ExternalLink,
+  CodeSimple,
+  ArrowSquareOut,
   CheckCircle,
-  AlertTriangle,
-  FlaskConical,
+  Warning,
+  TestTube,
   Wallet,
-  Server,
+  Desktop,
   Database,
   Activity,
   Users,
@@ -179,13 +179,13 @@ export function DeploymentView() {
       status: 'implemented'
     },
     {
-      icon: <Zap className="w-5 h-5" />,
+      icon: <Lightning className="w-5 h-5" />,
       title: 'High-Performance Consensus',
       description: 'Cosmos SDK with 2-second block times and 5000+ TPS',
       status: 'implemented'
     },
     {
-      icon: <Code className="w-5 h-5" />,
+      icon: <CodeSimple className="w-5 h-5" />,
       title: 'Smart Contract Suite',
       description: 'Complete set of contracts for mail, domains, and video',
       status: 'ready-to-deploy'
@@ -206,7 +206,7 @@ export function DeploymentView() {
       case 'ready-to-deploy':
         return <Badge variant="secondary"><Rocket className="w-3 h-3 mr-1" />Ready</Badge>
       default:
-        return <Badge variant="outline"><AlertTriangle className="w-3 h-3 mr-1" />Pending</Badge>
+        return <Badge variant="outline"><Warning className="w-3 h-3 mr-1" />Pending</Badge>
     }
   }
 
@@ -233,7 +233,7 @@ export function DeploymentView() {
                   target="_blank" 
                   rel="noopener noreferrer"
                 >
-                  <ExternalLink className="w-4 h-4 mr-2" />
+                  <ArrowSquareOut className="w-4 h-4 mr-2" />
                   Documentation
                 </a>
               </Button>
@@ -250,7 +250,7 @@ export function DeploymentView() {
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="deployment">Deployment</TabsTrigger>
               <TabsTrigger value="testing" className="gap-2">
-                <FlaskConical className="w-4 h-4" />
+                <TestTube className="w-4 h-4" />
                 Integration Tests
               </TabsTrigger>
               <TabsTrigger value="status">Status</TabsTrigger>
@@ -262,14 +262,14 @@ export function DeploymentView() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Cosmos Blockchain</CardTitle>
-                <Server className="h-4 w-4 text-muted-foreground" />
+                <Desktop className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="flex items-center space-x-2">
                   {cosmosConnected ? (
                     <CheckCircle className="h-4 w-4 text-green-500" />
                   ) : (
-                    <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                    <Warning className="h-4 w-4 text-yellow-500" />
                   )}
                   <span className="text-sm">
                     {cosmosConnected ? 'Connected' : 'Connecting...'}
@@ -293,7 +293,7 @@ export function DeploymentView() {
                   {zkIdentityLoaded ? (
                     <CheckCircle className="h-4 w-4 text-green-500" />
                   ) : (
-                    <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                    <Warning className="h-4 w-4 text-yellow-500" />
                   )}
                   <span className="text-sm">
                     {zkIdentityLoaded ? 'Loaded' : 'Generating...'}
@@ -315,7 +315,7 @@ export function DeploymentView() {
                   {ipfsInitialized ? (
                     <CheckCircle className="h-4 w-4 text-green-500" />
                   ) : (
-                    <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                    <Warning className="h-4 w-4 text-yellow-500" />
                   )}
                   <span className="text-sm">
                     {ipfsInitialized ? 'Connected' : 'Connecting...'}
@@ -384,7 +384,7 @@ export function DeploymentView() {
                   </div>
                   <div>
                     <div className="text-2xl font-bold">{networkStats.activeRelays || 0}</div>
-                    <div className="text-xs text-muted-foreground">Mail Relays</div>
+                    <div className="text-xs text-muted-foreground">Envelope Relays</div>
                   </div>
                   <div>
                     <div className="text-2xl font-bold">{networkStats.blockHeight || 0}</div>

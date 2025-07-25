@@ -18,8 +18,8 @@ import {
   Activity, 
   Coins, 
   Shield, 
-  Zap, 
-  TrendingUp, 
+  Lightning, 
+  TrendUp, 
   Users,
   Clock,
   Database,
@@ -154,7 +154,7 @@ export function BlockchainDashboard() {
             <TabsTrigger value="staking">Staking</TabsTrigger>
             <TabsTrigger value="validators">Validators</TabsTrigger>
             <TabsTrigger value="rollups">ZK-Rollups</TabsTrigger>
-            <TabsTrigger value="servers">Video Servers</TabsTrigger>
+            <TabsTrigger value="servers">VideoCamera Servers</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -197,7 +197,7 @@ export function BlockchainDashboard() {
                         {blockchainState?.consensus?.throughput?.toLocaleString() || '5,000'} TPS
                       </p>
                     </div>
-                    <Zap className="h-8 w-8 text-primary" />
+                    <Lightning className="h-8 w-8 text-primary" />
                   </div>
                 </CardContent>
               </Card>
@@ -449,12 +449,12 @@ export function BlockchainDashboard() {
             </Card>
           </TabsContent>
 
-          {/* Video Servers Tab */}
+          {/* VideoCamera Servers Tab */}
           <TabsContent value="servers" className="space-y-6">
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
                 <Lightning className="w-5 h-5" />
-                Decentralized TURN Server Network
+                Decentralized TURN Desktop Network
               </h3>
               <p className="text-muted-foreground">
                 Manage and monitor the decentralized video quality optimization infrastructure

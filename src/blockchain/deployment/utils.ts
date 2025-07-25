@@ -113,7 +113,7 @@ ${Object.entries(state.contracts)
   .map(([name, contract]) => `
 ### ${name.charAt(0).toUpperCase() + name.slice(1)} Contract
 - **Address:** \`${contract!.contractAddress}\`
-- **Code ID:** ${contract!.codeId}
+- **CodeSimple ID:** ${contract!.codeId}
 - **Transaction:** \`${contract!.txHash}\`
 `).join('')}
 

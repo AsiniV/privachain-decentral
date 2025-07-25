@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react'
-import { useKV } from '@github/spark/hooks'
+import { useKV } from '../hooks/useKV'
 import { VideoCall } from './VideoCall'
 import { Button } from './ui/button'
 import { Card } from './ui/card'
@@ -7,7 +7,7 @@ import { Badge } from './ui/badge'
 import { Avatar, AvatarFallback } from './ui/avatar'
 import { 
   VideoCamera, 
-  Phone,
+  PhoneCall,
   PhoneX,
   Coins,
   Globe
@@ -232,7 +232,7 @@ export function VideoCallProvider({ children }: { children: ReactNode }) {
                 {callState.type === 'video' ? (
                   <VideoCamera className="w-5 h-5" />
                 ) : (
-                  <Phone className="w-5 h-5" />
+                  <PhoneCall className="w-5 h-5" />
                 )}
                 <span className="text-lg">
                   Incoming {callState.type} call
@@ -265,7 +265,7 @@ export function VideoCallProvider({ children }: { children: ReactNode }) {
                 {callState.type === 'video' ? (
                   <VideoCamera className="w-8 h-8" />
                 ) : (
-                  <Phone className="w-8 h-8" />
+                  <PhoneCall className="w-8 h-8" />
                 )}
               </Button>
             </div>

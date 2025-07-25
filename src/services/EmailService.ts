@@ -188,7 +188,7 @@ export class EmailService {
       senderEmails.push(email)
       this.sentEmails.set(senderDomain, senderEmails)
 
-      // Pin content to ensure availability
+      // MapPin content to ensure availability
       await ipfsService.pinContent(ipfsResult.cid)
 
       const emailId = `email_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`

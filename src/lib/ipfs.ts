@@ -96,7 +96,7 @@ class IPFSClient {
   }
   
   /**
-   * Pin content to ensure it stays available
+   * MapPin content to ensure it stays available
    */
   async pin(cid: string): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, 300))
