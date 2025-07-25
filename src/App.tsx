@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useKV } from '@github/spark/hooks'
 import { VideoCallProvider } from './components/VideoCallProvider'
 import { Sidebar } from './components/Sidebar'
 import { MessengerView } from './components/MessengerView'
@@ -12,7 +11,7 @@ import { Toaster } from './components/ui/sonner'
 export type View = 'messenger' | 'email' | 'search' | 'profile' | 'deployment'
 
 function App() {
-  const [currentView, setCurrentView] = useKV<View>('current-view', 'messenger')
+  const [currentView, setCurrentView] = useState<View>('messenger')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const renderView = () => {
