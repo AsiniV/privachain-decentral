@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useKV } from '@github/spark/hooks'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -7,6 +7,7 @@ import { Card } from './ui/card'
 import { Badge } from './ui/badge'
 import { ScrollArea } from './ui/scroll-area'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
+import { Progress } from './ui/progress'
 import { 
   PaperPlaneTilt,
   Lock,
@@ -14,10 +15,16 @@ import {
   Trash,
   Eye,
   Download,
-  Paperclip
+  Paperclip,
+  X,
+  Cloud,
+  FileText,
+  Image,
+  VideoCamera
 } from '@phosphor-icons/react'
 import { cn } from '../lib/utils'
 import { toast } from 'sonner'
+import { ipfs, ipfsUtils, IPFSUploadResult } from '../lib/ipfs'
 
 interface Email {
   id: string
@@ -28,7 +35,13 @@ interface Email {
   timestamp: number
   encrypted: boolean
   read: boolean
-  attachments?: string[]
+  attachments?: {
+    name: string
+    cid: string
+    size: number
+    type: string
+  }[]
+  contentCID?: string // IPFS CID for email content
 }
 
 interface PrivDomain {
@@ -44,11 +57,17 @@ export function EmailView() {
       from: 'whistleblower.prv',
       to: 'you.prv',
       subject: 'Secure Communication Test',
-      content: 'This message was sent via PrivaChain\'s anonymous .prv domain system. The sender\'s identity is protected through ZK-SNARKs, and the message was routed through 3 anonymous relay nodes. Content hash: QmXyZ123...',
+      content: 'This message was sent via PrivaChain\'s anonymous .prv domain system. The sender\'s identity is protected through ZK-SNARKs, and the message was routed through 3 anonymous relay nodes.',
       timestamp: Date.now() - 3600000,
       encrypted: true,
       read: false,
-      attachments: ['encrypted_document.asc']
+      contentCID: 'QmXyZ123abcDEF456ghiJKL789mnoPQR012stuVWX345yzaBC',
+      attachments: [{
+        name: 'encrypted_document.asc',
+        cid: 'QmAbc456defGHI789jklMNO012pqrSTU345vwxYZA678bcDEF',
+        size: 2048,
+        type: 'application/pgp-encrypted'
+      }]
     },
     {
       id: '2',
@@ -58,7 +77,8 @@ export function EmailView() {
       content: 'Welcome to PrivaChain Mail! This demonstration shows:\n\n• Anonymous .prv domains\n• PGP/GPG encryption\n• IPFS content storage\n• Zero-knowledge sender verification\n• Decentralized relay routing\n\nYour communications are truly private and censorship-resistant.',
       timestamp: Date.now() - 7200000,
       encrypted: true,
-      read: true
+      read: true,
+      contentCID: 'Qm789DefghiJKL012mnoABC345pqrSTU678vwxYZA901bcDEF'
     }
   ])
   
@@ -78,8 +98,117 @@ export function EmailView() {
     content: ''
   })
   const [newDomain, setNewDomain] = useState('')
+  const [attachments, setAttachments] = useState<{name: string, file: File, cid?: string, uploading?: boolean}[]>([])
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const selectedEmailData = emails.find(e => e.id === selectedEmail)
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (!files) return
+
+    const newAttachments = Array.from(files).map(file => ({
+      name: file.name,
+      file,
+      uploading: false
+    }))
+
+    setAttachments(current => [...current, ...newAttachments])
+  }
+
+  const removeAttachment = (index: number) => {
+    setAttachments(current => current.filter((_, i) => i !== index))
+  }
+
+  const uploadAttachments = async () => {
+    const toUpload = attachments.filter(att => !att.cid)
+    if (toUpload.length === 0) return []
+
+    const uploadedAttachments: { name: string; cid: string; size: number; type: string }[] = []
+    
+    for (let i = 0; i < toUpload.length; i++) {
+      const attachment = toUpload[i]
+      setUploadProgress((i / toUpload.length) * 100)
+      
+      // Mark as uploading
+      setAttachments(current => 
+        current.map(att => 
+          att === attachment ? { ...att, uploading: true } : att
+        )
+      )
+
+      try {
+        toast.info(`📦 Uploading ${attachment.name} to IPFS...`)
+        
+        // Upload to IPFS with encryption
+        const result = await ipfsUtils.uploadEncrypted(attachment.file, 'encryption-key')
+        
+        // Pin the content to ensure availability
+        await ipfs.pin(result.cid)
+        
+        uploadedAttachments.push({
+          name: result.name,
+          cid: result.cid,
+          size: result.size,
+          type: attachment.file.type || 'application/octet-stream'
+        })
+
+        // Update attachment with CID
+        setAttachments(current =>
+          current.map(att =>
+            att === attachment ? { ...att, cid: result.cid, uploading: false } : att
+          )
+        )
+
+        toast.success(`✅ ${attachment.name} uploaded to IPFS`)
+      } catch (error) {
+        console.error('Upload failed:', error)
+        toast.error(`Failed to upload ${attachment.name}`)
+        
+        setAttachments(current =>
+          current.map(att =>
+            att === attachment ? { ...att, uploading: false } : att
+          )
+        )
+      }
+    }
+
+    setUploadProgress(100)
+    return uploadedAttachments
+  }
+
+  const downloadAttachment = async (attachment: { name: string; cid: string; size: number; type: string }) => {
+    try {
+      toast.info(`⬇️ Downloading ${attachment.name} from IPFS...`)
+      
+      // Download and decrypt from IPFS
+      const content = await ipfsUtils.downloadDecrypted(attachment.cid, 'decryption-key')
+      
+      // Create blob and download
+      const blob = new Blob([content], { type: attachment.type })
+      const url = URL.createObjectURL(blob)
+      
+      const a = document.createElement('a')
+      a.href = url
+      a.download = attachment.name
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      
+      toast.success(`✅ Downloaded ${attachment.name}`)
+    } catch (error) {
+      console.error('Download failed:', error)
+      toast.error(`Failed to download ${attachment.name}`)
+    }
+  }
+
+  const getFileIcon = (type: string) => {
+    if (type.startsWith('image/')) return <Image className="w-4 h-4" />
+    if (type.startsWith('video/')) return <VideoCamera className="w-4 h-4" />
+    return <FileText className="w-4 h-4" />
+  }
 
   const sendEmail = async () => {
     if (!newEmail.to.trim() || !newEmail.subject.trim() || !newEmail.content.trim()) {
@@ -87,35 +216,50 @@ export function EmailView() {
       return
     }
 
-    // Simulate blockchain email sending process
-    toast.info('🔐 Encrypting content with PGP...')
-    await new Promise(resolve => setTimeout(resolve, 800))
-    
-    toast.info('📦 Uploading to IPFS...')
-    await new Promise(resolve => setTimeout(resolve, 600))
-    
-    toast.info('🌐 Routing through anonymous relays...')
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    toast.info('⛽ Processing transaction (0.001 PRIV)...')
-    await new Promise(resolve => setTimeout(resolve, 500))
+    try {
+      // Upload attachments first
+      const uploadedAttachments = await uploadAttachments()
 
-    const email: Email = {
-      id: Date.now().toString(),
-      from: privDomains[0]?.domain || 'you.prv',
-      to: newEmail.to,
-      subject: newEmail.subject,
-      content: newEmail.content,
-      timestamp: Date.now(),
-      encrypted: true,
-      read: true
+      // Simulate blockchain email sending process
+      toast.info('🔐 Encrypting content with PGP...')
+      await new Promise(resolve => setTimeout(resolve, 800))
+      
+      // Upload email content to IPFS
+      toast.info('📦 Uploading content to IPFS...')
+      const contentResult = await ipfs.add(newEmail.content)
+      await ipfs.pin(contentResult.cid)
+      await new Promise(resolve => setTimeout(resolve, 600))
+      
+      toast.info('🌐 Routing through anonymous relays...')
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      toast.info('⛽ Processing transaction (0.001 PRIV)...')
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      const email: Email = {
+        id: Date.now().toString(),
+        from: privDomains[0]?.domain || 'you.prv',
+        to: newEmail.to,
+        subject: newEmail.subject,
+        content: newEmail.content,
+        timestamp: Date.now(),
+        encrypted: true,
+        read: true,
+        contentCID: contentResult.cid,
+        attachments: uploadedAttachments.length > 0 ? uploadedAttachments : undefined
+      }
+
+      setEmails(current => [email, ...current])
+      setNewEmail({ to: '', subject: '', content: '' })
+      setAttachments([])
+      setUploadProgress(0)
+      setComposing(false)
+      
+      toast.success('✅ Email sent via decentralized anonymous relays with IPFS storage')
+    } catch (error) {
+      console.error('Send failed:', error)
+      toast.error('Failed to send email')
     }
-
-    setEmails(current => [email, ...current])
-    setNewEmail({ to: '', subject: '', content: '' })
-    setComposing(false)
-    
-    toast.success('✅ Email sent via decentralized anonymous relays')
   }
 
   const createPrivDomain = async () => {
@@ -286,18 +430,55 @@ export function EmailView() {
                 
                 {selectedEmailData.attachments && (
                   <div className="mt-6 p-4 bg-muted rounded-lg">
-                    <h4 className="font-semibold mb-2 flex items-center gap-2">
+                    <h4 className="font-semibold mb-3 flex items-center gap-2">
                       <Paperclip className="w-4 h-4" />
-                      Attachments
+                      IPFS Attachments ({selectedEmailData.attachments.length})
                     </h4>
-                    {selectedEmailData.attachments.map((attachment, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-background rounded">
-                        <span className="font-mono text-sm">{attachment}</span>
-                        <Button variant="ghost" size="sm">
-                          <Download className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ))}
+                    <div className="space-y-2">
+                      {selectedEmailData.attachments.map((attachment, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-background rounded border">
+                          <div className="flex items-center gap-3">
+                            {getFileIcon(attachment.type)}
+                            <div>
+                              <div className="font-mono text-sm font-medium">{attachment.name}</div>
+                              <div className="text-xs text-muted-foreground flex items-center gap-2">
+                                <span>{ipfsUtils.formatSize(attachment.size)}</span>
+                                <span>•</span>
+                                <code className="text-xs">{attachment.cid.slice(0, 12)}...</code>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-auto p-0 text-xs"
+                                  onClick={() => navigator.clipboard.writeText(attachment.cid)}
+                                >
+                                  Copy CID
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => downloadAttachment(attachment)}
+                              className="gap-1"
+                            >
+                              <Download className="w-4 h-4" />
+                              Download
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => window.open(ipfs.getGatewayUrl(attachment.cid), '_blank')}
+                              className="gap-1"
+                            >
+                              <Eye className="w-4 h-4" />
+                              View
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -352,10 +533,95 @@ export function EmailView() {
                 />
               </div>
               
+              {/* Attachments Section */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium">Attachments</label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="gap-2"
+                  >
+                    <Paperclip className="w-4 h-4" />
+                    Add File
+                  </Button>
+                </div>
+                
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                
+                {attachments.length > 0 && (
+                  <div className="space-y-2 p-3 bg-muted rounded-lg">
+                    {attachments.map((attachment, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 bg-background rounded">
+                        <div className="flex items-center gap-2">
+                          {getFileIcon(attachment.file.type)}
+                          <div>
+                            <div className="text-sm font-medium">{attachment.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {ipfsUtils.formatSize(attachment.file.size)}
+                              {attachment.cid && (
+                                <>
+                                  {' • '}
+                                  <code className="text-xs">IPFS: {attachment.cid.slice(0, 8)}...</code>
+                                </>
+                              )}
+                              {attachment.uploading && (
+                                <>
+                                  {' • '}
+                                  <span className="text-accent">Uploading...</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeAttachment(index)}
+                          disabled={attachment.uploading}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    
+                    {uploadProgress > 0 && uploadProgress < 100 && (
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-sm">
+                          <span>Uploading to IPFS...</span>
+                          <span>{uploadProgress.toFixed(0)}%</span>
+                        </div>
+                        <Progress value={uploadProgress} className="h-2" />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              
               <div className="flex justify-between">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Lock className="w-4 h-4" />
-                  <span>End-to-end encrypted via anonymous relays</span>
+                  <div className="flex items-center gap-1">
+                    <Lock className="w-4 h-4" />
+                    <span>End-to-end encrypted</span>
+                  </div>
+                  {attachments.length > 0 && (
+                    <>
+                      <span>•</span>
+                      <div className="flex items-center gap-1">
+                        <Cloud className="w-4 h-4" />
+                        <span>IPFS distributed storage</span>
+                      </div>
+                    </>
+                  )}
                 </div>
                 
                 <Button onClick={sendEmail} className="gap-2">

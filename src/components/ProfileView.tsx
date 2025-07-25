@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { BlockchainStatus } from './BlockchainStatus'
 import { ZKAuthPanel } from './ZKAuthPanel'
 import { ImplementationStatus } from './ImplementationStatus'
+import { IPFSStatus } from './IPFSStatus'
 import { 
   User,
   Shield,
@@ -21,7 +22,8 @@ import {
   QrCode,
   Lock,
   Globe,
-  Star
+  Star,
+  Database
 } from '@phosphor-icons/react'
 import { cn } from '../lib/utils'
 import { toast } from 'sonner'
@@ -146,11 +148,12 @@ export function ProfileView() {
 
       <div className="flex-1 p-6">
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
             <TabsTrigger value="zkauth">ZK Auth</TabsTrigger>
             <TabsTrigger value="wallet">Wallet</TabsTrigger>
+            <TabsTrigger value="storage">Storage</TabsTrigger>
             <TabsTrigger value="premium">Premium</TabsTrigger>
             <TabsTrigger value="status">Status</TabsTrigger>
           </TabsList>
@@ -344,6 +347,46 @@ export function ProfileView() {
                 <Button variant="outline">Claim Rewards</Button>
               </div>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="storage" className="space-y-6">
+            <div className="grid gap-6">
+              <IPFSStatus />
+              
+              <Card className="p-6">
+                <h3 className="font-semibold mb-4 flex items-center gap-2">
+                  <Database className="w-5 h-5" />
+                  Storage Usage
+                </h3>
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="text-center p-4 bg-muted rounded-lg">
+                    <div className="text-2xl font-bold text-accent">1.2 GB</div>
+                    <div className="text-sm text-muted-foreground">Email Storage</div>
+                  </div>
+                  <div className="text-center p-4 bg-muted rounded-lg">
+                    <div className="text-2xl font-bold text-accent">847 MB</div>
+                    <div className="text-sm text-muted-foreground">Attachments</div>
+                  </div>
+                  <div className="text-center p-4 bg-muted rounded-lg">
+                    <div className="text-2xl font-bold text-accent">23</div>
+                    <div className="text-sm text-muted-foreground">Pinned Files</div>
+                  </div>
+                </div>
+                
+                <div className="mt-6 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Storage Used</span>
+                    <span>2.1 GB / 50 GB</span>
+                  </div>
+                  <div className="w-full bg-muted rounded-full h-2">
+                    <div className="bg-accent h-2 rounded-full" style={{ width: '4.2%' }}></div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {profile.isPremium ? 'Premium plan includes 50GB IPFS storage' : 'Upgrade to Premium for 50GB storage'}
+                  </p>
+                </div>
+              </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="premium" className="space-y-6">

@@ -6,6 +6,7 @@ import { Card } from './ui/card'
 import { Badge } from './ui/badge'
 import { ScrollArea } from './ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
+import { IPFSBrowser } from './IPFSBrowser'
 import { 
   MagnifyingGlass,
   Lock,
@@ -15,7 +16,8 @@ import {
   File,
   Calendar,
   User,
-  Shield
+  Shield,
+  Database
 } from '@phosphor-icons/react'
 import { cn } from '../lib/utils'
 
@@ -183,6 +185,16 @@ export function SearchView() {
                 
                 <Card className="p-4">
                   <div className="flex items-center gap-3 mb-2">
+                    <Database className="w-5 h-5 text-accent" />
+                    <span className="font-medium">IPFS Storage</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Browse and search decentralized file storage network
+                  </p>
+                </Card>
+                
+                <Card className="p-4">
+                  <div className="flex items-center gap-3 mb-2">
                     <Globe className="w-5 h-5 text-accent" />
                     <span className="font-medium">.onion Network</span>
                   </div>
@@ -206,15 +218,23 @@ export function SearchView() {
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-6">
                 <TabsTrigger value="all">All</TabsTrigger>
                 <TabsTrigger value="message">Messages</TabsTrigger>
                 <TabsTrigger value="email">Emails</TabsTrigger>
                 <TabsTrigger value="contact">Contacts</TabsTrigger>
                 <TabsTrigger value="file">Files</TabsTrigger>
+                <TabsTrigger value="ipfs">
+                  <Database className="w-4 h-4 mr-1" />
+                  IPFS
+                </TabsTrigger>
               </TabsList>
 
-              <TabsContent value={activeTab} className="mt-6">
+              <TabsContent value="ipfs" className="mt-6">
+                <IPFSBrowser />
+              </TabsContent>
+
+              <TabsContent value={activeTab === 'ipfs' ? 'hidden' : activeTab} className="mt-6">
                 <ScrollArea className="h-[500px]">
                   <div className="space-y-4">
                     {filteredResults.length === 0 ? (

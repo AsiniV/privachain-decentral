@@ -32,7 +32,10 @@ export function ImplementationStatus() {
       items: [
         { name: "WebRTC Video Calls", status: "implemented", description: "P2P video calling with UI simulation" },
         { name: "Signal Protocol E2E", status: "specified", description: "End-to-end encryption implementation" },
-        { name: "IPFS Storage", status: "specified", description: "Decentralized content storage" },
+        { name: "IPFS Storage", status: "implemented", description: "Decentralized content storage with file upload/download" },
+        { name: "IPFS Content Browser", status: "implemented", description: "Browse and search IPFS content with preview" },
+        { name: "Email Attachments via IPFS", status: "implemented", description: "File attachments stored on IPFS network" },
+        { name: "Content Pinning Service", status: "implemented", description: "Pin important content to ensure availability" },
         { name: "Anonymous Email (.prv)", status: "ui-only", description: "UI for anonymous email domains" },
         { name: "Telegram-like Messenger", status: "ui-only", description: "Basic messaging interface" },
         { name: "Search Service", status: "ui-only", description: "Basic search interface" }
