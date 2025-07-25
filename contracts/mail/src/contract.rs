@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+    entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
     StdError, Uint128, Addr, BankMsg, Coin, Order,
 };
 use cw2::set_contract_version;
@@ -390,16 +390,16 @@ pub fn execute_report_spam(
 #[entry_point]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetDomain { domain } => to_binary(&query_domain(deps, domain)?),
+        QueryMsg::GetDomain { domain } => to_json_binary(&query_domain(deps, domain)?),
         QueryMsg::GetEmails { domain, start_after, limit } => {
-            to_binary(&query_emails(deps, domain, start_after, limit)?)
+            to_json_binary(&query_emails(deps, domain, start_after, limit).map_err(|e| StdError::generic_err(e.to_string()))?)
         },
-        QueryMsg::GetRelay { address } => to_binary(&query_relay(deps, address)?),
+        QueryMsg::GetRelay { address } => to_json_binary(&query_relay(deps, address)?),
         QueryMsg::GetRelays { location, start_after, limit } => {
-            to_binary(&query_relays(deps, location, start_after, limit)?)
+            to_json_binary(&query_relays(deps, location, start_after, limit)?)
         },
-        QueryMsg::GetConfig {} => to_binary(&query_config(deps)?),
-        QueryMsg::GetStats {} => to_binary(&query_stats(deps)?),
+        QueryMsg::GetConfig {} => to_json_binary(&query_config(deps)?),
+        QueryMsg::GetStats {} => to_json_binary(&query_stats(deps)?),
     }
 }
 
@@ -423,18 +423,18 @@ pub fn query_emails(
     domain: String,
     _start_after: Option<String>,
     limit: Option<u32>,
-) -> StdResult<EmailsResponse> {
+) -> Result<EmailsResponse, ContractError> {
     let email_ids = DOMAIN_EMAILS
         .may_load(deps.storage, &domain)?
         .unwrap_or_default();
     
     let limit = limit.unwrap_or(50) as usize;
-    let emails: Result<Vec<EmailInfo>, _> = email_ids
+    let emails: Result<Vec<EmailInfo>, crate::ContractError> = email_ids
         .iter()
         .take(limit)
         .map(|id| {
             let email = EMAILS.load(deps.storage, (&domain, id))?;
-            Ok(EmailInfo {
+            Ok::<EmailInfo, crate::ContractError>(EmailInfo {
                 id: email.id,
                 sender_alias: email.sender_alias,
                 content_cid: email.content_cid,
