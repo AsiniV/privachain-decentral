@@ -8,6 +8,8 @@ import { Avatar, AvatarFallback } from './ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
 import { BlockchainStatus } from './BlockchainStatus'
+import { ZKAuthPanel } from './ZKAuthPanel'
+import { ImplementationStatus } from './ImplementationStatus'
 import { 
   User,
   Shield,
@@ -144,11 +146,13 @@ export function ProfileView() {
 
       <div className="flex-1 p-6">
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
+            <TabsTrigger value="zkauth">ZK Auth</TabsTrigger>
             <TabsTrigger value="wallet">Wallet</TabsTrigger>
             <TabsTrigger value="premium">Premium</TabsTrigger>
+            <TabsTrigger value="status">Status</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -302,6 +306,10 @@ export function ProfileView() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="zkauth" className="space-y-6">
+            <ZKAuthPanel />
+          </TabsContent>
+
           <TabsContent value="wallet" className="space-y-6">
             <div className="grid md:grid-cols-3 gap-6">
               <Card className="p-6 text-center">
@@ -414,6 +422,10 @@ export function ProfileView() {
                 </div>
               </Card>
             )}
+          </TabsContent>
+
+          <TabsContent value="status" className="space-y-6">
+            <ImplementationStatus />
           </TabsContent>
         </Tabs>
       </div>
