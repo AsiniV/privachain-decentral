@@ -19,12 +19,17 @@ import {
   Shield,
   Database,
   Brain,
-  Lightning
+  Lightning,
+  ArrowSquareOut
 } from '@phosphor-icons/react'
 import { cn } from '../lib/utils'
 import { useDecentralizedSearch, SearchIndexEntry } from '../blockchain/SearchBackend'
 
-export function SearchView() {
+interface SearchViewProps {
+  onNavigateToBrowser?: (url: string) => void
+}
+
+export function SearchView({ onNavigateToBrowser }: SearchViewProps = {}) {
   const [query, setQuery] = useState('')
   const [searchHistory] = useKV<string[]>('search-history', [])
   const [activeTab, setActiveTab] = useState('all')
@@ -294,6 +299,7 @@ export function SearchView() {
                                   {result.metadata.description}
                                 </p>
                                 
+                              <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                   <span className="font-mono">{result.metadata.source}</span>
                                   <span className="flex items-center gap-1">
@@ -305,6 +311,20 @@ export function SearchView() {
                                     <span className="font-mono text-xs">{result.contentHash.substring(0, 12)}...</span>
                                   )}
                                 </div>
+                                {result.metadata.source.includes('http') && onNavigateToBrowser && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      onNavigateToBrowser(result.metadata.source)
+                                    }}
+                                  >
+                                    <ArrowSquareOut className="w-3 h-3 mr-1" />
+                                    Browse
+                                  </Button>
+                                )}
+                              </div>
                               </div>
                             </div>
                           </Card>

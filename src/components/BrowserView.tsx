@@ -8,6 +8,7 @@ import { Progress } from './ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { Separator } from './ui/separator'
 import { ScrollArea } from './ui/scroll-area'
+import { ExtensionManager } from './ExtensionManager'
 import { toast } from 'sonner'
 import { proxyVPN } from '../services/proxyVPN'
 import { contentFilter } from '../services/contentFilter'
@@ -42,7 +43,8 @@ import {
   Envelope,
   File,
   Calendar,
-  User
+  User,
+  PuzzlePiece
 } from '@phosphor-icons/react'
 
 interface BrowserTab {
@@ -85,7 +87,11 @@ interface SearchResult {
   url?: string
 }
 
-export function BrowserView() {
+interface BrowserViewProps {
+  initialUrl?: string
+}
+
+export function BrowserView({ initialUrl }: BrowserViewProps = {}) {
   const [tabs, setTabs] = useKV<BrowserTab[]>('browser-tabs', [])
   const [activeTabId, setActiveTabId] = useKV<string>('active-tab', '')
   const [bookmarks, setBookmarks] = useKV<Bookmark[]>('browser-bookmarks', [])
@@ -103,6 +109,7 @@ export function BrowserView() {
   const [showSettings, setShowSettings] = useState(false)
   const [showBookmarks, setShowBookmarks] = useState(false)
   const [showSearchResults, setShowSearchResults] = useState(false)
+  const [showExtensions, setShowExtensions] = useState(false)
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   
@@ -218,9 +225,21 @@ export function BrowserView() {
     setActiveTabId(searchTab.id)
   }
 
-  // Initialize with a default tab if none exist
+  // Initialize with a default tab if none exist, or navigate to initial URL
   useEffect(() => {
-    if (tabs.length === 0) {
+    if (initialUrl && initialUrl !== '') {
+      // Create a new tab for the initial URL
+      const newTab: BrowserTab = {
+        id: Date.now().toString(),
+        url: initialUrl,
+        title: 'Loading...',
+        loading: true,
+        secure: initialUrl.startsWith('https://') || initialUrl.startsWith('privachain://'),
+      }
+      setTabs(prev => [...prev, newTab])
+      setActiveTabId(newTab.id)
+      navigateToUrl(initialUrl, newTab.id)
+    } else if (tabs.length === 0) {
       const defaultTab: BrowserTab = {
         id: '1',
         url: 'privachain://welcome',
@@ -232,7 +251,7 @@ export function BrowserView() {
       setTabs([defaultTab])
       setActiveTabId('1')
     }
-  }, [tabs.length, setTabs, setActiveTabId])
+  }, [initialUrl, tabs.length, setTabs, setActiveTabId])
 
   // Initialize services
   useEffect(() => {
@@ -561,6 +580,9 @@ export function BrowserView() {
           <Button variant="ghost" size="sm" onClick={() => setShowSettings(!showSettings)}>
             <Gear className="w-4 h-4" />
           </Button>
+          <Button variant="ghost" size="sm" onClick={() => setShowExtensions(!showExtensions)}>
+            <PuzzlePiece className="w-4 h-4" />
+          </Button>
         </div>
 
         {/* Security Status Bar */}
@@ -716,6 +738,13 @@ export function BrowserView() {
                 </div>
               </ScrollArea>
             </div>
+          </div>
+        )}
+
+        {/* Extension Manager Panel */}
+        {showExtensions && (
+          <div className="w-96 border-l border-border bg-background">
+            <ExtensionManager />
           </div>
         )}
 

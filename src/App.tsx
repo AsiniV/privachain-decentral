@@ -6,13 +6,20 @@ import { EmailView } from './components/EmailView'
 import { SearchView } from './components/SearchView'
 import { ProfileView } from './components/ProfileView'
 import { DeploymentView } from './components/DeploymentView'
+import { BrowserView } from './components/BrowserView'
 import { Toaster } from './components/ui/sonner'
 
-export type View = 'messenger' | 'email' | 'search' | 'profile' | 'deployment'
+export type View = 'messenger' | 'email' | 'search' | 'profile' | 'deployment' | 'browser'
 
 function App() {
   const [currentView, setCurrentView] = useState<View>('messenger')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [browserUrl, setBrowserUrl] = useState<string>('')
+
+  const navigateToBrowser = (url: string) => {
+    setBrowserUrl(url)
+    setCurrentView('browser')
+  }
 
   const renderView = () => {
     switch (currentView) {
@@ -21,7 +28,9 @@ function App() {
       case 'email':
         return <EmailView />
       case 'search':
-        return <SearchView />
+        return <SearchView onNavigateToBrowser={navigateToBrowser} />
+      case 'browser':
+        return <BrowserView initialUrl={browserUrl} />
       case 'profile':
         return <ProfileView />
       case 'deployment':

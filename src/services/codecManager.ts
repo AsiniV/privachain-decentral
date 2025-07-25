@@ -374,7 +374,7 @@ class CodecManager {
     if (!('IntersectionObserver' in window)) {
       // Simplified polyfill for basic functionality
       (window as any).IntersectionObserver = class {
-        constructor(callback: Function) {
+        constructor(callback: (entries: any[]) => void) {
           this.callback = callback
         }
         observe() {}
@@ -388,7 +388,7 @@ class CodecManager {
     if (!('ResizeObserver' in window)) {
       // Simplified polyfill for basic functionality
       (window as any).ResizeObserver = class {
-        constructor(callback: Function) {
+        constructor(callback: (entries: any[]) => void) {
           this.callback = callback
         }
         observe() {}

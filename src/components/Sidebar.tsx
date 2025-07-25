@@ -7,7 +7,8 @@ import {
   Plus,
   List,
   X,
-  Rocket
+  Rocket,
+  Globe
 } from '@phosphor-icons/react'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
@@ -17,7 +18,7 @@ import { useIsMobile } from '../hooks/use-mobile'
 
 interface SidebarProps {
   currentView: string
-  onViewChange: (view: 'messenger' | 'email' | 'search' | 'profile' | 'deployment') => void
+  onViewChange: (view: 'messenger' | 'email' | 'search' | 'browser' | 'profile' | 'deployment') => void
   open: boolean
   onOpenChange: (open: boolean) => void
 }
@@ -42,8 +43,14 @@ export function Sidebar({ currentView, onViewChange, open, onOpenChange }: Sideb
     },
     {
       id: 'search',
-      label: 'MagnifyingGlass',
+      label: 'Search',
       icon: MagnifyingGlass,
+      badge: null
+    },
+    {
+      id: 'browser',
+      label: 'Browser',
+      icon: Globe,
       badge: null
     },
     {

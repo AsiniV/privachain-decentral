@@ -248,27 +248,32 @@ class WebsiteUnblockingService {
 
   private async constructBypassUrl(originalUrl: string, method: BypassMethod): Promise<string> {
     switch (method.type) {
-      case 'proxy':
+      case 'proxy': {
         // Use PrivaChain proxy infrastructure
         return `${method.url}?target=${encodeURIComponent(originalUrl)}`
+      }
       
-      case 'mirror':
+      case 'mirror': {
         // Replace domain with mirror
         const urlObj = new URL(originalUrl)
         const mirrorUrl = new URL(method.url)
         return originalUrl.replace(urlObj.hostname, mirrorUrl.hostname)
+      }
       
-      case 'archive':
+      case 'archive': {
         // Use archive.org or similar
         return `${method.url}/${encodeURIComponent(originalUrl)}`
+      }
       
-      case 'p2p':
+      case 'p2p': {
         // Use IPFS or similar P2P network
         return method.url
+      }
       
-      case 'alternative':
+      case 'alternative': {
         // Use alternative service
         return method.url
+      }
       
       default:
         return originalUrl
@@ -451,7 +456,7 @@ class WebsiteUnblockingService {
     try {
       const bypassUrl = await this.bypassUrl(url)
       return { success: true, bypassUrl, method: 'auto' }
-    } catch (error) {
+    } catch {
       return { success: false }
     }
   }
