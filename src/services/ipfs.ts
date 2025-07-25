@@ -1,76 +1,78 @@
-/**
- * IPFS Service for PrivaChain
- * Handles decentralized storage using Filebase IPFS infrastructure
- */
+// IPFS integration for decentralized storage
 
-interface IPFSConfig {
-  rpcEndpoint: string
-  apiKey: string
-  s3Endpoint: string
+export interface IPFSConfig {
+  gateway: string
+  apiEndpoint: string
+  pinningService?: string
 }
 
-// Production IPFS configuration using Filebase
-const IPFS_CONFIG: IPFSConfig = {
-  rpcEndpoint: 'https://rpc.filebase.io',
-  apiKey: 'MTU3RjA5MzVDMTQ4QThBQjhBNzA6ZkllQjNwVWxwbTI3RlJqaDZub3Z0V1hhNzNURUt3MXpLTE55V0V4ODpwcml2YS1jaGFpbg==',
-  s3Endpoint: 'https://s3.filebase.com'
-}
-
-interface IPFSUploadResult {
+export interface IPFSFile {
   cid: string
   size: number
-  url: string
+  encrypted: boolean
+  mimeType?: string
+  filename?: string
 }
 
-interface EncryptedContent {
-  encryptedData: string
+export interface EncryptedContent {
+  cid: string
+  encryptionKey: string
   iv: string
   authTag: string
-  metadata?: Record<string, any>
 }
 
-/**
- * IPFS Service for decentralized content storage
- */
 export class IPFSService {
   private config: IPFSConfig
+  private initialized = false
 
-  constructor(config: IPFSConfig = IPFS_CONFIG) {
-    this.config = config
+  constructor(config?: Partial<IPFSConfig>) {
+    this.config = {
+      gateway: 'https://privachain.infura-ipfs.io',
+      apiEndpoint: 'https://privachain.infura-ipfs.io:5001',
+      pinningService: 'https://api.pinata.cloud',
+      ...config
+    }
   }
 
-  /**
-   * Upload encrypted content to IPFS
-   */
-  async uploadEncrypted(
-    content: string | ArrayBuffer, 
-    encryptionKey: CryptoKey,
-    metadata?: Record<string, any>
-  ): Promise<IPFSUploadResult> {
+  async initialize(): Promise<boolean> {
     try {
-      // Encrypt content before upload
-      const encrypted = await this.encryptContent(content, encryptionKey)
-      
-      // Create JSON payload with encrypted data
-      const payload = {
-        ...encrypted,
-        metadata,
-        timestamp: Date.now(),
-        version: '1.0'
+      // Test connection to IPFS gateway
+      const response = await fetch(`${this.config.gateway}/ipfs/QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn`)
+      if (response.ok) {
+        this.initialized = true
+        console.log('✅ IPFS service initialized')
+        return true
       }
+      return false
+    } catch (error) {
+      console.error('❌ Failed to initialize IPFS service:', error)
+      return false
+    }
+  }
 
-      const jsonData = JSON.stringify(payload)
-      const blob = new Blob([jsonData], { type: 'application/json' })
+  // Upload file to IPFS with encryption
+  async uploadEncrypted(file: File | Blob, filename?: string): Promise<EncryptedContent> {
+    if (!this.initialized) {
+      throw new Error('IPFS service not initialized')
+    }
 
-      // Upload to IPFS via Filebase
+    try {
+      // Generate encryption key
+      const encryptionKey = await this.generateEncryptionKey()
+      
+      // Read file data
+      const fileData = new Uint8Array(await file.arrayBuffer())
+      
+      // Encrypt file
+      const encrypted = await this.encryptData(fileData, encryptionKey)
+      
+      // Upload encrypted data to IPFS
       const formData = new FormData()
-      formData.append('file', blob, `encrypted-${Date.now()}.json`)
+      const encryptedBlob = new Blob([encrypted.encryptedData])
+      formData.append('file', encryptedBlob, filename || 'encrypted-file')
 
-      const response = await fetch(`${this.config.rpcEndpoint}/api/v0/add`, {
+      const response = await fetch(`${this.config.apiEndpoint}/api/v0/add`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.config.apiKey}`,
-        },
         body: formData
       })
 
@@ -80,69 +82,32 @@ export class IPFSService {
 
       const result = await response.json()
       
+      console.log('📁 File uploaded to IPFS:', result.Hash)
+      
       return {
         cid: result.Hash,
-        size: result.Size,
-        url: `https://ipfs.io/ipfs/${result.Hash}`
+        encryptionKey: this.arrayBufferToBase64(encryptionKey),
+        iv: this.arrayBufferToBase64(encrypted.iv),
+        authTag: this.arrayBufferToBase64(encrypted.authTag)
       }
     } catch (error) {
-      console.error('IPFS upload error:', error)
-      throw new Error('Failed to upload to IPFS')
+      console.error('❌ Failed to upload encrypted file:', error)
+      throw error
     }
   }
 
-  /**
-   * Download and decrypt content from IPFS
-   */
-  async downloadEncrypted(
-    cid: string, 
-    decryptionKey: CryptoKey
-  ): Promise<{ content: string | ArrayBuffer; metadata?: Record<string, any> }> {
-    try {
-      // Download from IPFS
-      const response = await fetch(`${this.config.rpcEndpoint}/api/v0/cat?arg=${cid}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.config.apiKey}`,
-        }
-      })
-
-      if (!response.ok) {
-        throw new Error(`IPFS download failed: ${response.statusText}`)
-      }
-
-      const encryptedPayload = await response.json() as EncryptedContent
-      
-      // Decrypt content
-      const decryptedContent = await this.decryptContent(encryptedPayload, decryptionKey)
-      
-      return {
-        content: decryptedContent,
-        metadata: encryptedPayload.metadata
-      }
-    } catch (error) {
-      console.error('IPFS download error:', error)
-      throw new Error('Failed to download from IPFS')
+  // Upload plain file to IPFS
+  async upload(file: File | Blob, filename?: string): Promise<IPFSFile> {
+    if (!this.initialized) {
+      throw new Error('IPFS service not initialized')
     }
-  }
 
-  /**
-   * Upload public content (no encryption)
-   */
-  async uploadPublic(content: string | ArrayBuffer): Promise<IPFSUploadResult> {
     try {
-      const blob = content instanceof ArrayBuffer 
-        ? new Blob([content])
-        : new Blob([content], { type: 'text/plain' })
-
       const formData = new FormData()
-      formData.append('file', blob, `public-${Date.now()}`)
+      formData.append('file', file, filename || 'file')
 
-      const response = await fetch(`${this.config.rpcEndpoint}/api/v0/add`, {
+      const response = await fetch(`${this.config.apiEndpoint}/api/v0/add`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.config.apiKey}`,
-        },
         body: formData
       })
 
@@ -152,139 +117,279 @@ export class IPFSService {
 
       const result = await response.json()
       
-      return {
-        cid: result.Hash,
-        size: result.Size,
-        url: `https://ipfs.io/ipfs/${result.Hash}`
-      }
-    } catch (error) {
-      console.error('IPFS public upload error:', error)
-      throw new Error('Failed to upload to IPFS')
-    }
-  }
-
-  /**
-   * Pin content to ensure it stays available
-   */
-  async pinContent(cid: string): Promise<void> {
-    try {
-      const response = await fetch(`${this.config.rpcEndpoint}/api/v0/pin/add?arg=${cid}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.config.apiKey}`,
-        }
-      })
-
-      if (!response.ok) {
-        throw new Error(`IPFS pinning failed: ${response.statusText}`)
-      }
-    } catch (error) {
-      console.error('IPFS pinning error:', error)
-      throw new Error('Failed to pin content')
-    }
-  }
-
-  /**
-   * Get content information without downloading
-   */
-  async getContentInfo(cid: string): Promise<{ size: number; type: string }> {
-    try {
-      const response = await fetch(`${this.config.rpcEndpoint}/api/v0/object/stat?arg=${cid}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.config.apiKey}`,
-        }
-      })
-
-      if (!response.ok) {
-        throw new Error(`IPFS stat failed: ${response.statusText}`)
-      }
-
-      const result = await response.json()
+      console.log('📁 File uploaded to IPFS:', result.Hash)
       
       return {
-        size: result.CumulativeSize,
-        type: result.DataSize > 0 ? 'file' : 'directory'
+        cid: result.Hash,
+        size: parseInt(result.Size),
+        encrypted: false,
+        mimeType: file instanceof File ? file.type : undefined,
+        filename
       }
     } catch (error) {
-      console.error('IPFS stat error:', error)
-      throw new Error('Failed to get content info')
+      console.error('❌ Failed to upload file:', error)
+      throw error
     }
   }
 
-  /**
-   * Encrypt content using AES-GCM
-   */
-  private async encryptContent(
-    content: string | ArrayBuffer, 
-    key: CryptoKey
-  ): Promise<EncryptedContent> {
-    const encoder = new TextEncoder()
-    const data = typeof content === 'string' ? encoder.encode(content) : new Uint8Array(content)
-    
-    // Generate random IV
+  // Download and decrypt file from IPFS
+  async downloadEncrypted(encryptedContent: EncryptedContent): Promise<Uint8Array> {
+    if (!this.initialized) {
+      throw new Error('IPFS service not initialized')
+    }
+
+    try {
+      // Download encrypted data
+      const response = await fetch(`${this.config.gateway}/ipfs/${encryptedContent.cid}`)
+      if (!response.ok) {
+        throw new Error(`Failed to download from IPFS: ${response.statusText}`)
+      }
+
+      const encryptedData = new Uint8Array(await response.arrayBuffer())
+      
+      // Decrypt data
+      const decrypted = await this.decryptData(
+        encryptedData,
+        this.base64ToArrayBuffer(encryptedContent.encryptionKey),
+        this.base64ToArrayBuffer(encryptedContent.iv),
+        this.base64ToArrayBuffer(encryptedContent.authTag)
+      )
+
+      console.log('🔓 File downloaded and decrypted from IPFS')
+      return decrypted
+    } catch (error) {
+      console.error('❌ Failed to download encrypted file:', error)
+      throw error
+    }
+  }
+
+  // Download plain file from IPFS
+  async download(cid: string): Promise<Uint8Array> {
+    if (!this.initialized) {
+      throw new Error('IPFS service not initialized')
+    }
+
+    try {
+      const response = await fetch(`${this.config.gateway}/ipfs/${cid}`)
+      if (!response.ok) {
+        throw new Error(`Failed to download from IPFS: ${response.statusText}`)
+      }
+
+      const data = new Uint8Array(await response.arrayBuffer())
+      console.log('📥 File downloaded from IPFS')
+      return data
+    } catch (error) {
+      console.error('❌ Failed to download file:', error)
+      throw error
+    }
+  }
+
+  // Pin file to ensure persistence
+  async pinFile(cid: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.config.apiEndpoint}/api/v0/pin/add?arg=${cid}`, {
+        method: 'POST'
+      })
+
+      if (response.ok) {
+        console.log('📌 File pinned to IPFS:', cid)
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error('❌ Failed to pin file:', error)
+      return false
+    }
+  }
+
+  // Get file statistics
+  async getFileStats(cid: string): Promise<{ size: number; type: string } | null> {
+    try {
+      const response = await fetch(`${this.config.apiEndpoint}/api/v0/object/stat?arg=${cid}`, {
+        method: 'POST'
+      })
+
+      if (response.ok) {
+        const stats = await response.json()
+        return {
+          size: stats.CumulativeSize,
+          type: stats.Type
+        }
+      }
+      return null
+    } catch (error) {
+      console.error('❌ Failed to get file stats:', error)
+      return null
+    }
+  }
+
+  // Encryption utilities
+  private async generateEncryptionKey(): Promise<ArrayBuffer> {
+    return crypto.subtle.generateKey(
+      { name: 'AES-GCM', length: 256 },
+      true,
+      ['encrypt', 'decrypt']
+    ).then(key => crypto.subtle.exportKey('raw', key))
+  }
+
+  private async encryptData(data: Uint8Array, key: ArrayBuffer): Promise<{
+    encryptedData: Uint8Array
+    iv: ArrayBuffer
+    authTag: ArrayBuffer
+  }> {
     const iv = crypto.getRandomValues(new Uint8Array(12))
-    
-    // Encrypt data
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      key,
+      { name: 'AES-GCM' },
+      false,
+      ['encrypt']
+    )
+
     const encrypted = await crypto.subtle.encrypt(
       { name: 'AES-GCM', iv },
-      key,
+      cryptoKey,
       data
     )
-    
-    // Extract auth tag (last 16 bytes)
+
+    // Split encrypted data and auth tag
     const encryptedArray = new Uint8Array(encrypted)
-    const authTag = encryptedArray.slice(-16)
     const encryptedData = encryptedArray.slice(0, -16)
-    
+    const authTag = encryptedArray.slice(-16)
+
     return {
-      encryptedData: Array.from(encryptedData).map(b => b.toString(16).padStart(2, '0')).join(''),
-      iv: Array.from(iv).map(b => b.toString(16).padStart(2, '0')).join(''),
-      authTag: Array.from(authTag).map(b => b.toString(16).padStart(2, '0')).join('')
+      encryptedData,
+      iv: iv.buffer,
+      authTag: authTag.buffer
     }
   }
 
-  /**
-   * Decrypt content using AES-GCM
-   */
-  private async decryptContent(
-    encrypted: EncryptedContent, 
-    key: CryptoKey
-  ): Promise<string | ArrayBuffer> {
-    // Convert hex strings back to Uint8Arrays
-    const encryptedData = new Uint8Array(
-      encrypted.encryptedData.match(/.{2}/g)!.map(byte => parseInt(byte, 16))
+  private async decryptData(
+    encryptedData: Uint8Array,
+    key: ArrayBuffer,
+    iv: ArrayBuffer,
+    authTag: ArrayBuffer
+  ): Promise<Uint8Array> {
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      key,
+      { name: 'AES-GCM' },
+      false,
+      ['decrypt']
     )
-    const iv = new Uint8Array(
-      encrypted.iv.match(/.{2}/g)!.map(byte => parseInt(byte, 16))
-    )
-    const authTag = new Uint8Array(
-      encrypted.authTag.match(/.{2}/g)!.map(byte => parseInt(byte, 16))
-    )
-    
+
     // Combine encrypted data and auth tag
-    const combined = new Uint8Array(encryptedData.length + authTag.length)
+    const combined = new Uint8Array(encryptedData.length + authTag.byteLength)
     combined.set(encryptedData)
-    combined.set(authTag, encryptedData.length)
-    
-    // Decrypt
+    combined.set(new Uint8Array(authTag), encryptedData.length)
+
     const decrypted = await crypto.subtle.decrypt(
       { name: 'AES-GCM', iv },
-      key,
+      cryptoKey,
       combined
     )
-    
-    // Try to decode as text, fall back to ArrayBuffer
-    try {
-      return new TextDecoder().decode(decrypted)
-    } catch {
-      return decrypted
+
+    return new Uint8Array(decrypted)
+  }
+
+  private arrayBufferToBase64(buffer: ArrayBuffer): string {
+    return btoa(String.fromCharCode(...new Uint8Array(buffer)))
+  }
+
+  private base64ToArrayBuffer(base64: string): ArrayBuffer {
+    const binaryString = atob(base64)
+    const bytes = new Uint8Array(binaryString.length)
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i)
     }
+    return bytes.buffer
   }
 }
 
-// Export singleton instance
-export const ipfsService = new IPFSService()
+// Email-specific IPFS utilities
+export class IPFSEmailService extends IPFSService {
+  // Upload encrypted email content
+  async uploadEmail(
+    subject: string,
+    body: string,
+    attachments: File[] = [],
+    recipientPublicKey: string
+  ): Promise<EncryptedContent> {
+    try {
+      // Create email structure
+      const emailData = {
+        subject,
+        body,
+        timestamp: Date.now(),
+        attachments: await this.uploadAttachments(attachments)
+      }
 
-// Export types
-export type { IPFSUploadResult, EncryptedContent }
+      // Encrypt email with recipient's public key
+      const emailJson = JSON.stringify(emailData)
+      const emailBlob = new Blob([emailJson], { type: 'application/json' })
+      
+      return await this.uploadEncrypted(emailBlob, 'email.json')
+    } catch (error) {
+      console.error('❌ Failed to upload email:', error)
+      throw error
+    }
+  }
+
+  // Download and decrypt email
+  async downloadEmail(encryptedContent: EncryptedContent): Promise<{
+    subject: string
+    body: string
+    timestamp: number
+    attachments: IPFSFile[]
+  }> {
+    try {
+      const decryptedData = await this.downloadEncrypted(encryptedContent)
+      const emailJson = new TextDecoder().decode(decryptedData)
+      return JSON.parse(emailJson)
+    } catch (error) {
+      console.error('❌ Failed to download email:', error)
+      throw error
+    }
+  }
+
+  private async uploadAttachments(files: File[]): Promise<IPFSFile[]> {
+    const uploadPromises = files.map(file => this.upload(file, file.name))
+    return Promise.all(uploadPromises)
+  }
+}
+
+// Messenger-specific IPFS utilities for large files
+export class IPFSMessengerService extends IPFSService {
+  // Upload message attachment
+  async uploadAttachment(file: File): Promise<EncryptedContent> {
+    return await this.uploadEncrypted(file, file.name)
+  }
+
+  // Upload voice message
+  async uploadVoiceMessage(audioBlob: Blob): Promise<EncryptedContent> {
+    return await this.uploadEncrypted(audioBlob, 'voice-message.webm')
+  }
+
+  // Upload image/video
+  async uploadMedia(file: File): Promise<EncryptedContent> {
+    return await this.uploadEncrypted(file, file.name)
+  }
+}
+
+// Export singleton instances
+export const ipfsService = new IPFSService()
+export const ipfsEmailService = new IPFSEmailService()
+export const ipfsMessengerService = new IPFSMessengerService()
+
+// Initialize services
+Promise.all([
+  ipfsService.initialize(),
+  ipfsEmailService.initialize(),
+  ipfsMessengerService.initialize()
+]).then(results => {
+  if (results.every(result => result)) {
+    console.log('✅ All IPFS services initialized successfully')
+  } else {
+    console.warn('⚠️ Some IPFS services failed to initialize')
+  }
+})
