@@ -17,75 +17,55 @@ import {
   Calendar,
   User,
   Shield,
-  Database
+  Database,
+  Brain,
+  Lightning
 } from '@phosphor-icons/react'
 import { cn } from '../lib/utils'
-
-interface SearchResult {
-  id: string
-  type: 'message' | 'email' | 'contact' | 'file'
-  title: string
-  content: string
-  source: string
-  timestamp: number
-  encrypted: boolean
-  relevance: number
-}
+import { useDecentralizedSearch, SearchIndexEntry } from '../blockchain/SearchBackend'
 
 export function SearchView() {
   const [query, setQuery] = useState('')
   const [searchHistory] = useKV<string[]>('search-history', [])
   const [activeTab, setActiveTab] = useState('all')
+  const [results, setResults] = useState<SearchIndexEntry[]>([])
+  const [isSearching, setIsSearching] = useState(false)
   
-  const mockResults: SearchResult[] = [
-    {
-      id: '1',
-      type: 'message',
-      title: 'Encrypted Message Thread',
-      content: 'Zero-knowledge proof verification successful. Anonymous communication established.',
-      source: 'whistleblower.prv',
-      timestamp: Date.now() - 300000,
-      encrypted: true,
-      relevance: 0.95
-    },
-    {
-      id: '2',
-      type: 'email',
-      title: 'PrivaChain Network Update',
-      content: 'New TURN nodes deployed globally. Enhanced quantum-resistant encryption protocols active.',
-      source: 'network@privachain.prv',
-      timestamp: Date.now() - 600000,
-      encrypted: true,
-      relevance: 0.88
-    },
-    {
-      id: '3',
-      type: 'contact',
-      title: 'Anonymous Journalist',
-      content: 'Verified journalist on PrivaChain network. Specializes in secure communications.',
-      source: 'journalist.prv',
-      timestamp: Date.now() - 900000,
-      encrypted: true,
-      relevance: 0.92
-    },
-    {
-      id: '4',
-      type: 'file',
-      title: 'Blockchain Whitepaper',
-      content: 'Technical specification for anonymous communication protocol with ZK-SNARKs.',
-      source: 'ipfs://QmXyZ123...',
-      timestamp: Date.now() - 1200000,
-      encrypted: false,
-      relevance: 0.85
-    }
-  ]
+  const { zkSearch, searchIPFS, indexStats } = useDecentralizedSearch()
 
-  const filteredResults = query.length > 0 ? mockResults.filter(result =>
-    activeTab === 'all' || result.type === activeTab
-  ).filter(result =>
-    result.title.toLowerCase().includes(query.toLowerCase()) ||
-    result.content.toLowerCase().includes(query.toLowerCase())
-  ).sort((a, b) => b.relevance - a.relevance) : []
+  const handleSearch = async (searchQuery: string) => {
+    if (!searchQuery.trim()) {
+      setResults([])
+      return
+    }
+
+    setIsSearching(true)
+    try {
+      const filters = activeTab === 'all' ? {} : { type: activeTab }
+      const searchResults = await zkSearch(searchQuery, filters)
+      setResults(searchResults)
+    } catch (error) {
+      console.error('Search failed:', error)
+      setResults([])
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  const handleIPFSSearch = async (searchQuery: string) => {
+    if (!searchQuery.trim()) return
+
+    setIsSearching(true)
+    try {
+      const ipfsResults = await searchIPFS(searchQuery)
+      setResults(ipfsResults)
+    } catch (error) {
+      console.error('IPFS search failed:', error)
+      setResults([])
+    } finally {
+      setIsSearching(false)
+    }
+  }
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -93,6 +73,8 @@ export function SearchView() {
       case 'email': return Mail
       case 'contact': return User
       case 'file': return File
+      case 'domain': return Globe
+      case 'transaction': return Database
       default: return File
     }
   }
@@ -103,6 +85,8 @@ export function SearchView() {
       case 'email': return 'bg-green-500/20 text-green-400'
       case 'contact': return 'bg-purple-500/20 text-purple-400'
       case 'file': return 'bg-orange-500/20 text-orange-400'
+      case 'domain': return 'bg-pink-500/20 text-pink-400'
+      case 'transaction': return 'bg-cyan-500/20 text-cyan-400'
       default: return 'bg-gray-500/20 text-gray-400'
     }
   }
@@ -120,15 +104,44 @@ export function SearchView() {
             <MagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value)
+                if (e.target.value.length > 2) {
+                  handleSearch(e.target.value)
+                } else {
+                  setResults([])
+                }
+              }}
               placeholder="Search messages, emails, contacts, and files..."
               className="pl-12 h-12 text-lg"
             />
+            {isSearching && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <Brain className="w-5 h-5 animate-pulse text-accent" />
+              </div>
+            )}
           </div>
           
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Shield className="w-4 h-4" />
-            <span>Zero-knowledge search • No tracking • Fully encrypted</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Shield className="w-4 h-4" />
+              <span>Zero-knowledge search • No tracking • Fully encrypted</span>
+            </div>
+            
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Database className="w-3 h-3" />
+                <span>{indexStats.totalIndexed} indexed</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Lock className="w-3 h-3" />
+                <span>{indexStats.encryptedEntries} encrypted</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Lightning className="w-3 h-3" />
+                <span>{indexStats.queryHistory} queries</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -209,7 +222,7 @@ export function SearchView() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <p className="text-muted-foreground">
-                Found {filteredResults.length} results for "{query}"
+                Found {results.length} results for "{query}"
               </p>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Lock className="w-4 h-4" />
@@ -224,7 +237,7 @@ export function SearchView() {
                 <TabsTrigger value="email">Emails</TabsTrigger>
                 <TabsTrigger value="contact">Contacts</TabsTrigger>
                 <TabsTrigger value="file">Files</TabsTrigger>
-                <TabsTrigger value="ipfs">
+                <TabsTrigger value="ipfs" onClick={() => handleIPFSSearch(query)}>
                   <Database className="w-4 h-4 mr-1" />
                   IPFS
                 </TabsTrigger>
@@ -237,13 +250,13 @@ export function SearchView() {
               <TabsContent value={activeTab === 'ipfs' ? 'hidden' : activeTab} className="mt-6">
                 <ScrollArea className="h-[500px]">
                   <div className="space-y-4">
-                    {filteredResults.length === 0 ? (
+                    {results.length === 0 ? (
                       <div className="text-center py-8">
                         <MagnifyingGlass className="w-12 h-12 mx-auto mb-4 opacity-50" />
                         <p className="text-muted-foreground">No results found for this search</p>
                       </div>
                     ) : (
-                      filteredResults.map(result => {
+                      results.map(result => {
                         const IconComponent = getIcon(result.type)
                         return (
                           <Card key={result.id} className="p-4 hover:bg-muted/50 cursor-pointer transition-colors">
@@ -257,31 +270,40 @@ export function SearchView() {
                               
                               <div className="flex-1 space-y-2">
                                 <div className="flex items-center justify-between">
-                                  <h3 className="font-semibold">{result.title}</h3>
+                                  <h3 className="font-semibold">{result.metadata.title}</h3>
                                   <div className="flex items-center gap-2">
                                     <Badge variant="outline" className="capitalize">
                                       {result.type}
                                     </Badge>
-                                    {result.encrypted && (
+                                    {result.metadata.encrypted && (
                                       <Badge variant="secondary" className="gap-1">
                                         <Lock className="w-3 h-3" />
                                         Encrypted
+                                      </Badge>
+                                    )}
+                                    {result.zkProof && (
+                                      <Badge variant="accent" className="gap-1">
+                                        <Brain className="w-3 h-3" />
+                                        ZK-Proof
                                       </Badge>
                                     )}
                                   </div>
                                 </div>
                                 
                                 <p className="text-muted-foreground line-clamp-2">
-                                  {result.content}
+                                  {result.metadata.description}
                                 </p>
                                 
                                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                  <span className="font-mono">{result.source}</span>
+                                  <span className="font-mono">{result.metadata.source}</span>
                                   <span className="flex items-center gap-1">
                                     <Calendar className="w-3 h-3" />
-                                    {new Date(result.timestamp).toLocaleDateString()}
+                                    {new Date(result.metadata.timestamp).toLocaleDateString()}
                                   </span>
-                                  <span>Relevance: {Math.round(result.relevance * 100)}%</span>
+                                  <span>Relevance: {Math.round(result.relevanceScore * 100)}%</span>
+                                  {result.contentHash && (
+                                    <span className="font-mono text-xs">{result.contentHash.substring(0, 12)}...</span>
+                                  )}
                                 </div>
                               </div>
                             </div>

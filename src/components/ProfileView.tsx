@@ -45,8 +45,8 @@ interface WalletInfo {
 
 export function ProfileView() {
   const [profile, setProfile] = useKV<UserProfile>('user-profile', {
-    address: 'priv1x7k9m2n8q5r3t6u9v2w5y8z1a4b7c0d3e6f9',
-    displayName: 'Anonymous User',
+    address: 'cosmos1hcgd3hg6kpvsfuklsgkzjratda53vwsymrp24k',
+    displayName: 'PrivaChain Developer',
     joinDate: Date.now() - 2592000000, // 30 days ago
     isPremium: false,
     reputation: 847,
@@ -154,7 +154,7 @@ export function ProfileView() {
             <TabsTrigger value="zkauth">ZK Auth</TabsTrigger>
             <TabsTrigger value="wallet">Wallet</TabsTrigger>
             <TabsTrigger value="storage">Storage</TabsTrigger>
-            <TabsTrigger value="premium">Premium</TabsTrigger>
+            <TabsTrigger value="implementation">Implementation</TabsTrigger>
             <TabsTrigger value="status">Status</TabsTrigger>
           </TabsList>
 
@@ -307,6 +307,10 @@ export function ProfileView() {
                 </div>
               </div>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="implementation" className="space-y-6">
+            <ImplementationStatus />
           </TabsContent>
 
           <TabsContent value="zkauth" className="space-y-6">

@@ -1,8 +1,10 @@
 import React from 'react'
 import { DeploymentManager } from './deployment/DeploymentManager'
+import { SystemIntegrationTest } from './SystemIntegrationTest'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Badge } from './ui/badge'
 import { Button } from './ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { 
   Rocket, 
   Shield, 
@@ -11,7 +13,8 @@ import {
   Code,
   ExternalLink,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  FlaskConical
 } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 
@@ -111,179 +114,98 @@ export function DeploymentView() {
       <div className="flex-1 overflow-auto p-6">
         <div className="max-w-6xl mx-auto space-y-6">
           
-          {/* Deployment Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {deploymentStats.map((stat, index) => (
-              <Card key={index}>
-                <CardContent className="p-4">
-                  <div className="text-2xl font-bold text-primary">{stat.value}</div>
-                  <div className="font-medium">{stat.label}</div>
-                  <div className="text-sm text-muted-foreground">{stat.description}</div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <Tabs defaultValue="deployment" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="deployment">Deployment</TabsTrigger>
+              <TabsTrigger value="testing" className="gap-2">
+                <FlaskConical className="w-4 h-4" />
+                Integration Tests
+              </TabsTrigger>
+              <TabsTrigger value="status">Status</TabsTrigger>
+            </TabsList>
 
-          {/* Feature Status */}
-          <Card>
-            <CardHeader>
-              <CardTitle>PrivaChain Features Status</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {features.map((feature, index) => (
-                  <div key={index} className="flex items-start gap-3 p-3 border rounded-lg">
-                    <div className="text-primary mt-1">{feature.icon}</div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="font-medium">{feature.title}</h4>
-                        {getStatusBadge(feature.status)}
-                      </div>
-                      <p className="text-sm text-muted-foreground">{feature.description}</p>
-                    </div>
-                  </div>
+            <TabsContent value="deployment" className="space-y-6">
+              {/* Deployment Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {deploymentStats.map((stat, index) => (
+                  <Card key={index}>
+                    <CardContent className="p-4">
+                      <div className="text-2xl font-bold text-primary">{stat.value}</div>
+                      <div className="font-medium">{stat.label}</div>
+                      <div className="text-sm text-muted-foreground">{stat.description}</div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Deployment Manager */}
-          <DeploymentManager 
-            onDeploy={handleDeploy}
-            onVerify={handleVerify}
-          />
+              {/* Deployment Manager */}
+              <DeploymentManager onDeploy={handleDeploy} onVerify={handleVerify} />
+            </TabsContent>
 
-          {/* Architecture Overview */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Architecture Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div>
-                  <h4 className="font-medium mb-3">Core Components</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="text-center p-4 border rounded-lg">
-                      <div className="font-medium text-primary mb-2">Layer 1: Blockchain</div>
-                      <div className="text-sm text-muted-foreground">
-                        Cosmos SDK with Tendermint consensus, providing 2-second finality and high throughput
+            <TabsContent value="testing" className="space-y-6">
+              <SystemIntegrationTest />
+            </TabsContent>
+
+            <TabsContent value="status" className="space-y-6">
+
+              {/* Feature Status */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>PrivaChain Features Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {features.map((feature, index) => (
+                      <div key={index} className="flex items-start gap-3 p-3 border rounded-lg">
+                        <div className="text-primary mt-1">{feature.icon}</div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <h4 className="font-medium">{feature.title}</h4>
+                            {getStatusBadge(feature.status)}
+                          </div>
+                          <p className="text-sm text-muted-foreground">{feature.description}</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-center p-4 border rounded-lg">
-                      <div className="font-medium text-primary mb-2">Layer 2: Services</div>
-                      <div className="text-sm text-muted-foreground">
-                        Anonymous mail, video signaling, domain registry, and node rewards
-                      </div>
-                    </div>
-                    <div className="text-center p-4 border rounded-lg">
-                      <div className="font-medium text-primary mb-2">Infrastructure</div>
-                      <div className="text-sm text-muted-foreground">
-                        IPFS storage, TURN/STUN nodes, and decentralized search indexing
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Architecture Overview */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Architecture Overview</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    <div>
+                      <h4 className="font-medium mb-3">Core Components</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="text-center p-4 border rounded-lg">
+                          <div className="font-medium text-primary mb-2">Layer 1: Blockchain</div>
+                          <div className="text-sm text-muted-foreground">
+                            Cosmos SDK with Tendermint consensus, providing 2-second finality and high throughput
+                          </div>
+                        </div>
+                        <div className="text-center p-4 border rounded-lg">
+                          <div className="font-medium text-primary mb-2">Layer 2: Services</div>
+                          <div className="text-sm text-muted-foreground">
+                            Anonymous mail, video signaling, domain registry, and node rewards
+                          </div>
+                        </div>
+                        <div className="text-center p-4 border rounded-lg">
+                          <div className="font-medium text-primary mb-2">Infrastructure</div>
+                          <div className="text-sm text-muted-foreground">
+                            IPFS storage, TURN relays, search indexing, and ZK-proof generation
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-
-                <div>
-                  <h4 className="font-medium mb-3">Security Features</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                      <span>ZK-SNARK privacy proofs</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                      <span>End-to-end encryption</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                      <span>Quantum-resistant cryptography</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                      <span>Decentralized consensus</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                      <span>Anti-spam mechanisms</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                      <span>Validator slashing protection</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Technical Specifications */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Performance Metrics</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Block Time</span>
-                  <span className="font-mono">2 seconds</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Throughput</span>
-                  <span className="font-mono">5,000+ TPS</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Finality</span>
-                  <span className="font-mono">1 block</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Video Latency</span>
-                  <span className="font-mono">&lt;300ms</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Storage</span>
-                  <span className="font-mono">IPFS + Filecoin</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Validators</span>
-                  <span className="font-mono">Up to 100</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Token Economics</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Token Symbol</span>
-                  <span className="font-mono">PRIV</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total Supply</span>
-                  <span className="font-mono">10B PRIV</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Initial Circulation</span>
-                  <span className="font-mono">1B PRIV</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Min Validator Stake</span>
-                  <span className="font-mono">100K PRIV</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Domain Registration</span>
-                  <span className="font-mono">10 PRIV</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Video Relay Rate</span>
-                  <span className="font-mono">0.001 PRIV/MB</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
