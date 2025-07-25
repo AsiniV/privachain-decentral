@@ -6,9 +6,10 @@ import { MessengerView } from './components/MessengerView'
 import { EmailView } from './components/EmailView'
 import { SearchView } from './components/SearchView'
 import { ProfileView } from './components/ProfileView'
+import { DeploymentView } from './components/DeploymentView'
 import { Toaster } from './components/ui/sonner'
 
-export type View = 'messenger' | 'email' | 'search' | 'profile'
+export type View = 'messenger' | 'email' | 'search' | 'profile' | 'deployment'
 
 function App() {
   const [currentView, setCurrentView] = useKV<View>('current-view', 'messenger')
@@ -24,6 +25,8 @@ function App() {
         return <SearchView />
       case 'profile':
         return <ProfileView />
+      case 'deployment':
+        return <DeploymentView />
       default:
         return <MessengerView />
     }
