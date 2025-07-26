@@ -1,23 +1,50 @@
-# ✨ Welcome to Your Spark Template!
-You've just launched your brand-new Spark Template Codespace — everything’s fired up and ready for you to explore, build, and create with Spark!
+# ⚡ PrivaChain Decentral
 
-This template is your blank canvas. It comes with a minimal setup to help you get started quickly with Spark development.
+A decentralized blockchain platform for private communication and digital identity management.
 
-🚀 What's Inside?
-- A clean, minimal Spark environment
-- Pre-configured for local development
-- Ready to scale with your ideas
-  
-🧠 What Can You Do?
+## 🚀 Quick Start
 
-Right now, this is just a starting point — the perfect place to begin building and testing your Spark applications.
+### Prerequisites
+- Node.js v18+
+- Rust & Cargo
+- Git
 
-🧹 Just Exploring?
-No problem! If you were just checking things out and don’t need to keep this code:
+### Setup & Testing
+```bash
+git clone https://github.com/AsiniV/privachain-decentral.git
+cd privachain-decentral
+npm install
+npm run test:all
+npm run dev
+```
 
-- Simply delete your Spark.
-- Everything will be cleaned up — no traces left behind.
+Visit `http://localhost:5173` to see the application.
 
-📄 License For Spark Template Resources 
+## 📖 Documentation
+
+- **[LOCAL_TESTING.md](./LOCAL_TESTING.md)** - Comprehensive guide for local development and testing
+- **[USER_WORKFLOW_GUIDE.md](./USER_WORKFLOW_GUIDE.md)** - User interaction workflows
+- **[IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md)** - Development progress
+
+## 🧪 Testing Commands
+
+```bash
+npm run test           # Run core tests (contracts, lint, build)
+npm run test:all       # Run complete test suite including dev server
+npm run test:contracts # Test smart contracts only
+npm run dev            # Start development server
+```
+
+## 🛠️ Development
+
+This project uses:
+- **Frontend**: React + TypeScript + Vite
+- **Smart Contracts**: CosmWasm (Rust)
+- **Blockchain**: Cosmos SDK
+- **Styling**: Tailwind CSS
+
+For detailed setup instructions, testing procedures, and troubleshooting, see [LOCAL_TESTING.md](./LOCAL_TESTING.md).
+
+## 📄 License
 
 The Spark Template files and resources from GitHub are licensed under the terms of the MIT license, Copyright GitHub, Inc.

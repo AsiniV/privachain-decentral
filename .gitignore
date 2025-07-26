@@ -37,3 +37,12 @@ Cargo.lock
 # Contract build artifacts
 contracts/*/target/
 contracts/artifacts/*.wasm
+
+# Temporary files
+/tmp/
+*.tmp
+*.temp
+
+# Backup files
+*.backup
+*_old.*
