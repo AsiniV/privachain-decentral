@@ -513,7 +513,7 @@ export class ProductionDeployer {
    */
   private async instantiateContract(
     codeId: number,
-    msg: any,
+    msg: Record<string, unknown>,
     label: string,
     funds: string | 'auto'
   ): Promise<{ contractAddress: string; transactionHash: string }> {

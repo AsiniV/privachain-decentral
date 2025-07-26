@@ -22,7 +22,6 @@ import {
   CheckCircle
 } from '@phosphor-icons/react'
 import { ipfsService } from '../services/ipfs'
-import { gasFeeManager } from '../services/GasFeeManager'
 import { videoCallService } from '../services/VideoCallService'
 import { emailService } from '../services/EmailService'
 import { toast } from 'sonner'
@@ -206,9 +205,9 @@ export function IPFSIntegrationDemo() {
       if (result.success) {
         toast.success(`VideoCamera call initiated with IPFS signaling: ${result.sessionId}`)
       } else {
-        toast.error(result.error || 'Call failed')
+        toast.error(result.error || 'VideoCamera call demo failed')
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error('VideoCamera call demo failed')
     }
   }
@@ -231,7 +230,7 @@ export function IPFSIntegrationDemo() {
       } else {
         toast.error(result.error || 'Email failed')
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error('Email demo failed')
     }
   }

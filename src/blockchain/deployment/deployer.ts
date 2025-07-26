@@ -61,7 +61,7 @@ export class PrivaChainDeployer {
 
   async deployContract(
     contractType: ContractType,
-    initMsg: any,
+    initMsg: Record<string, unknown>,
     label?: string
   ): Promise<ContractAddress> {
     if (!this.client || !this.wallet) {

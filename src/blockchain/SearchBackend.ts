@@ -273,7 +273,7 @@ export class DecentralizedSearchBackend {
   /**
    * MagnifyingGlass SubQuery Cosmos indexer
    */
-  private async searchSubQuery(query: string, filters: any): Promise<SearchIndexEntry[]> {
+  private async searchSubQuery(query: string, filters: Record<string, unknown>): Promise<SearchIndexEntry[]> {
     try {
       if (!this.subqueryClient) {
         return []
@@ -319,7 +319,7 @@ export class DecentralizedSearchBackend {
 
       const result = await this.subqueryClient.request(searchQuery, variables)
       
-      const entries: SearchIndexEntry[] = result.searchEntries.nodes.map((node: any) => ({
+      const entries: SearchIndexEntry[] = result.searchEntries.nodes.map((node: { id: string; type: string; contentHash: string; title: string; description?: string; url?: string; timestamp: number }) => ({
         id: node.id,
         type: node.type,
         contentHash: node.contentHash,
@@ -347,7 +347,7 @@ export class DecentralizedSearchBackend {
   /**
    * MagnifyingGlass ComposeDB content database
    */
-  private async searchComposeDB(query: string, _filters: any): Promise<SearchIndexEntry[]> {
+  private async searchComposeDB(query: string, _filters: Record<string, unknown>): Promise<SearchIndexEntry[]> {
     try {
       if (!this.composeDbInitialized) {
         return []
@@ -387,7 +387,7 @@ export class DecentralizedSearchBackend {
   /**
    * MagnifyingGlass local encrypted index
    */
-  private async searchLocalIndex(query: string, filters: any): Promise<SearchIndexEntry[]> {
+  private async searchLocalIndex(query: string, filters: Record<string, unknown>): Promise<SearchIndexEntry[]> {
     // Use existing searchEncryptedIndex method
     return await this.searchEncryptedIndex(query, filters)
   }
@@ -478,7 +478,7 @@ export class DecentralizedSearchBackend {
    */
   private async searchEncryptedIndex(
     query: string,
-    filters: any
+    filters: Record<string, unknown>
   ): Promise<SearchIndexEntry[]> {
     // Simulate decryption and search
     await new Promise(resolve => setTimeout(resolve, 150))
@@ -699,7 +699,7 @@ export class DecentralizedSearchBackend {
   /**
    * Generate ZK proof for content
    */
-  private async generateContentZKProof(content: any): Promise<string> {
+  private async generateContentZKProof(content: Record<string, unknown>): Promise<string> {
     // Simulate ZK proof generation for content
     await new Promise(resolve => setTimeout(resolve, 50))
     
@@ -769,9 +769,16 @@ export const searchBackend = new DecentralizedSearchBackend()
 /**
  * React hook for decentralized search
  */
+interface SearchStats {
+  totalIndexed: number
+  encryptedEntries: number
+  queryHistory: number
+  lastIndexed: number
+}
+
 export function useDecentralizedSearch() {
   const [searchHistory] = useState<ZKQuery[]>([])
-  const [indexStats, setIndexStats] = useState<any>(searchBackend.getSearchStats())
+  const [indexStats, setIndexStats] = useState<SearchStats>(searchBackend.getSearchStats())
 
   useEffect(() => {
     // Update stats periodically
@@ -787,7 +794,7 @@ export function useDecentralizedSearch() {
 
   const zkSearch = async (
     query: string,
-    filters: any = {}
+    filters: Record<string, unknown> = {}
   ): Promise<SearchIndexEntry[]> => {
     const results = await searchBackend.zkSearch(query, filters)
     
@@ -797,7 +804,7 @@ export function useDecentralizedSearch() {
     return results
   }
 
-  const indexContent = async (content: any): Promise<string> => {
+  const indexContent = async (content: Record<string, unknown>): Promise<string> => {
     const id = await searchBackend.indexContent(content)
     
     // Update stats

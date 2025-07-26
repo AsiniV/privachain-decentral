@@ -30,7 +30,7 @@ export function PaymentView({ onBack }: PaymentViewProps) {
     name: ''
   })
   const [processing, setProcessing] = useState(false)
-  const [premiumStatus] = useKV('premium_access', null)
+  const [_premiumStatus] = useKV('premium_access', null)
 
   const plans = {
     monthly: {

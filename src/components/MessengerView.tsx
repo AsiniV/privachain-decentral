@@ -39,7 +39,7 @@ interface Contact {
 
 export function MessengerView() {
   const [messages, setMessages] = useKV<Message[]>('messages', [])
-  const [contacts, setContacts] = useKV<Contact[]>('contacts', [
+  const [contacts, _setContacts] = useKV<Contact[]>('contacts', [
     {
       id: '1',
       name: 'Alice Chen',

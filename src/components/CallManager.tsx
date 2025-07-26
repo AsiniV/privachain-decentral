@@ -60,7 +60,7 @@ export function CallManager({ contacts, onCallStatusChange }: CallManagerProps) 
       const interval = setInterval(simulateIncomingCall, 10000)
       return () => clearInterval(interval)
     }
-  }, [callState.status, contacts])
+  }, [callState.status, contacts, initiateIncomingCall])
 
   // Incoming call timer
   useEffect(() => {
@@ -80,7 +80,7 @@ export function CallManager({ contacts, onCallStatusChange }: CallManagerProps) 
         setIncomingCallTimer(0)
       }
     }
-  }, [callState.status, callState.isIncoming])
+  }, [callState.status, callState.isIncoming, declineCall])
 
   // Update call status for parent component
   useEffect(() => {

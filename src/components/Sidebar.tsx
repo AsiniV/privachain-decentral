@@ -91,7 +91,7 @@ export function Sidebar({ currentView, onViewChange, open, onOpenChange }: Sideb
               currentView === item.id && "bg-accent text-accent-foreground"
             )}
             onClick={() => {
-              onViewChange(item.id as any)
+              onViewChange(item.id as 'messenger' | 'email' | 'search' | 'browser' | 'profile' | 'deployment')
               if (isMobile) onOpenChange(false)
             }}
           >

@@ -252,7 +252,7 @@ export class VideoSignalingContract {
    */
   private async executeBlockchainTransaction(
     action: string, 
-    data: any
+    data: Record<string, unknown>
   ): Promise<string> {
     try {
       if (!this.signingClient || !this.wallet) {
@@ -308,7 +308,7 @@ export class VideoSignalingContract {
    */
   private async simulateBlockchainTransaction(
     action: string, 
-    data: any
+    data: Record<string, unknown>
   ): Promise<string> {
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 300))

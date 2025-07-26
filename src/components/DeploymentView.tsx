@@ -26,13 +26,23 @@ import { cosmosService } from '../services/cosmos'
 import { zkIdentityManager } from '../services/zkCrypto'
 import { ipfsService } from '../services/ipfs'
 
+interface NetworkStats {
+  blockHeight: number
+  totalDomains: number
+  activeDomains: number
+  totalEmails: number
+  totalRelays: number
+  activeRelays: number
+  timestamp: number
+}
+
 export function DeploymentView() {
   const [activeTab, setActiveTab] = useKV('deployment-tab', 'overview')
   // const [deploymentStatus, setDeploymentStatus] = React.useState<'idle' | 'deploying' | 'deployed' | 'error'>('idle')
   const [cosmosConnected, setCosmosConnected] = useState(false)
   const [zkIdentityLoaded, setZkIdentityLoaded] = useState(false)
   const [ipfsInitialized, setIpfsInitialized] = useState(false)
-  const [networkStats, setNetworkStats] = useState<any>(null)
+  const [networkStats, setNetworkStats] = useState<NetworkStats | null>(null)
   
   useEffect(() => {
     initializeServices()

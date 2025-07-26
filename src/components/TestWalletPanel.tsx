@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
-import { Separator } from './ui/separator'
 import { ScrollArea } from './ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { useTestWallet } from '../hooks/useTestWallet'
@@ -14,7 +13,7 @@ import { toast } from 'sonner'
 export function TestWalletPanel() {
   const { wallet, isLoading, connectWallet, disconnectWallet, refreshBalances, getGasBudgetRemaining, config } = useTestWallet()
   const { isTestnetConnected, connectToTestnet, config: testnetConfig } = useCosmosTestnet()
-  const [showTransactions, setShowTransactions] = useState(false)
+  const [_showTransactions, _setShowTransactions] = useState(false)
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)

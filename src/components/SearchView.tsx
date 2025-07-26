@@ -31,7 +31,7 @@ interface SearchViewProps {
 
 export function SearchView({ onNavigateToBrowser }: SearchViewProps = {}) {
   const [query, setQuery] = useState('')
-  const [searchHistory] = useKV<string[]>('search-history', [])
+  const [_searchHistory] = useKV<string[]>('search-history', [])
   const [activeTab, setActiveTab] = useState('all')
   const [results, setResults] = useState<SearchIndexEntry[]>([])
   const [isSearching, setIsSearching] = useState(false)
