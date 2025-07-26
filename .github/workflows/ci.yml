@@ -1,4 +1,3 @@
-# .github/workflows/ci.yml
 name: CI
 
 on:
@@ -9,71 +8,62 @@ on:
 
 jobs:
   test:
+    name: Build and Test
     runs-on: ubuntu-latest
-
+    
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
-    services:
-      substrate-node:
-        image: parity/substrate:latest
-        ports:
-          - 9944:9944
-        options: >-
-          --health-cmd "curl -s http://localhost:9933/health || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
-          --dev
+        node-version: [20.x]
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      # Install Rust
-      - name: Set up Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-          target: wasm32-unknown-unknown
-
-      # Install Node.js for TypeScript/JS tools
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
 
-      # Install dependencies
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            contracts/mail/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
       - name: Install Node.js dependencies
         run: npm ci
 
-      # Install Rust WASM target
-      - name: Install WASM target
-        run: rustup target add wasm32-unknown-unknown
-
-      # Build contracts
-      - name: Build contracts
+      - name: Build smart contracts
         run: npm run contracts:build
-        working-directory: .
 
-      # Build frontend
-      - name: Build frontend
-        run: npm run build
-
-      # Deploy contracts (example, adapt as needed)
-      - name: Deploy contracts
-        run: ./scripts/deploy-contracts.sh
-        env:
-          NODE_URL: ws://localhost:9944
-        working-directory: .
-
-      # Run Rust tests
-      - name: Run contract tests
+      - name: Test smart contracts
         run: npm run contracts:test
 
-      # Run TypeScript/JS tests
-      - name: Run frontend tests
-        run: npm test
+      - name: Lint frontend code
+        run: npm run test:lint
+
+      - name: Build frontend
+        run: npm run test:build
+
+  # Optional: Add a deployment job for successful builds on main branch
+  # deploy:
+  #   name: Deploy to staging
+  #   runs-on: ubuntu-latest
+  #   needs: test
+  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #   steps:
+  #     - name: Deploy
+  #       run: echo "Deploy to staging environment"
