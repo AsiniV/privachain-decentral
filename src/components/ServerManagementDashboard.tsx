@@ -21,7 +21,6 @@ import {
   Gauge
 } from '@phosphor-icons/react'
 import { videoQualityContract, TurnServerInfo, ServerStats, GlobalMetrics } from '../blockchain/videoQualityContract'
-import { useKV } from '../hooks/useKV'
 import { toast } from 'sonner'
 
 export function ServerManagementDashboard() {

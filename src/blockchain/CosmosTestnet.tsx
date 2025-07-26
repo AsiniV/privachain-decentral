@@ -2,6 +2,15 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback 
 import { useKV } from '../hooks/useKV'
 import { toast } from 'sonner'
 
+// Keplr wallet interface extension
+interface KeplrWindow extends Window {
+  keplr?: {
+    experimentalSuggestChain: (chainInfo: unknown) => Promise<void>
+  }
+}
+
+declare const window: KeplrWindow
+
 // Cosmos Testnet Configuration
 interface TestnetConfig {
   chainId: string
@@ -132,7 +141,7 @@ export function CosmosTestnetProvider({ children }: { children: ReactNode }) {
         toast.success(`Connected to ${config.chainName} with test wallet: ${TEST_WALLET_ADDRESS.slice(0, 12)}...`)
         
         // Add testnet to Keplr wallet if available
-        if (typeof window !== 'undefined' && (window as any).keplr) {
+        if (typeof window !== 'undefined' && window.keplr) {
           await suggestChainToKeplr()
         }
       } else {
@@ -205,8 +214,8 @@ export function CosmosTestnetProvider({ children }: { children: ReactNode }) {
 
   const suggestChainToKeplr = async () => {
     try {
-      if (typeof window !== 'undefined' && (window as any).keplr) {
-        await (window as any).keplr.experimentalSuggestChain({
+      if (typeof window !== 'undefined' && window.keplr) {
+        await window.keplr.experimentalSuggestChain({
           chainId: config.chainId,
           chainName: config.chainName,
           rpc: config.rpc,

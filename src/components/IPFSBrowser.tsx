@@ -168,7 +168,7 @@ export function IPFSBrowser() {
     try {
       await navigator.clipboard.writeText(text)
       toast.success('Copied to clipboard')
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to copy')
     }
   }
