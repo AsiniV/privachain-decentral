@@ -29,3 +29,11 @@ dist-ssr
 packages
 .file-manifest
 .devcontainer/
+
+# Rust build artifacts
+target/
+Cargo.lock
+
+# Contract build artifacts
+contracts/*/target/
+contracts/artifacts/*.wasm

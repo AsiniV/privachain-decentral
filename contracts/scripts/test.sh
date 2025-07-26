@@ -8,8 +8,8 @@ echo "Testing PrivaChain smart contracts..."
 
 # Test mail contract
 echo "Testing mail contract..."
-cd contracts/mail
+cd mail
 cargo test
-cd ../..
+cd ..
 
 echo "All tests passed!"

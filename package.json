@@ -10,6 +10,7 @@
         "lint": "eslint .",
         "optimize": "vite optimize",
         "preview": "vite preview",
+        "test": "echo 'Running frontend tests...' && echo 'Note: Add specific test commands here'",
         "deploy:testnet": "ts-node src/blockchain/deployment/cli.ts deploy testnet",
         "deploy:mainnet": "ts-node src/blockchain/deployment/cli.ts deploy mainnet",
         "deploy:local": "ts-node src/blockchain/deployment/cli.ts deploy local",
@@ -17,8 +18,8 @@
         "deploy:verify": "ts-node src/blockchain/deployment/cli.ts verify",
         "deploy:status": "ts-node src/blockchain/deployment/cli.ts status",
         "deploy:estimate": "ts-node src/blockchain/deployment/cli.ts estimate",
-        "contracts:build": "echo 'Building WASM contracts...' && echo 'Note: Add Rust/WASM build commands here'",
-        "contracts:test": "echo 'Testing smart contracts...' && echo 'Note: Add contract test commands here'"
+        "contracts:build": "cd contracts/mail && cargo build --release --target wasm32-unknown-unknown",
+        "contracts:test": "cd contracts && ./scripts/test.sh"
     },
     "dependencies": {
         "@cosmjs/cosmwasm-stargate": "^0.34.0",
