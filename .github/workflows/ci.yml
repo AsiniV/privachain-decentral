@@ -1,0 +1,73 @@
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      substrate-node:
+        image: parity/substrate:latest
+        ports:
+          - 9944:9944
+        options: >-
+          --health-cmd "curl -s http://localhost:9933/health || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Install Rust
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          target: wasm32-unknown-unknown
+
+      # Install Node.js for TypeScript/JS tools
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # Install dependencies
+      - name: Install Node.js dependencies
+        run: npm ci
+
+      # Install Rust WASM target
+      - name: Install WASM target
+        run: rustup target add wasm32-unknown-unknown
+
+      # Build contracts
+      - name: Build contracts
+        run: npm run contracts:build
+        working-directory: .
+
+      # Build frontend
+      - name: Build frontend
+        run: npm run build
+
+      # Deploy contracts (example, adapt as needed)
+      - name: Deploy contracts
+        run: ./scripts/deploy-contracts.sh
+        env:
+          NODE_URL: ws://localhost:9944
+        working-directory: .
+
+      # Run Rust tests
+      - name: Run contract tests
+        run: npm run contracts:test
+
+      # Run TypeScript/JS tests
+      - name: Run frontend tests
+        run: npm test
