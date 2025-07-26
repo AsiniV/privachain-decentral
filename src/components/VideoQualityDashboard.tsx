@@ -122,7 +122,7 @@ export function VideoQualityDashboard({ onServerSelected, currentSessionId }: Vi
       setOptimalServer(server)
       onServerSelected?.(server)
       toast.success(`Optimized to server: ${server.region} (${server.latency}ms)`)
-    } catch (error) {
+    } catch {
       toast.error('Failed to optimize connection')
     } finally {
       setIsOptimizing(false)
@@ -141,7 +141,7 @@ export function VideoQualityDashboard({ onServerSelected, currentSessionId }: Vi
       setOptimalServer(newServer)
       onServerSelected?.(newServer)
       toast.success(`Switched to backup server: ${newServer.region}`)
-    } catch (error) {
+    } catch {
       toast.error('Failover failed')
     }
   }
@@ -152,7 +152,7 @@ export function VideoQualityDashboard({ onServerSelected, currentSessionId }: Vi
     try {
       await videoQualityContract.reportQualityMetrics(currentSessionId, qualityMetrics)
       toast.success('Quality metrics reported')
-    } catch (error) {
+    } catch {
       toast.error('Failed to report quality metrics')
     }
   }

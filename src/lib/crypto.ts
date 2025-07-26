@@ -201,7 +201,7 @@ export class ZKIdentity {
   /**
    * Validate identity structure
    */
-  private validateIdentity(identity: any): identity is CryptoIdentity {
+  private validateIdentity(identity: unknown): identity is CryptoIdentity {
     return (
       typeof identity === 'object' &&
       typeof identity.privateKey === 'string' &&
@@ -219,11 +219,7 @@ export class BlockchainUtils {
   /**
    * Simulate smart contract call for domain registration
    */
-  static async registerDomain(
-    domainName: string,
-    zkProof: string,
-    publicKey: string
-  ): Promise<{ success: boolean, txHash: string }> {
+  static async registerDomain(): Promise<{ success: boolean, txHash: string }> {
     // Simulate blockchain transaction
     const txHash = `0x${Math.random().toString(16).substring(2, 66)}`
     
@@ -239,7 +235,7 @@ export class BlockchainUtils {
   /**
    * Simulate stake verification for premium features
    */
-  static async verifyStake(address: string): Promise<{ hasStake: boolean, amount: number }> {
+  static async verifyStake(): Promise<{ hasStake: boolean, amount: number }> {
     // Simulate stake check
     const amount = Math.random() * 1000
     return {
@@ -322,7 +318,7 @@ export class SessionManager {
   /**
    * Get session data
    */
-  static getSessionData(): any | null {
+  static getSessionData(): Record<string, unknown> | null {
     try {
       const sessionToken = localStorage.getItem(this.SESSION_KEY)
       if (!sessionToken) return null

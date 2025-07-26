@@ -83,7 +83,7 @@ class CodecManager {
     const video = document.createElement('video')
     const audio = document.createElement('audio')
     const canvas = document.createElement('canvas')
-    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl')
+    canvas.getContext('webgl2') || canvas.getContext('webgl')
 
     return {
       video: {
@@ -351,15 +351,15 @@ class CodecManager {
 
   private addWebRTCPolyfill(): void {
     if (!window.RTCPeerConnection) {
-      window.RTCPeerConnection = (window as any).webkitRTCPeerConnection || 
-                                 (window as any).mozRTCPeerConnection || 
-                                 (window as any).msRTCPeerConnection
+      window.RTCPeerConnection = (window as Record<string, unknown>).webkitRTCPeerConnection || 
+                                 (window as Record<string, unknown>).mozRTCPeerConnection || 
+                                 (window as Record<string, unknown>).msRTCPeerConnection
     }
 
     if (!navigator.getUserMedia) {
-      navigator.getUserMedia = (navigator as any).webkitGetUserMedia || 
-                              (navigator as any).mozGetUserMedia || 
-                              (navigator as any).msGetUserMedia
+      navigator.getUserMedia = (navigator as Record<string, unknown>).webkitGetUserMedia || 
+                              (navigator as Record<string, unknown>).mozGetUserMedia || 
+                              (navigator as Record<string, unknown>).msGetUserMedia
     }
   }
 
@@ -373,8 +373,8 @@ class CodecManager {
   private addIntersectionObserverPolyfill(): void {
     if (!('IntersectionObserver' in window)) {
       // Simplified polyfill for basic functionality
-      (window as any).IntersectionObserver = class {
-        constructor(callback: (entries: any[]) => void) {
+      (window as Record<string, unknown>).IntersectionObserver = class {
+        constructor(callback: (entries: unknown[]) => void) {
           this.callback = callback
         }
         observe() {}
@@ -387,8 +387,8 @@ class CodecManager {
   private addResizeObserverPolyfill(): void {
     if (!('ResizeObserver' in window)) {
       // Simplified polyfill for basic functionality
-      (window as any).ResizeObserver = class {
-        constructor(callback: (entries: any[]) => void) {
+      (window as Record<string, unknown>).ResizeObserver = class {
+        constructor(callback: (entries: unknown[]) => void) {
           this.callback = callback
         }
         observe() {}

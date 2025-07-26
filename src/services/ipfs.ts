@@ -312,8 +312,7 @@ export class IPFSEmailService extends IPFSService {
   async uploadEmail(
     subject: string,
     body: string,
-    attachments: File[] = [],
-    _recipientPublicKey: string
+    attachments: File[] = []
   ): Promise<EncryptedContent> {
     try {
       // Create email structure

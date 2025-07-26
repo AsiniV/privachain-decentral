@@ -157,7 +157,7 @@ export function DeploymentManager({ onDeploy, onVerify }: DeploymentManagerProps
                   key={network.id}
                   variant={selectedNetwork === network.id ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setSelectedNetwork(network.id as any)}
+                  onClick={() => setSelectedNetwork(network.id as 'testnet' | 'mainnet' | 'local')}
                 >
                   {network.name}
                 </Button>
