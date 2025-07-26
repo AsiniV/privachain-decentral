@@ -11,6 +11,11 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
     services:
       substrate-node:
         image: parity/substrate:latest
@@ -34,10 +39,10 @@ jobs:
           target: wasm32-unknown-unknown
 
       # Install Node.js for TypeScript/JS tools
-      - name: Set up Node.js
+      - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ matrix.node-version }}
           cache: 'npm'
 
       # Install dependencies
