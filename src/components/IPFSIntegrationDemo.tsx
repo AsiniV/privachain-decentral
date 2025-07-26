@@ -16,7 +16,6 @@ import {
   CloudArrowDown, 
   Shield, 
   Globe, 
-  Clock,
   FileText,
   VideoCamera,
   Image,

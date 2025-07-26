@@ -24,7 +24,7 @@ import {
 } from '@phosphor-icons/react'
 import { cn } from '../lib/utils'
 import { toast } from 'sonner'
-import { ipfs, ipfsUtils, IPFSUploadResult } from '../lib/ipfs'
+import { ipfs, ipfsUtils } from '../lib/ipfs'
 
 interface Email {
   id: string

@@ -496,7 +496,7 @@ export const videoSignaling = new VideoSignalingContract()
  */
 export function useVideoSignaling() {
   const [sessions, setSessions] = useState<VideoSession[]>([])
-  const [turnRelays, setTurnRelays] = useState<TurnRelay[]>(videoSignaling.getTurnRelays())
+  const [turnRelays] = useState<TurnRelay[]>(videoSignaling.getTurnRelays())
 
   useEffect(() => {
     // Update local state when sessions change

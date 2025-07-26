@@ -25,7 +25,6 @@ import {
   Star,
   Database
 } from '@phosphor-icons/react'
-import { cn } from '../lib/utils'
 import { toast } from 'sonner'
 
 interface UserProfile {
