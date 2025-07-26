@@ -17,13 +17,13 @@ import { useVideoSignaling } from '../blockchain/VideoSignaling'
 import { useDecentralizedSearch } from '../blockchain/SearchBackend'
 
 export function IntegrationTestPanel() {
-  const [testResults, setTestResults] = useState<any>({})
+  const [testResults, setTestResults] = useState<Record<string, unknown>>({})
   const [isRunning, setIsRunning] = useState(false)
   const [callReceiver, setCallReceiver] = useState('test.prv')
   const [searchQuery, setSearchQuery] = useState('blockchain')
 
   const { startSession, sessions, turnRelays } = useVideoSignaling()
-  const { zkSearch, indexContent, searchHistory: _searchHistory, indexStats } = useDecentralizedSearch()
+  const { zkSearch, indexContent, indexStats } = useDecentralizedSearch()
 
   const runVideoCallTest = async () => {
     try {

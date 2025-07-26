@@ -67,7 +67,7 @@ export function ProfileView() {
       setCopied(type)
       toast.success(`${type} copied to clipboard`)
       setTimeout(() => setCopied(null), 2000)
-    } catch (err) {
+    } catch {
       toast.error('Failed to copy to clipboard')
     }
   }

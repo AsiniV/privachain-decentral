@@ -72,7 +72,7 @@ export function GasSponsorshipDemo() {
     
     try {
       const gasAmount = estimateGasFee(operation.operation + '_test')
-      const _txHash = await payGasFee(gasAmount, `test_${operation.operation}`, `Testing ${operation.name}`)
+      await payGasFee(gasAmount, `test_${operation.operation}`, `Testing ${operation.name}`)
       
       // Simulate blockchain confirmation delay
       setTimeout(() => {
@@ -98,7 +98,7 @@ export function GasSponsorshipDemo() {
       }
       
       toast.success('All gas sponsorship tests completed!')
-    } catch (error) {
+    } catch {
       toast.error('Test suite failed')
     } finally {
       setIsRunningTest(false)

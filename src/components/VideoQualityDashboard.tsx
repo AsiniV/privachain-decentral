@@ -22,10 +22,10 @@ interface VideoQualityDashboardProps {
   onServerSelected?: (server: TurnServerInfo) => void
   currentSessionId?: string
   isInCall?: boolean
-  onSettingsChange?: (settings: any) => void
+  onSettingsChange?: (settings: Record<string, unknown>) => void
 }
 
-export function VideoQualityDashboard({ onServerSelected, currentSessionId, isInCall, onSettingsChange }: VideoQualityDashboardProps) {
+export function VideoQualityDashboard({ onServerSelected, currentSessionId }: VideoQualityDashboardProps) {
   const [servers, setServers] = useState<TurnServerInfo[]>([])
   const [selectedRegion, setSelectedRegion] = useState<string>('auto')
   const [qualityRequirement, setQualityRequirement] = useState<string>('HD')
@@ -84,7 +84,7 @@ export function VideoQualityDashboard({ onServerSelected, currentSessionId, isIn
         }
       ]
       setServers(mockServers)
-    } catch (error) {
+    } catch {
       toast.error('Failed to load TURN servers')
     }
   }

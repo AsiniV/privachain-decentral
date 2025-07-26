@@ -97,7 +97,7 @@ export function ServerManagementDashboard() {
       ]
 
       setServers(mockServers)
-    } catch (error) {
+    } catch {
       toast.error('Failed to load dashboard data')
     } finally {
       setIsLoading(false)
@@ -108,7 +108,7 @@ export function ServerManagementDashboard() {
     try {
       const stats = await videoQualityContract.getServerStats(serverId)
       setServerStats(stats)
-    } catch (error) {
+    } catch {
       toast.error('Failed to load server statistics')
     }
   }
@@ -131,7 +131,7 @@ export function ServerManagementDashboard() {
       setNewServerRegion('')
       setStakeAmount('')
       loadDashboardData()
-    } catch (error) {
+    } catch {
       toast.error('Failed to register server')
     }
   }
@@ -147,7 +147,7 @@ export function ServerManagementDashboard() {
       toast.success(`Staked ${stakeAmount} PRIV for server ${serverId}`)
       setStakeAmount('')
       loadDashboardData()
-    } catch (error) {
+    } catch {
       toast.error('Failed to stake for server')
     }
   }
@@ -157,7 +157,7 @@ export function ServerManagementDashboard() {
       await videoQualityContract.reportServerIssue(serverId, 'poor_performance', 'Manual report from dashboard')
       toast.success('Issue reported successfully')
       loadDashboardData()
-    } catch (error) {
+    } catch {
       toast.error('Failed to report issue')
     }
   }

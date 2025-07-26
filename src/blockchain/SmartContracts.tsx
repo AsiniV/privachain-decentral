@@ -224,7 +224,7 @@ mQENBF...${domainName}...example...key
       })
     },
 
-    getRewards: async (_address: string): Promise<string> => {
+    getRewards: async (): Promise<string> => {
       // Simulate fetching pending rewards
       return (Math.random() * 100).toFixed(2)
     }
@@ -278,7 +278,7 @@ export interface ZKRollup {
   state: ZKState
   submitProof: (proof: string, publicInputs: string[]) => Promise<string>
   verifyProof: (proof: string) => boolean
-  batchTransactions: (txs: any[]) => Promise<string>
+  batchTransactions: (txs: unknown[]) => Promise<string>
 }
 
 interface ZKState {

@@ -71,7 +71,6 @@ export function VideoCall({ contact, onEndCall, isIncoming = false }: VideoCallP
   })
   
   const localVideoRef = useRef<HTMLVideoElement>(null)
-  const _remoteVideoRef = useRef<HTMLVideoElement>(null)
   const callStartTime = useRef<number>(Date.now())
   
   // Simulated participants for demo

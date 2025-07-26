@@ -46,7 +46,7 @@ export function BlockchainDashboard() {
     claimRewards
   } = usePrivToken()
   
-  const { mailContract: _mailContract, domainContract: _domainContract } = useSmartContracts()
+  const {} = useSmartContracts()
   const zkRollup = useZKRollup()
   
   const [transferTo, setTransferTo] = useState('')
