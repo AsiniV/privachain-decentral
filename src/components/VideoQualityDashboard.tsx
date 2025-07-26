@@ -38,7 +38,7 @@ export function VideoQualityDashboard({ onServerSelected, currentSessionId }: Vi
     if (currentSessionId) {
       simulateQualityMetrics()
     }
-  }, [currentSessionId])
+  }, [currentSessionId, simulateQualityMetrics])
 
   const loadServers = async () => {
     try {

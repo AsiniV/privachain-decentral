@@ -152,7 +152,7 @@ export function ExtensionManager() {
     if (extensions.length === 0) {
       setExtensions(mockExtensions)
     }
-  }, [extensions.length, setExtensions])
+  }, [extensions.length, setExtensions, mockExtensions])
 
   const analyzeExtensionPrivacy = (extension: Extension): PrivacyAnalysis => {
     const analysis: PrivacyAnalysis = {

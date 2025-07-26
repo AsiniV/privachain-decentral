@@ -56,7 +56,7 @@ export function TestnetDashboard() {
       const interval = setInterval(refreshStatus, 10000) // Refresh every 10 seconds
       return () => clearInterval(interval)
     }
-  }, [isTestnetConnected])
+  }, [isTestnetConnected, refreshStatus])
 
   const handleConnect = async () => {
     setLoading(true)

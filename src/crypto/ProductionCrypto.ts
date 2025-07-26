@@ -330,13 +330,13 @@ export class ProductionCryptography {
     return new Uint8Array(1024) // Placeholder
   }
 
-  private async generateWitness(circuitWasm: Uint8Array, inputs: Record<string, string>): Promise<Uint8Array> {
+  private async generateWitness(): Promise<Uint8Array> {
     // Generate witness using snarkjs
     // This would use actual snarkjs library
     return new Uint8Array(512) // Placeholder
   }
 
-  private async groth16Prove(circuit: string, witness: Uint8Array): Promise<any> {
+  private async groth16Prove(): Promise<Record<string, unknown>> {
     // Generate Groth16 proof using snarkjs
     // This would use actual snarkjs library
     return {
@@ -345,7 +345,7 @@ export class ProductionCryptography {
     }
   }
 
-  private async formallyVerifyProof(circuit: string, proof: unknown): Promise<Record<string, unknown>> {
+  private async formallyVerifyProof(circuit: string): Promise<Record<string, unknown>> {
     // Formal verification using Lean or Coq
     // This would interface with theorem provers
     return {

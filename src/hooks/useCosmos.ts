@@ -27,46 +27,68 @@ export function useCosmos() {
   const [storedMnemonic, setStoredMnemonic] = useState<string | null>(null)
 
   useEffect(() => {
-    initializeConnection()
-  }, [])
-
-  const initializeConnection = async () => {
-    setState(prev => ({ ...prev, isConnecting: true, error: null }))
-
-    try {
-      // Connect to Cosmos RPC
-      const connected = await cosmosClient.connect()
-      if (!connected) {
-        throw new Error('Failed to connect to Cosmos testnet')
+    const initializeConnection = async () => {
+      setState(prev => ({ ...prev, isConnecting: true, error: null }))
+      
+      try {
+        // Clear any existing state
+        setState(prev => ({ 
+          ...prev, 
+          client: null, 
+          signingClient: null, 
+          address: null,
+          isConnected: false 
+        }))
+        
+        const config = getCurrentConfig()
+        
+        // Connect to read-only client
+        const client = await StargateClient.connect(config.rpcEndpoint)
+        setState(prev => ({ ...prev, client }))
+        
+        // Check for existing wallet
+        if (storedMnemonic) {
+          const wallet = await DirectSecp256k1HdWallet.fromMnemonic(storedMnemonic, {
+            prefix: config.addressPrefix
+          })
+          
+          const [firstAccount] = await wallet.getAccounts()
+          const address = firstAccount.address
+          
+          const signingClient = await SigningStargateClient.connectWithSigner(
+            config.rpcEndpoint,
+            wallet,
+            { gasPrice: GasPrice.fromString(`0.025${config.feeToken}`) }
+          )
+          
+          setState(prev => ({
+            ...prev,
+            wallet,
+            signingClient,
+            address,
+            isConnected: true
+          }))
+        }
+        
+      } catch (error) {
+        console.error('Failed to initialize Cosmos connection:', error)
+        setState(prev => ({ 
+          ...prev, 
+          error: error instanceof Error ? error.message : 'Connection failed' 
+        }))
+      } finally {
+        setState(prev => ({ ...prev, isConnecting: false }))
       }
-
-      // Try to restore wallet if mnemonic exists
-      if (storedMnemonic) {
-        await restoreWallet(storedMnemonic)
-      }
-
-      setState(prev => ({ 
-        ...prev, 
-        isConnected: true, 
-        isConnecting: false 
-      }))
-
-    } catch (error) {
-      console.error('Cosmos initialization failed:', error)
-      setState(prev => ({ 
-        ...prev, 
-        isConnected: false, 
-        isConnecting: false, 
-        error: error instanceof Error ? error.message : 'Connection failed' 
-      }))
     }
-  }
+    
+    initializeConnection()
+  }, [storedMnemonic])
 
   const createWallet = async (): Promise<boolean> => {
     setState(prev => ({ ...prev, isConnecting: true, error: null }))
 
     try {
-      const address = await cosmosClient.createWallet()
+      await cosmosClient.createWallet()
       const signingClient = await cosmosClient.connectWallet()
       
       if (!signingClient) {
@@ -106,7 +128,7 @@ export function useCosmos() {
     setState(prev => ({ ...prev, isConnecting: true, error: null }))
 
     try {
-      const address = await cosmosClient.createWallet(mnemonic)
+      await cosmosClient.createWallet(mnemonic)
       const signingClient = await cosmosClient.connectWallet()
       
       if (!signingClient) {

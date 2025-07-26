@@ -11,30 +11,22 @@ export function useZKAuth() {
   const [zkInstance] = useState(() => new ZKIdentity())
 
   useEffect(() => {
-    checkExistingSession()
-  }, [])
-
-  const checkExistingSession = () => {
-    setIsLoading(true)
-    
-    // Check for valid session
-    if (SessionManager.validateSession()) {
-      const sessionData = SessionManager.getSessionData()
-      if (sessionData) {
-        // Try to restore identity from storage
-        const storedIdentity = localStorage.getItem('zk_identity')
-        if (storedIdentity && zkInstance.importIdentity(storedIdentity)) {
-          const restoredIdentity = zkInstance.getIdentity()
-          if (restoredIdentity) {
-            setIdentity(restoredIdentity)
-            setIsAuthenticated(true)
-          }
+    const checkExistingSession = () => {
+      setIsLoading(true)
+      
+      // Check for valid session
+      if (SessionManager.validateSession()) {
+        const sessionData = SessionManager.getSessionData()
+        if (sessionData) {
+          setSession(sessionData)
         }
       }
+      
+      setIsLoading(false)
     }
     
-    setIsLoading(false)
-  }
+    checkExistingSession()
+  }, [])
 
   const generateIdentity = async (): Promise<CryptoIdentity> => {
     setIsLoading(true)

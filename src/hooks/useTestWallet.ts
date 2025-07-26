@@ -66,7 +66,7 @@ export const useTestWallet = () => {
     }
 
     initializeWallet()
-  }, [])
+  }, [setWalletState, walletState.balances.length])
 
   const connectWallet = async () => {
     setIsLoading(true)
