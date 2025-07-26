@@ -9,13 +9,11 @@ import { TEST_WALLET_ADDRESS } from '../blockchain/CosmosTestnet'
 import { 
   CheckCircle, 
   XCircle, 
-  Clock,
   Wallet,
   Shield,
   Lightning,
   TrendUp,
   Copy,
-  ArrowSquareOut,
   Coins
 } from '@phosphor-icons/react'
 import { toast } from 'sonner'

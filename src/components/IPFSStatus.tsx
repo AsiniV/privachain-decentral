@@ -11,7 +11,6 @@ import {
   MapPin, 
   Trash,
   Database,
-  Globe,
   Link
 } from '@phosphor-icons/react'
 import { ipfs, ipfsUtils } from '../lib/ipfs'

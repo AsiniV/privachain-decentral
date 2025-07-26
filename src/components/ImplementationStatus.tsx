@@ -6,13 +6,11 @@
 import { Card } from './ui/card'
 import { Badge } from './ui/badge'
 import { Progress } from './ui/progress'
-import { 
+import {
   CheckCircle,
   Hourglass,
   Circle,
   Brain,
-  VideoCamera,
-  MagnifyingGlass,
   Shield,
   Globe,
   Database,

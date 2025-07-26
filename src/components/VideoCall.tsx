@@ -17,7 +17,6 @@ import {
   SpeakerX,
   Record,
   Gear,
-  Users,
   ChatCircle,
   PictureInPicture,
   ArrowsOut,
@@ -72,7 +71,7 @@ export function VideoCall({ contact, onEndCall, isIncoming = false }: VideoCallP
   })
   
   const localVideoRef = useRef<HTMLVideoElement>(null)
-  const remoteVideoRef = useRef<HTMLVideoElement>(null)
+  const _remoteVideoRef = useRef<HTMLVideoElement>(null)
   const callStartTime = useRef<number>(Date.now())
   
   // Simulated participants for demo

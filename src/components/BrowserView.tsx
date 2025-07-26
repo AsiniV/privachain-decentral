@@ -245,7 +245,7 @@ export function BrowserView({ initialUrl }: BrowserViewProps = {}) {
       setTabs([defaultTab])
       setActiveTabId('1')
     }
-  }, [initialUrl, tabs.length, setTabs, setActiveTabId])
+  }, [initialUrl, tabs.length, setTabs, setActiveTabId, navigateToUrl])
 
   // Initialize services
   useEffect(() => {

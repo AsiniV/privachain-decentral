@@ -3,7 +3,6 @@ import { useKV } from '../hooks/useKV'
 import { Button } from './ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { Badge } from './ui/badge'
-import { Slider } from './ui/slider'
 import { Progress } from './ui/progress'
 import { 
   PhoneCall, 
@@ -61,7 +60,7 @@ export function VideoCallSimulator({ onBack }: VideoCallSimulatorProps) {
   const [premiumFeatures] = useKV('premium_access', null)
   
   const videoRef = useRef<HTMLVideoElement>(null)
-  const remoteVideoRef = useRef<HTMLVideoElement>(null)
+  const _remoteVideoRef = useRef<HTMLVideoElement>(null)
   
   const [callMetrics, setCallMetrics] = useState<CallMetrics>({
     bitrate: 1200,
