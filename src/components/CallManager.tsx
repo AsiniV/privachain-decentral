@@ -226,7 +226,7 @@ export function CallManager({ contacts, onCallStatusChange }: CallManagerProps) 
 }
 
 // Hook for components to use call functionality
-export function useCallManager(contacts: Contact[]) {
+export function useCallManager(_contacts: Contact[]) {
   const [callState, setCallState] = useKV<CallState>('call-state', {
     type: null,
     isIncoming: false,

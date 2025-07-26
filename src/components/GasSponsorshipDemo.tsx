@@ -4,7 +4,6 @@ import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { Separator } from './ui/separator'
 import { useTestWallet } from '../hooks/useTestWallet'
-import { gasFeeManager } from '../services/GasFeeManager'
 import { TEST_WALLET_ADDRESS } from '../blockchain/CosmosTestnet'
 import { 
   Play, 
@@ -15,7 +14,6 @@ import {
   Envelope,
   VideoCamera,
   MagnifyingGlass,
-  Globe,
   Coins
 } from '@phosphor-icons/react'
 import { toast } from 'sonner'
@@ -74,7 +72,7 @@ export function GasSponsorshipDemo() {
     
     try {
       const gasAmount = estimateGasFee(operation.operation + '_test')
-      const txHash = await payGasFee(gasAmount, `test_${operation.operation}`, `Testing ${operation.name}`)
+      const _txHash = await payGasFee(gasAmount, `test_${operation.operation}`, `Testing ${operation.name}`)
       
       // Simulate blockchain confirmation delay
       setTimeout(() => {

@@ -49,7 +49,7 @@ export function BlockchainStatus() {
     }, 3000)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [setBlockchainState])
 
   const handleConnect = () => {
     if (blockchainState.connected) {

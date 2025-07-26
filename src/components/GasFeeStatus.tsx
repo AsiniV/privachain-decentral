@@ -20,7 +20,6 @@ import {
   Wallet 
 } from '@phosphor-icons/react';
 import { gasFeeManager } from '../services/GasFeeManager';
-import { privToken } from '../blockchain/PRIVToken';
 import { useTestWallet } from '../hooks/useTestWallet';
 import { TEST_WALLET_ADDRESS } from '../blockchain/CosmosTestnet';
 import { toast } from 'sonner';
@@ -47,7 +46,7 @@ export function GasFeeStatus() {
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
-  const { wallet, canAffordGas, estimateGasFee } = useTestWallet();
+  const { wallet, canAffordGas: _canAffordGas, estimateGasFee: _estimateGasFee } = useTestWallet();
 
   useEffect(() => {
     loadPaymentStatus();
