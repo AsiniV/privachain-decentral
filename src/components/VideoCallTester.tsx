@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useKV } from '../hooks/useKV'
 import { useVideoCall } from './VideoCallProvider'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
@@ -6,27 +6,19 @@ import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { Progress } from './ui/progress'
 import { Slider } from './ui/slider'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { Warning, AlertDescription } from './ui/alert'
 import { 
   Play,
-  Stop,
   Lightning,
-  WifiHigh,
-  WifiMedium,
-  WifiLow,
   Warning,
   CheckCircle,
-  Clock,
   Gauge,
   VideoCamera,
   Globe,
   TrendUp,
   Activity,
-  Lightning,
   Target,
-  ArrowClockwise,
-  Warning
+  ArrowClockwise
 } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 
