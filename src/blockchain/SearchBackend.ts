@@ -769,9 +769,16 @@ export const searchBackend = new DecentralizedSearchBackend()
 /**
  * React hook for decentralized search
  */
+interface SearchStats {
+  totalIndexed: number
+  encryptedEntries: number
+  queryHistory: number
+  lastIndexed: number
+}
+
 export function useDecentralizedSearch() {
   const [searchHistory] = useState<ZKQuery[]>([])
-  const [indexStats, setIndexStats] = useState<any>(searchBackend.getSearchStats())
+  const [indexStats, setIndexStats] = useState<SearchStats>(searchBackend.getSearchStats())
 
   useEffect(() => {
     // Update stats periodically
@@ -797,7 +804,7 @@ export function useDecentralizedSearch() {
     return results
   }
 
-  const indexContent = async (content: any): Promise<string> => {
+  const indexContent = async (content: Record<string, unknown>): Promise<string> => {
     const id = await searchBackend.indexContent(content)
     
     // Update stats

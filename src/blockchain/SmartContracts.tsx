@@ -314,7 +314,7 @@ export function useZKRollup(): ZKRollup {
     return proof.startsWith('0x') && proof.length > 100
   }
 
-  const batchTransactions = async (txs: any[]): Promise<string> => {
+  const batchTransactions = async (txs: Transaction[]): Promise<string> => {
     const batchProof = generateZKProof(txs)
     return await submitProof(batchProof, txs.map(tx => tx.hash))
   }
@@ -332,7 +332,7 @@ function generateSessionId(): string {
   return 'session_' + Math.random().toString(36).substring(2, 9)
 }
 
-function generateZKProof(data: any[]): string {
+function generateZKProof(data: unknown[]): string {
   // Simulate ZK-proof generation
   const hash = data.map(d => JSON.stringify(d)).join('')
   return '0x' + hash.split('').map(c => c.charCodeAt(0).toString(16)).join('').slice(0, 128)
