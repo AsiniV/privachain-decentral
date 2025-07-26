@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useKV } from '../hooks/useKV'
 import { Card } from './ui/card'
 import { Badge } from './ui/badge'
 import { Button } from './ui/button'
 import { 
   Wallet,
-  CurrencyDollar,
   Lightning,
   ShieldCheck,
   ChartLine,

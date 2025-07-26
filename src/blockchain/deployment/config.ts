@@ -1,6 +1,4 @@
-import { CosmWasmClient, SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate'
-import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing'
-import { GasPrice } from '@cosmjs/stargate'
+// Removed unused imports: CosmWasmClient, SigningCosmWasmClient, DirectSecp256k1HdWallet, GasPrice
 
 export interface DeploymentConfig {
   rpcEndpoint: string

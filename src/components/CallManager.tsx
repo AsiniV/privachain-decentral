@@ -8,8 +8,7 @@ import { Avatar, AvatarFallback } from './ui/avatar'
 import { 
   VideoCamera, 
   PhoneCall,
-  PhoneX,
-  User
+  PhoneX
 } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 

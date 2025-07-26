@@ -224,7 +224,7 @@ mQENBF...${domainName}...example...key
       })
     },
 
-    getRewards: async (address: string): Promise<string> => {
+    getRewards: async (_address: string): Promise<string> => {
       // Simulate fetching pending rewards
       return (Math.random() * 100).toFixed(2)
     }

@@ -2,7 +2,7 @@ import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate'
 import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing'
 import { GasPrice } from '@cosmjs/stargate'
 import { DeploymentConfig, DeploymentState, ContractAddress, getConfig } from './config'
-import { CONTRACT_SCHEMAS, ContractType } from './contracts'
+import { ContractType } from './contracts'
 import { generateContractCode, saveDeploymentState, loadDeploymentState } from './utils'
 
 export class PrivaChainDeployer {
@@ -140,7 +140,7 @@ export class PrivaChainDeployer {
     return await this.deployContract('prvToken', initMsg, 'PRIV Token')
   }
 
-  async deployNFTContract(prvTokenAddress: string): Promise<ContractAddress> {
+  async deployNFTContract(_prvTokenAddress: string): Promise<ContractAddress> {
     const initMsg = {
       name: 'PrivaChain Identity NFT',
       symbol: 'PRIV-ID',

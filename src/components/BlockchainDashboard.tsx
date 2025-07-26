@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -19,13 +19,10 @@ import {
   Coins, 
   Shield, 
   Lightning, 
-  TrendUp, 
-  Users,
   Clock,
   Database,
   Network,
-  Lock,
-  Lightning
+  Lock
 } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 
@@ -49,7 +46,7 @@ export function BlockchainDashboard() {
     claimRewards
   } = usePrivToken()
   
-  const { mailContract, domainContract } = useSmartContracts()
+  const { mailContract: _mailContract, domainContract: _domainContract } = useSmartContracts()
   const zkRollup = useZKRollup()
   
   const [transferTo, setTransferTo] = useState('')
