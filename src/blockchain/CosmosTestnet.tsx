@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react'
 import { useKV } from '../hooks/useKV'
 import { toast } from 'sonner'
 
@@ -165,10 +165,10 @@ export function CosmosTestnetProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const validateTestnetConnection = async (): Promise<boolean> => {
+  const validateTestnetConnection = useCallback(async (): Promise<boolean> => {
     try {
       // Simulate testnet validation
-      const response = await fetch(`${testnetEndpoint}/status`, {
+      await fetch(`${testnetEndpoint}/status`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
@@ -182,7 +182,7 @@ export function CosmosTestnetProvider({ children }: { children: ReactNode }) {
       console.error('Testnet validation error:', error)
       return false
     }
-  }
+  }, [testnetEndpoint])
 
   const getTestnetStatus = async (): Promise<TestnetStatus> => {
     try {
@@ -237,7 +237,7 @@ export function CosmosTestnetProvider({ children }: { children: ReactNode }) {
         }
       })
     }
-  }, [])
+  }, [isTestnetConnected, setIsTestnetConnected, validateTestnetConnection])
 
   return (
     <TestnetContext.Provider value={{

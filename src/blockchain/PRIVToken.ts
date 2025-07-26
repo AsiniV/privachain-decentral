@@ -315,7 +315,6 @@ export class PRIVToken {
    * Parse token amount from string
    */
   parseAmount(amount: string): bigint {
-    const multiplier = BigInt(10 ** this.decimals);
     const num = parseFloat(amount);
     return BigInt(Math.floor(num * (10 ** this.decimals)));
   }

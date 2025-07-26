@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react'
 import { useKV } from '../hooks/useKV'
 import { toast } from 'sonner'
 
@@ -80,7 +80,7 @@ export function CosmosProvider({ children }: { children: ReactNode }) {
   const [privBalance, setPrivBalance] = useKV<string>('priv-balance', '1000.0')
 
   // Initialize state if it's incomplete
-  const initializeState = () => {
+  const initializeState = useCallback(() => {
     if (!state || !state.consensus) {
       setState({
         blockHeight: 1234567,
@@ -97,12 +97,12 @@ export function CosmosProvider({ children }: { children: ReactNode }) {
         totalSupply: '1000000000'
       })
     }
-  }
+  }, [state, setState])
 
   // Initialize on mount
   useEffect(() => {
     initializeState()
-  }, [])
+  }, [initializeState])
 
   // Simulate blockchain progression
   useEffect(() => {
@@ -233,7 +233,7 @@ function generateValidators(): Validator[] {
   const validators: Validator[] = []
   const validatorNames = ['Cosmos Hub', 'Tendermint', 'Osmosis', 'Juno', 'Secret Network', 'Akash']
   
-  for (let i = 0; i < 21; i++) {
+  for (let i = 0; i < Math.min(21, validatorNames.length); i++) {
     validators.push({
       address: generateCosmosAddress(),
       votingPower: Math.floor(Math.random() * 1000) + 100,
