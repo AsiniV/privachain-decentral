@@ -313,7 +313,7 @@ export class IPFSEmailService extends IPFSService {
     subject: string,
     body: string,
     attachments: File[] = [],
-    recipientPublicKey: string
+    _recipientPublicKey: string
   ): Promise<EncryptedContent> {
     try {
       // Create email structure

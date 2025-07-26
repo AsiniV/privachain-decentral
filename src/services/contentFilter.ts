@@ -292,7 +292,7 @@ class ContentFilteringService {
     }
   }
 
-  shouldBlockRequest(url: string, type: string = 'other'): boolean {
+  shouldBlockRequest(url: string, _type: string = 'other'): boolean {
     try {
       const urlObj = new URL(url)
       

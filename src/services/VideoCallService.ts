@@ -409,18 +409,18 @@ export class VideoCallService {
       turnServerFees: number
     }
   } {
-    const userCalls = this.callStatistics.filter(
-      call => this.currentSession?.initiator === domain || this.currentSession?.receiver === domain
-    )
+    // For now, return all call statistics
+    // TODO: Filter by domain when CallStatistics interface includes user information
+    const userCalls = this.callStatistics
 
     const totalCalls = userCalls.length
     const totalDuration = userCalls.reduce((sum, call) => sum + call.duration, 0)
     const averageDuration = totalCalls > 0 ? totalDuration / totalCalls : 0
 
     const totalCosts = userCalls.reduce((sum, call) => sum + call.costPaid, 0)
-    const thisMonth = userCalls
-      .filter(call => Date.now() - (this.currentSession?.startTime || 0) < 30 * 24 * 60 * 60 * 1000)
-      .reduce((sum, call) => sum + call.costPaid, 0)
+    // For this month calculation, assuming all recent calls are from this month
+    // TODO: Add timestamp field to CallStatistics for proper filtering
+    const thisMonth = userCalls.slice(-5).reduce((sum, call) => sum + call.costPaid, 0)
 
     return {
       totalCalls,
@@ -594,7 +594,7 @@ export class VideoCallService {
     return this.currentSession?.sessionId === sessionId ? this.currentSession : null
   }
 
-  private async getSignalingData(sessionId: string): Promise<any> {
+  private async getSignalingData(_sessionId: string): Promise<any> {
     // Mock implementation - would fetch from IPFS
     return { type: 'offer', sdp: 'mock_sdp_data' }
   }

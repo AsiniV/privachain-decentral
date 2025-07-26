@@ -211,7 +211,7 @@ class ProxyVPNService {
     }
   }
 
-  private async performHandshake(node: ProxyNode): Promise<void> {
+  private async performHandshake(_node: ProxyNode): Promise<void> {
     // Simulate secure handshake with encryption key exchange
     return new Promise((resolve, reject) => {
       setTimeout(() => {

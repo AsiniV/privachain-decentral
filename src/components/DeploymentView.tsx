@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Badge } from './ui/badge'
 import { Button } from './ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
-import { Progress } from './ui/progress'
 import { 
   Rocket, 
   Shield, 
@@ -20,9 +19,7 @@ import {
   Wallet,
   Desktop,
   Database,
-  Activity,
-  Users,
-  Clock
+  Activity
 } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { cosmosService } from '../services/cosmos'
@@ -31,7 +28,7 @@ import { ipfsService } from '../services/ipfs'
 
 export function DeploymentView() {
   const [activeTab, setActiveTab] = useKV('deployment-tab', 'overview')
-  const [deploymentStatus, setDeploymentStatus] = React.useState<'idle' | 'deploying' | 'deployed' | 'error'>('idle')
+  // const [deploymentStatus, setDeploymentStatus] = React.useState<'idle' | 'deploying' | 'deployed' | 'error'>('idle')
   const [cosmosConnected, setCosmosConnected] = useState(false)
   const [zkIdentityLoaded, setZkIdentityLoaded] = useState(false)
   const [ipfsInitialized, setIpfsInitialized] = useState(false)
@@ -94,7 +91,7 @@ export function DeploymentView() {
       toast.info('Testing Cosmos wallet connection...')
       
       // Test wallet connection with the provided test address
-      const testWallet = 'cosmos1hcgd3hg6kpvsfuklsgkzjratda53vwsymrp24k'
+      // const testWallet = 'cosmos1hcgd3hg6kpvsfuklsgkzjratda53vwsymrp24k'
       
       // Get balance and network info
       const stats = await cosmosService.getNetworkStats()
