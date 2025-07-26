@@ -789,29 +789,21 @@ export function useDecentralizedSearch() {
     query: string,
     filters: any = {}
   ): Promise<SearchIndexEntry[]> => {
-    try {
-      const results = await searchBackend.zkSearch(query, filters)
-      
-      // Update stats
-      setIndexStats(searchBackend.getSearchStats())
-      
-      return results
-    } catch (error) {
-      throw error
-    }
+    const results = await searchBackend.zkSearch(query, filters)
+    
+    // Update stats
+    setIndexStats(searchBackend.getSearchStats())
+    
+    return results
   }
 
   const indexContent = async (content: any): Promise<string> => {
-    try {
-      const id = await searchBackend.indexContent(content)
-      
-      // Update stats
-      setIndexStats(searchBackend.getSearchStats())
-      
-      return id
-    } catch (error) {
-      throw error
-    }
+    const id = await searchBackend.indexContent(content)
+    
+    // Update stats
+    setIndexStats(searchBackend.getSearchStats())
+    
+    return id
   }
 
   const searchIPFS = async (query: string): Promise<SearchIndexEntry[]> => {
