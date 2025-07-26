@@ -19,11 +19,11 @@ const COMPOSEDB_CONFIG = {
   network: 'testnet-clay'
 }
 
-// ZK proof configuration
-const ZK_CONFIG = {
-  provingKey: 'mock-proving-key',
-  verifyingKey: 'mock-verifying-key'
-}
+// ZK proof configuration (for future use)
+// const ZK_CONFIG = {
+//   provingKey: 'mock-proving-key',
+//   verifyingKey: 'mock-verifying-key'
+// }
 
 export interface SearchIndexEntry {
   id: string
@@ -347,7 +347,7 @@ export class DecentralizedSearchBackend {
   /**
    * MagnifyingGlass ComposeDB content database
    */
-  private async searchComposeDB(query: string, filters: any): Promise<SearchIndexEntry[]> {
+  private async searchComposeDB(query: string, _filters: any): Promise<SearchIndexEntry[]> {
     try {
       if (!this.composeDbInitialized) {
         return []
@@ -770,7 +770,7 @@ export const searchBackend = new DecentralizedSearchBackend()
  * React hook for decentralized search
  */
 export function useDecentralizedSearch() {
-  const [searchHistory, setSearchHistory] = useState<ZKQuery[]>([])
+  const [searchHistory] = useState<ZKQuery[]>([])
   const [indexStats, setIndexStats] = useState<any>(searchBackend.getSearchStats())
 
   useEffect(() => {
@@ -789,29 +789,21 @@ export function useDecentralizedSearch() {
     query: string,
     filters: any = {}
   ): Promise<SearchIndexEntry[]> => {
-    try {
-      const results = await searchBackend.zkSearch(query, filters)
-      
-      // Update stats
-      setIndexStats(searchBackend.getSearchStats())
-      
-      return results
-    } catch (error) {
-      throw error
-    }
+    const results = await searchBackend.zkSearch(query, filters)
+    
+    // Update stats
+    setIndexStats(searchBackend.getSearchStats())
+    
+    return results
   }
 
   const indexContent = async (content: any): Promise<string> => {
-    try {
-      const id = await searchBackend.indexContent(content)
-      
-      // Update stats
-      setIndexStats(searchBackend.getSearchStats())
-      
-      return id
-    } catch (error) {
-      throw error
-    }
+    const id = await searchBackend.indexContent(content)
+    
+    // Update stats
+    setIndexStats(searchBackend.getSearchStats())
+    
+    return id
   }
 
   const searchIPFS = async (query: string): Promise<SearchIndexEntry[]> => {

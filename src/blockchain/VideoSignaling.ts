@@ -516,34 +516,22 @@ export function useVideoSignaling() {
     callType: 'video' | 'audio', 
     sdpOffer: string
   ) => {
-    try {
-      const sessionId = await videoSignaling.startSession(receiver, callType, sdpOffer)
-      const activeSessions = videoSignaling.getActiveSessions('osmo1hcgd3hg6kpvsfuklsgkzjratda53vwsymrp24k')
-      setSessions(activeSessions)
-      return sessionId
-    } catch (error) {
-      throw error
-    }
+    const sessionId = await videoSignaling.startSession(receiver, callType, sdpOffer)
+    const activeSessions = videoSignaling.getActiveSessions('osmo1hcgd3hg6kpvsfuklsgkzjratda53vwsymrp24k')
+    setSessions(activeSessions)
+    return sessionId
   }
 
   const acceptSession = async (sessionId: string, sdpAnswer: string) => {
-    try {
-      await videoSignaling.acceptSession(sessionId, sdpAnswer)
-      const activeSessions = videoSignaling.getActiveSessions('osmo1hcgd3hg6kpvsfuklsgkzjratda53vwsymrp24k')
-      setSessions(activeSessions)
-    } catch (error) {
-      throw error
-    }
+    await videoSignaling.acceptSession(sessionId, sdpAnswer)
+    const activeSessions = videoSignaling.getActiveSessions('osmo1hcgd3hg6kpvsfuklsgkzjratda53vwsymrp24k')
+    setSessions(activeSessions)
   }
 
   const endSession = async (sessionId: string, dataTransferred: number) => {
-    try {
-      await videoSignaling.endSession(sessionId, dataTransferred)
-      const activeSessions = videoSignaling.getActiveSessions('osmo1hcgd3hg6kpvsfuklsgkzjratda53vwsymrp24k')
-      setSessions(activeSessions)
-    } catch (error) {
-      throw error
-    }
+    await videoSignaling.endSession(sessionId, dataTransferred)
+    const activeSessions = videoSignaling.getActiveSessions('osmo1hcgd3hg6kpvsfuklsgkzjratda53vwsymrp24k')
+    setSessions(activeSessions)
   }
 
   return {

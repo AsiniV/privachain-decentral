@@ -1,5 +1,5 @@
 import { useCosmos } from './CosmosBlockchain'
-import { videoQualityContract, VideoQualityContract } from './videoQualityContract'
+import { videoQualityContract } from './videoQualityContract'
 
 // Smart Contract Interfaces
 export interface MailContract {
@@ -81,10 +81,10 @@ export function useSmartContracts() {
     },
 
     getMail: async (domain: string): Promise<Email[]> => {
-      // Simulate fetching emails from blockchain
+      // Simulate fetching emails from blockchain for the specified domain
       const mockEmails: Email[] = [
         {
-          senderAlias: 'a3f8b1c4d9e.prv',
+          senderAlias: `user@${domain}`,
           contentCID: 'QmXyZ123abc456def789',
           zkProof: '0x1234567890abcdef',
           timestamp: Date.now() - 3600000,

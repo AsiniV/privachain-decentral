@@ -7,7 +7,6 @@ import { productionIPFS } from './services/ProductionIPFS'
 import { productionNetworking } from './services/ProductionNetworking'
 import { productionEmailService } from './services/ProductionEmailService'
 import { productionEconomicSystem } from './services/ProductionEconomicSystem'
-import { productionCrypto } from './crypto/ProductionCrypto'
 import { ProductionDeployer, TESTNET_CONFIG } from './blockchain/ProductionDeployer'
 
 export interface SystemStatus {
@@ -239,7 +238,8 @@ export class ProductionInitializer {
     // Get metrics from all systems
     const networkMetrics = productionNetworking.getNetworkMetrics()
     const emailMetrics = productionEmailService.getMetrics()
-    const economicMetrics = productionEconomicSystem.getEconomicMetrics()
+    // TODO: Use economic metrics when needed
+    // const economicMetrics = productionEconomicSystem.getEconomicMetrics()
     
     return {
       uptime,

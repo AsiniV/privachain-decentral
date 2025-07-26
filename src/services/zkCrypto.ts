@@ -220,7 +220,7 @@ export class ZKIdentityManager {
   }
 
   // Import identity from backup
-  async importIdentity(exportedData: string, password?: string): Promise<ZKIdentity> {
+  async importIdentity(exportedData: string, _password?: string): Promise<ZKIdentity> {
     try {
       // In production, decrypt with password first
       const data = JSON.parse(exportedData)
@@ -302,15 +302,15 @@ if (typeof window !== 'undefined') {
   if (storedIdentity) {
     try {
       zkIdentityManager.importIdentity(storedIdentity)
-    } catch (error) {
+    } catch {
       console.warn('Failed to load stored identity, generating new one')
-      zkIdentityManager.generateIdentity().then(identity => {
+      zkIdentityManager.generateIdentity().then(() => {
         localStorage.setItem('privachain_identity', zkIdentityManager.exportIdentity() || '')
       })
     }
   } else {
     // Generate new identity
-    zkIdentityManager.generateIdentity().then(identity => {
+    zkIdentityManager.generateIdentity().then(() => {
       localStorage.setItem('privachain_identity', zkIdentityManager.exportIdentity() || '')
     })
   }

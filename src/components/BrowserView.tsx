@@ -25,19 +25,13 @@ import {
   Lock,
   LockOpen,
   Globe,
-  Download,
   BookmarkSimple,
-  DotsThree,
   Plus,
   X,
   Eye,
   EyeSlash,
   ShieldCheck,
-  Warning,
-  Lightning,
-  CloudArrowDown,
   Gear,
-  FingerprintSimple,
   WifiHigh,
   ChatCircle,
   Envelope,
@@ -94,8 +88,8 @@ interface BrowserViewProps {
 export function BrowserView({ initialUrl }: BrowserViewProps = {}) {
   const [tabs, setTabs] = useKV<BrowserTab[]>('browser-tabs', [])
   const [activeTabId, setActiveTabId] = useKV<string>('active-tab', '')
-  const [bookmarks, setBookmarks] = useKV<Bookmark[]>('browser-bookmarks', [])
-  const [history, setHistory] = useKV<string[]>('browser-history', [])
+  // const [bookmarks, setBookmarks] = useKV<Bookmark[]>('browser-bookmarks', [])
+  // const [history, setHistory] = useKV<string[]>('browser-history', [])
   const [proxyEnabled, setProxyEnabled] = useKV('proxy-enabled', true)
   const [vpnEnabled, setVpnEnabled] = useKV('vpn-enabled', true)
   const [adBlockEnabled, setAdBlockEnabled] = useKV('adblock-enabled', true)
@@ -107,13 +101,13 @@ export function BrowserView({ initialUrl }: BrowserViewProps = {}) {
   const [urlInput, setUrlInput] = useState('')
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [showSettings, setShowSettings] = useState(false)
-  const [showBookmarks, setShowBookmarks] = useState(false)
+  // const [showBookmarks, setShowBookmarks] = useState(false)
   const [showSearchResults, setShowSearchResults] = useState(false)
   const [showExtensions, setShowExtensions] = useState(false)
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   
-  const iframeRef = useRef<HTMLIFrameElement>(null)
+  // const iframeRef = useRef<HTMLIFrameElement>(null)
 
   // Mock proxy nodes for demonstration
   const [proxyNodes] = useState<ProxyNode[]>([
