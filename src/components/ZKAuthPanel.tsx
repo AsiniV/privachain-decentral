@@ -39,7 +39,7 @@ export function ZKAuthPanel() {
   const [importIdentity, setImportIdentity] = useState('')
   const [testDomain, setTestDomain] = useState('journalist.prv')
   const [registrationStatus, setRegistrationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
-  const [powStatus, setPowStatus] = useState<'idle' | 'loading' | 'success'>('idle')
+  const [powStatus, _setPowStatus] = useState<'idle' | 'loading' | 'success'>('idle')
   const [blockchainRegistrationTx, setBlockchainRegistrationTx] = useState<string | null>(null)
 
   const handleGenerateIdentity = async () => {

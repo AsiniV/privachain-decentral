@@ -22,7 +22,6 @@ import {
   CheckCircle
 } from '@phosphor-icons/react'
 import { ipfsService } from '../services/ipfs'
-import { gasFeeManager } from '../services/GasFeeManager'
 import { videoCallService } from '../services/VideoCallService'
 import { emailService } from '../services/EmailService'
 import { toast } from 'sonner'

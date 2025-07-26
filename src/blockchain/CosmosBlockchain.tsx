@@ -31,7 +31,7 @@ interface Transaction {
   gasPrice: number
   timestamp: number
   blockHeight: number
-  data?: any
+  data?: Record<string, unknown>
 }
 
 interface ConsensusState {

@@ -23,7 +23,7 @@ export function IntegrationTestPanel() {
   const [searchQuery, setSearchQuery] = useState('blockchain')
 
   const { startSession, sessions, turnRelays } = useVideoSignaling()
-  const { zkSearch, indexContent, searchHistory, indexStats } = useDecentralizedSearch()
+  const { zkSearch, indexContent, searchHistory: _searchHistory, indexStats } = useDecentralizedSearch()
 
   const runVideoCallTest = async () => {
     try {

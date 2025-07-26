@@ -50,7 +50,7 @@ export function GasFeeStatus() {
 
   useEffect(() => {
     loadPaymentStatus();
-  }, [userAddress]);
+  }, [userAddress, loadPaymentStatus]);
 
   const loadPaymentStatus = () => {
     try {

@@ -13,7 +13,7 @@ import { toast } from 'sonner'
 export function TestWalletPanel() {
   const { wallet, isLoading, connectWallet, disconnectWallet, refreshBalances, getGasBudgetRemaining, config } = useTestWallet()
   const { isTestnetConnected, connectToTestnet, config: testnetConfig } = useCosmosTestnet()
-  const [showTransactions, setShowTransactions] = useState(false)
+  const [_showTransactions, _setShowTransactions] = useState(false)
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)

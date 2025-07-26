@@ -18,10 +18,23 @@ import {
 } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 
+interface GasStats {
+  totalTransactions: number
+  testWalletSponsored: number
+  foundationSponsored: number
+  premiumPayments: number
+  directPayments: number
+  testWalletAddress: string
+  testWalletBudgetRemaining: string
+  foundationBudgetRemaining: string
+  activePremiumUsers: number
+  averageGasCost: number
+}
+
 export function TestWalletIntegrationStatus() {
   const { wallet, config } = useTestWallet()
   const { isTestnetConnected, config: testnetConfig } = useCosmosTestnet()
-  const [gasStats, setGasStats] = useState<any>(null)
+  const [gasStats, setGasStats] = useState<GasStats | null>(null)
 
   useEffect(() => {
     const stats = gasFeeManager.getGasStats()
