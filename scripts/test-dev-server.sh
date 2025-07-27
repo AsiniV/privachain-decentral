@@ -68,10 +68,27 @@ if ! start_dev_server 1; then
     echo "   Reinstalling dependencies (this may take a few minutes)..."
     
     # Set a timeout for npm install to prevent hanging
-    timeout 300 npm install || {
-        echo "❌ npm install timed out after 5 minutes"
-        exit 1
-    }
+    # Use cross-platform timeout solution
+    if command -v timeout >/dev/null 2>&1; then
+        # Linux/GNU timeout
+        timeout 300 npm install || {
+            echo "❌ npm install timed out after 5 minutes"
+            exit 1
+        }
+    elif command -v gtimeout >/dev/null 2>&1; then
+        # macOS with GNU coreutils
+        gtimeout 300 npm install || {
+            echo "❌ npm install timed out after 5 minutes"
+            exit 1
+        }
+    else
+        # Fallback: run npm install without timeout on systems that don't have it
+        echo "⚠️  timeout command not available, running npm install without timeout"
+        npm install || {
+            echo "❌ npm install failed"
+            exit 1
+        }
+    fi
     
     echo "✅ Dependencies reinstalled. Retrying dev server..."
     
