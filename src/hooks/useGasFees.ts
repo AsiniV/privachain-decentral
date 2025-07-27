@@ -1,10 +1,12 @@
 /**
  * Hook for handling gas fees in PrivaChain operations
+ * Integrated with plan-based system and ATOM-only payments
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useKV } from './useKV';
 import { gasFeeManager } from '../services/GasFeeManager';
+import { planManager } from '../services/PlanManager';
 import { toast } from 'sonner';
 
 export interface GasTransaction {
@@ -12,69 +14,94 @@ export interface GasTransaction {
   userAddress: string;
   operation: 'message' | 'email' | 'video' | 'search' | 'domain';
   gasCost: bigint;
-  paymentMethod: 'foundation' | 'premium' | 'direct';
+  paymentMethod: 'developer_sponsored';
+  planType: 'starter' | 'premium';
   timestamp: number;
   success: boolean;
   errorReason?: string;
 }
 
 export function useGasFees() {
-  const [userAddress] = useKV('user-address', '0x1234567890123456789012345678901234567890');
+  const [userAddress] = useKV('user-address', 'cosmos1hcgd3hg6kpvsfuklsgkzjratda53vwsymrp24k');
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastTransaction, setLastTransaction] = useState<GasTransaction | null>(null);
+  const [planStatus, setPlanStatus] = useState<any>(null);
+
+  // Initialize plan on first load
+  useEffect(() => {
+    const initializePlan = async () => {
+      try {
+        await planManager.initializePlan();
+        const status = await planManager.getPlanStatus();
+        setPlanStatus(status);
+      } catch (error) {
+        console.error('Error initializing plan:', error);
+      }
+    };
+
+    initializePlan();
+  }, []);
+
+  // Listen for premium activation events
+  useEffect(() => {
+    const handlePremiumActivated = async () => {
+      const status = await planManager.getPlanStatus();
+      setPlanStatus(status);
+      toast.success('🎉 Premium plan activated! You now have unlimited access to all features.');
+    };
+
+    window.addEventListener('premium-activated', handlePremiumActivated);
+    return () => window.removeEventListener('premium-activated', handlePremiumActivated);
+  }, []);
 
   /**
    * Process gas fee for an operation
    */
   const processGasFee = useCallback(async (
-    operation: 'message' | 'email' | 'video' | 'search' | 'domain',
-    preferredPayment: 'auto' | 'foundation' | 'premium' | 'direct' = 'auto'
+    operation: 'message' | 'email' | 'video' | 'search' | 'domain'
   ): Promise<boolean> => {
     setIsProcessing(true);
     
     try {
-      const transaction = await gasFeeManager.processGasFee(
-        userAddress, 
-        operation, 
-        preferredPayment
-      );
-      
+      const transaction = await gasFeeManager.processGasFee(userAddress, operation);
       setLastTransaction(transaction);
       
       if (transaction.success) {
-        // Show success message based on payment method
-        const paymentMessages = {
-          foundation: `${operation} sent using free quota`,
-          premium: `${operation} sent using Premium subscription`,
-          direct: `${operation} sent - paid with PRIV tokens`
-        };
+        // Show success message
+        const planName = transaction.planType === 'premium' ? 'Premium' : 'Starter';
+        toast.success(`${operation} completed using ${planName} plan (Developer sponsored)`);
         
-        toast.success(paymentMessages[transaction.paymentMethod]);
+        // Update plan status to reflect new usage
+        const status = await planManager.getPlanStatus();
+        setPlanStatus(status);
+        
         return true;
       } else {
         // Handle different error scenarios
-        if (transaction.errorReason?.includes('quota exceeded')) {
-          toast.error('Daily free quota exceeded. Consider upgrading to Premium.', {
-            action: {
-              label: 'Upgrade',
-              onClick: () => {
-                // Trigger premium upgrade dialog
-                window.dispatchEvent(new CustomEvent('show-premium-upgrade'));
+        if (transaction.errorReason?.includes('not allowed by current plan')) {
+          if (operation === 'video' && planStatus?.planType === 'starter') {
+            toast.error('Video calls require Premium plan. Upgrade to unlock unlimited video calling.', {
+              action: {
+                label: 'Upgrade',
+                onClick: () => {
+                  window.dispatchEvent(new CustomEvent('show-premium-upgrade'));
+                }
               }
-            }
-          });
-        } else if (transaction.errorReason?.includes('Insufficient balance')) {
-          toast.error('Insufficient PRIV balance. Add tokens to continue.', {
-            action: {
-              label: 'Add Tokens',
-              onClick: () => {
-                // Trigger add tokens dialog  
-                window.dispatchEvent(new CustomEvent('show-add-tokens'));
+            });
+          } else if (transaction.errorReason?.includes('quota exceeded')) {
+            toast.error(`Daily ${operation} quota reached. Upgrade to Premium for unlimited access.`, {
+              action: {
+                label: 'Upgrade',
+                onClick: () => {
+                  window.dispatchEvent(new CustomEvent('show-premium-upgrade'));
+                }
               }
-            }
-          });
+            });
+          } else {
+            toast.error(`${operation} not allowed: ${transaction.errorReason}`);
+          }
         } else {
-          toast.error(`Failed to send ${operation}: ${transaction.errorReason}`);
+          toast.error(`Failed to process ${operation}: ${transaction.errorReason}`);
         }
         return false;
       }
@@ -85,72 +112,48 @@ export function useGasFees() {
     } finally {
       setIsProcessing(false);
     }
-  }, [userAddress]);
+  }, [userAddress, planStatus]);
 
   /**
    * Check if user can perform operation
    */
-  const canPerformOperation = useCallback((operation: 'message' | 'email' | 'video' | 'search' | 'domain'): {
+  const canPerformOperation = useCallback(async (operation: 'message' | 'email' | 'video' | 'search' | 'domain'): Promise<{
     canUse: boolean;
-    method: 'foundation' | 'premium' | 'direct' | 'none';
     reason?: string;
-  } => {
+    remainingQuota?: number;
+    planType?: string;
+  }> => {
     try {
-      const paymentStatus = gasFeeManager.getPaymentStatus(userAddress);
+      const permission = await planManager.canPerformOperation(operation);
+      const currentPlan = await planManager.getPlanStatus();
       
-      // Check free quota first
-      const quotaMap = {
-        message: paymentStatus.freeQuotaRemaining.messages,
-        email: paymentStatus.freeQuotaRemaining.emails,
-        video: paymentStatus.freeQuotaRemaining.videoMinutes,
-        search: paymentStatus.freeQuotaRemaining.searches,
-        domain: 0 // Domains not included in free tier
-      };
-      
-      if (quotaMap[operation] > 0) {
-        return { canUse: true, method: 'foundation' };
-      }
-      
-      // Check premium subscription
-      if (paymentStatus.premiumStatus?.active) {
-        return { canUse: true, method: 'premium' };
-      }
-      
-      // Check direct balance
-      const directBalance = parseFloat(paymentStatus.directBalance);
-      const requiredAmounts = {
-        message: 0.001,
-        email: 0.01,
-        video: 0.1,
-        search: 0.0005,
-        domain: 50
-      };
-      
-      if (directBalance >= requiredAmounts[operation]) {
-        return { canUse: true, method: 'direct' };
-      }
-      
-      return { 
-        canUse: false, 
-        method: 'none', 
-        reason: 'Insufficient funds and no available quota' 
+      return {
+        canUse: permission.allowed,
+        reason: permission.reason,
+        remainingQuota: permission.remainingQuota,
+        planType: currentPlan?.planType || 'starter'
       };
     } catch (error) {
       console.error('Error checking operation capability:', error);
       return { 
         canUse: false, 
-        method: 'none', 
-        reason: 'Error checking payment status' 
+        reason: 'Error checking plan status' 
       };
     }
-  }, [userAddress]);
+  }, []);
 
   /**
-   * Get user's current payment status
+   * Get user's current payment status and plan information
    */
-  const getPaymentStatus = useCallback(() => {
+  const getPaymentStatus = useCallback(async () => {
     try {
-      return gasFeeManager.getPaymentStatus(userAddress);
+      const status = await gasFeeManager.getPaymentStatus(userAddress);
+      const planInfo = await planManager.getPlanStatus();
+      
+      return {
+        ...status,
+        planInfo
+      };
     } catch (error) {
       console.error('Error getting payment status:', error);
       return null;
@@ -158,45 +161,82 @@ export function useGasFees() {
   }, [userAddress]);
 
   /**
-   * Get gas cost for operation
+   * Get gas cost for operation (always free for users)
    */
   const getGasCost = useCallback((operation: 'message' | 'email' | 'video' | 'search' | 'domain'): string => {
-    const costs = {
-      message: '0.001',
-      email: '0.01', 
-      video: '0.1',
-      search: '0.0005',
-      domain: '50'
-    };
-    return costs[operation];
+    return 'FREE'; // All operations are free for users
   }, []);
 
   /**
-   * Subscribe to premium
+   * Trigger premium upgrade flow
    */
-  const subscribeToPremium = useCallback(async (duration: number = 30): Promise<boolean> => {
-    setIsProcessing(true);
-    try {
-      await gasFeeManager.subscribeToPremium(userAddress, duration, true);
-      toast.success('Successfully upgraded to Premium!');
-      return true;
-    } catch (error) {
-      console.error('Premium subscription error:', error);
-      toast.error('Failed to upgrade to Premium');
-      return false;
-    } finally {
-      setIsProcessing(false);
+  const upgradeToPremium = useCallback(async (): Promise<void> => {
+    // Dispatch event to show upgrade dialog
+    window.dispatchEvent(new CustomEvent('show-premium-upgrade'));
+  }, []);
+
+  /**
+   * Get plan upgrade recommendation
+   */
+  const getUpgradeRecommendation = useCallback((): {
+    shouldUpgrade: boolean;
+    reason: string;
+    benefits: string[];
+  } => {
+    if (!planStatus) {
+      return {
+        shouldUpgrade: false,
+        reason: 'Plan status not loaded',
+        benefits: []
+      };
     }
-  }, [userAddress]);
+
+    if (planStatus.planType === 'premium') {
+      return {
+        shouldUpgrade: false,
+        reason: 'Already have Premium plan',
+        benefits: []
+      };
+    }
+
+    // Check usage patterns
+    const totalUsage = (
+      (planStatus.quotas.messages.used / Math.max(planStatus.quotas.messages.limit, 1)) +
+      (planStatus.quotas.emails.used / Math.max(planStatus.quotas.emails.limit, 1)) +
+      (planStatus.quotas.searches.used / Math.max(planStatus.quotas.searches.limit, 1))
+    ) / 3;
+
+    if (totalUsage > 0.7) {
+      return {
+        shouldUpgrade: true,
+        reason: 'You\'re using most of your daily quotas',
+        benefits: [
+          'Unlimited messaging and emails',
+          'Unlimited video calls',
+          'Unlimited searches',
+          '1TB storage vs 500MB',
+          '5 custom .prv domains'
+        ]
+      };
+    }
+
+    return {
+      shouldUpgrade: false,
+      reason: 'Current plan meets your usage',
+      benefits: []
+    };
+  }, [planStatus]);
 
   return {
     processGasFee,
     canPerformOperation,
     getPaymentStatus,
     getGasCost,
-    subscribeToPremium,
+    upgradeToPremium,
+    getUpgradeRecommendation,
     isProcessing,
     lastTransaction,
-    userAddress
+    userAddress,
+    planStatus
   };
 }

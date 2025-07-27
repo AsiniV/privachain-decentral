@@ -1,8 +1,11 @@
 /**
- * Simplified Gas Fee Management System for PrivaChain
+ * ATOM-Only Gas Fee Management System for PrivaChain
  * All gas fees are paid by the developer's wallet using ATOM
- * Users can use the platform immediately according to tariffs without crypto knowledge
+ * Users operate within plan-based quotas without crypto knowledge
+ * PRIV tokens completely removed from the system
  */
+
+import { planManager } from './PlanManager';
 
 export interface UserQuota {
   messagesUsed: number;
@@ -30,27 +33,32 @@ export interface GasTransaction {
   errorReason?: string;
 }
 
+export interface GasTransaction {
+  id: string;
+  userAddress: string;
+  operation: 'message' | 'email' | 'video' | 'search' | 'domain';
+  gasCost: bigint;
+  paymentMethod: 'developer_sponsored';
+  sponsorWallet: string;
+  planType: 'starter' | 'premium';
+  timestamp: number;
+  success: boolean;
+  errorReason?: string;
+}
+
 export class GasFeeManager {
-  private userQuotas: Map<string, UserQuota> = new Map();
   private gasTransactions: GasTransaction[] = [];
   private developerWallet = 'cosmos1developer5wallet7address9for0gas1payments23'; // Developer's ATOM wallet
   private lastBudgetReset = Date.now();
 
   // Gas costs for different operations (in ATOM micro units - uatom)
+  // All costs are sponsored by developer wallet
   private readonly gasCosts = {
     message: BigInt('5000'),        // 0.005 ATOM
     email: BigInt('10000'),         // 0.01 ATOM  
     video: BigInt('25000'),         // 0.025 ATOM per session
     search: BigInt('2000'),         // 0.002 ATOM
     domain: BigInt('100000'),       // 0.1 ATOM for .prv domain
-  };
-
-  // Generous daily limits for free usage
-  private readonly freeLimits = {
-    messages: 200,    // Generous limit for messaging
-    emails: 50,       // Sufficient for daily email needs
-    videoMinutes: 120, // 2 hours of video calling per day
-    searches: 500,    // Plenty of searches per day
   };
 
   constructor() {
@@ -69,49 +77,15 @@ export class GasFeeManager {
   }
 
   /**
-   * Get user's current quota status
+   * Check if user can perform operation based on their plan
    */
-  getUserQuota(userAddress: string): UserQuota {
-    const existing = this.userQuotas.get(userAddress);
-    const now = Date.now();
-    const dayInMs = 24 * 60 * 60 * 1000;
-
-    // Reset quota if it's a new day
-    if (!existing || now - existing.lastResetTime > dayInMs) {
-      const quota: UserQuota = {
-        messagesUsed: 0,
-        emailsUsed: 0,
-        videoMinutesUsed: 0,
-        searchesUsed: 0,
-        lastResetTime: now,
-        dailyLimits: { ...this.freeLimits }
-      };
-      this.userQuotas.set(userAddress, quota);
-      return quota;
-    }
-
-    return existing;
-  }
-
-  /**
-   * Check if user can perform operation with their quota
-   */
-  canUseQuota(userAddress: string, operation: keyof typeof this.gasCosts): boolean {
-    const quota = this.getUserQuota(userAddress);
-    
-    switch (operation) {
-      case 'message':
-        return quota.messagesUsed < quota.dailyLimits.messages;
-      case 'email':
-        return quota.emailsUsed < quota.dailyLimits.emails;
-      case 'video':
-        return quota.videoMinutesUsed < quota.dailyLimits.videoMinutes;
-      case 'search':
-        return quota.searchesUsed < quota.dailyLimits.searches;
-      case 'domain':
-        return true; // Domain registration allowed for all users
-      default:
-        return false;
+  async canUseQuota(userAddress: string, operation: keyof typeof this.gasCosts): Promise<boolean> {
+    try {
+      const permission = await planManager.canPerformOperation(operation);
+      return permission.allowed;
+    } catch (error) {
+      console.error('Error checking quota:', error);
+      return false;
     }
   }
 
@@ -126,8 +100,8 @@ export class GasFeeManager {
     const transactionId = this.generateTransactionId();
 
     try {
-      // Check if user has quota remaining
-      if (!this.canUseQuota(userAddress, operation)) {
+      // Check if user has quota remaining based on their plan
+      if (!(await this.canUseQuota(userAddress, operation))) {
         const transaction: GasTransaction = {
           id: transactionId,
           userAddress,
@@ -135,14 +109,19 @@ export class GasFeeManager {
           gasCost,
           paymentMethod: 'developer_sponsored',
           sponsorWallet: this.developerWallet,
+          planType: 'starter', // Will be updated below
           timestamp: Date.now(),
           success: false,
-          errorReason: 'Daily quota exceeded'
+          errorReason: 'Operation not allowed by current plan or quota exceeded'
         };
         
         this.gasTransactions.push(transaction);
         return transaction;
       }
+
+      // Get current plan type
+      const planStatus = await planManager.getPlanStatus();
+      const planType = planStatus?.planType || 'starter';
 
       // All gas is sponsored by developer wallet
       const success = await this.processDeveloperSponsoredPayment(userAddress, operation, gasCost);
@@ -154,6 +133,7 @@ export class GasFeeManager {
         gasCost,
         paymentMethod: 'developer_sponsored',
         sponsorWallet: this.developerWallet,
+        planType,
         timestamp: Date.now(),
         success,
         errorReason: success ? undefined : 'Developer wallet payment failed'
@@ -170,6 +150,7 @@ export class GasFeeManager {
         gasCost,
         paymentMethod: 'developer_sponsored',
         sponsorWallet: this.developerWallet,
+        planType: 'starter',
         timestamp: Date.now(),
         success: false,
         errorReason: error instanceof Error ? error.message : 'Unknown error'
@@ -181,7 +162,7 @@ export class GasFeeManager {
   }
 
   /**
-   * Process developer wallet sponsored payment
+   * Process developer wallet sponsored payment and record usage
    */
   private async processDeveloperSponsoredPayment(
     userAddress: string,
@@ -192,67 +173,88 @@ export class GasFeeManager {
     // Log developer wallet transaction for monitoring
     console.log(`Developer wallet sponsored ${operation} for ${userAddress}: ${gasCost} uatom`);
 
-    // Update user quota
-    const quota = this.getUserQuota(userAddress);
-    switch (operation) {
-      case 'message':
-        quota.messagesUsed++;
-        break;
-      case 'email':
-        quota.emailsUsed++;
-        break;
-      case 'video':
-        quota.videoMinutesUsed += 10; // Assuming 10-minute session
-        break;
-      case 'search':
-        quota.searchesUsed++;
-        break;
-      case 'domain':
-        // Domain registration doesn't count against quotas
-        break;
+    // Record usage in plan manager
+    try {
+      await planManager.recordUsage(operation, operation === 'video' ? 10 : 1);
+    } catch (error) {
+      console.error('Error recording usage:', error);
+      return false;
     }
-    this.userQuotas.set(userAddress, quota);
 
     return true;
   }
 
   /**
-   * Get user's payment status and recommendations
+   * Get user's payment status and plan information
    */
-  getPaymentStatus(userAddress: string) {
-    const quota = this.getUserQuota(userAddress);
+  async getPaymentStatus(userAddress: string) {
+    try {
+      const planStatus = await planManager.getPlanStatus();
+      
+      if (!planStatus) {
+        return {
+          error: 'No plan found. Please initialize the app.',
+          gasPaymentMethod: 'Developer Sponsored (ATOM)',
+          userCostPerOperation: 'N/A',
+          recommendedAction: 'Please restart the application'
+        };
+      }
 
-    return {
-      quotaRemaining: {
-        messages: quota.dailyLimits.messages - quota.messagesUsed,
-        emails: quota.dailyLimits.emails - quota.emailsUsed,
-        videoMinutes: quota.dailyLimits.videoMinutes - quota.videoMinutesUsed,
-        searches: quota.dailyLimits.searches - quota.searchesUsed,
-      },
-      gasPaymentMethod: 'Developer Sponsored (ATOM)',
-      userCostPerOperation: 'Free',
-      recommendedAction: this.getRecommendedAction(userAddress)
-    };
+      return {
+        planType: planStatus.planType,
+        quotasRemaining: {
+          messages: planStatus.quotas.messages.limit === -1 ? 'unlimited' : 
+            Math.max(0, planStatus.quotas.messages.limit - planStatus.quotas.messages.used),
+          emails: planStatus.quotas.emails.limit === -1 ? 'unlimited' : 
+            Math.max(0, planStatus.quotas.emails.limit - planStatus.quotas.emails.used),
+          videoMinutes: planStatus.quotas.videoMinutes.limit === -1 ? 'unlimited' : 
+            Math.max(0, planStatus.quotas.videoMinutes.limit - planStatus.quotas.videoMinutes.used),
+          searches: planStatus.quotas.searches.limit === -1 ? 'unlimited' : 
+            Math.max(0, planStatus.quotas.searches.limit - planStatus.quotas.searches.used),
+          storage: `${(planStatus.quotas.storage.limit - planStatus.quotas.storage.used).toFixed(0)} MB`,
+          prvDomains: Math.max(0, planStatus.quotas.prvDomains.limit - planStatus.quotas.prvDomains.used)
+        },
+        gasPaymentMethod: 'Developer Sponsored (ATOM)',
+        userCostPerOperation: 'FREE',
+        costPerMonth: planStatus.costPerMonth,
+        features: planStatus.features,
+        recommendedAction: this.getRecommendedAction(planStatus)
+      };
+    } catch (error) {
+      console.error('Error getting payment status:', error);
+      return {
+        error: 'Error retrieving plan status',
+        gasPaymentMethod: 'Developer Sponsored (ATOM)',
+        userCostPerOperation: 'FREE',
+        recommendedAction: 'Please try again'
+      };
+    }
   }
 
   /**
-   * Get recommended action for user
+   * Get recommended action for user based on plan and usage
    */
-  private getRecommendedAction(userAddress: string): string {
-    const quota = this.getUserQuota(userAddress);
+  private getRecommendedAction(planStatus: any): string {
+    if (planStatus.planType === 'premium') {
+      return 'You have unlimited access to all features. Enjoy premium benefits!';
+    }
 
     // Check if user is approaching limits
     const quotaUsage = Math.max(
-      quota.messagesUsed / quota.dailyLimits.messages,
-      quota.emailsUsed / quota.dailyLimits.emails,
-      quota.videoMinutesUsed / quota.dailyLimits.videoMinutes
+      planStatus.quotas.messages.used / Math.max(planStatus.quotas.messages.limit, 1),
+      planStatus.quotas.emails.used / Math.max(planStatus.quotas.emails.limit, 1),
+      planStatus.quotas.searches.used / Math.max(planStatus.quotas.searches.limit, 1)
     );
 
     if (quotaUsage > 0.8) {
-      return 'Approaching daily usage limits. Quotas reset in 24 hours.';
+      return 'Approaching daily limits. Consider upgrading to Premium for unlimited access.';
     }
 
-    return 'You have sufficient quota for continued usage. All gas fees sponsored.';
+    if (quotaUsage > 0.5) {
+      return 'You\'re using your quotas well. Premium offers unlimited usage and video calls.';
+    }
+
+    return 'You have sufficient quota remaining. All gas fees are developer sponsored.';
   }
 
   /**
@@ -262,6 +264,11 @@ export class GasFeeManager {
     const totalTransactions = this.gasTransactions.length;
     const successfulTransactions = this.gasTransactions.filter(tx => tx.success).length;
     const totalGasCost = this.gasTransactions.reduce((sum, tx) => sum + Number(tx.gasCost), 0);
+    
+    const planBreakdown = this.gasTransactions.reduce((acc, tx) => {
+      acc[tx.planType] = (acc[tx.planType] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
 
     return {
       totalTransactions,
@@ -269,9 +276,10 @@ export class GasFeeManager {
       failedTransactions: totalTransactions - successfulTransactions,
       developerWallet: this.developerWallet,
       totalGasSponsored: `${(totalGasCost / 1000000).toFixed(6)} ATOM`,
-      activeUsers: this.userQuotas.size,
+      planBreakdown,
       averageGasCost: totalTransactions > 0 ? totalGasCost / totalTransactions : 0,
-      paymentModel: 'Developer Sponsored Gas (No User Cost)'
+      paymentModel: 'Plan-Based Developer Sponsored Gas (100% Free for Users)',
+      economicModel: 'ATOM-only payments, PRIV tokens removed completely'
     };
   }
 
