@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Warning, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
-import { Wallet, Shield, Warning, Lightning, ArrowRight, Coins } from '@phosphor-icons/react';
+import { Wallet, Shield, WarningCircle, Lightning, ArrowRight, Coins } from '@phosphor-icons/react';
 import { useKV } from '../hooks/useKV';
 
 interface PaymentMethod {
@@ -268,14 +268,14 @@ export function WalletManager() {
 
       {/* Privacy Warning for ATOM */}
       {showPrivacyWarning && (
-        <Warning className="border-yellow-200 bg-yellow-50">
-          <Warning className="h-4 w-4 text-yellow-600" />
+        <Alert className="border-yellow-200 bg-yellow-50">
+          <WarningCircle className="h-4 w-4 text-yellow-600" />
           <AlertDescription className="text-yellow-800">
             <strong>Privacy Notice:</strong> Using ATOM for payments will create public transaction records 
             that can be linked to your wallet address. Your PrivaChain usage patterns may become visible. 
             For maximum privacy, consider using PRIV tokens instead.
           </AlertDescription>
-        </Warning>
+        </Alert>
       )}
 
       {/* Usage Status */}

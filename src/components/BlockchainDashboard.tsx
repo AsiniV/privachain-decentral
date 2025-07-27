@@ -14,7 +14,7 @@ import {
 } from '../blockchain'
 import { ServerManagementDashboard } from './ServerManagementDashboard'
 import { 
-  Activity, 
+  ChartLine, 
   Coins, 
   Shield, 
   Lightning, 
@@ -221,7 +221,7 @@ export function BlockchainDashboard() {
                   {blockchainState?.transactions?.slice(0, 5).map((tx) => (
                     <div key={tx.hash} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center gap-3">
-                        <Activity className="h-4 w-4 text-muted-foreground" />
+                        <ChartLine className="h-4 w-4 text-muted-foreground" />
                         <div>
                           <p className="font-mono text-sm">{tx.hash.slice(0, 16)}...</p>
                           <p className="text-xs text-muted-foreground">{tx.type}</p>

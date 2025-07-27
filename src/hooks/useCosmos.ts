@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useState, useEffect } from 'react'
 import { cosmosClient, CosmosAccount, COSMOS_CONFIG } from '@/lib/cosmos'
 import { toast } from 'sonner'
 
