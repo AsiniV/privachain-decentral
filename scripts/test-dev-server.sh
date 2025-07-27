@@ -2,6 +2,9 @@
 
 # PrivaChain Dev Server Test Script
 # Tests that the development server can start and respond to HTTP requests
+# 
+# This script includes automatic handling for the macOS ARM64 Rollup dependency issue
+# where @rollup/rollup-darwin-arm64 may not be properly installed due to npm bug #4828
 
 set -e
 
