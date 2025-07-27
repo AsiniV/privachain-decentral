@@ -17,7 +17,7 @@ const COSMOS_CONFIG = {
   gasPrice: GasPrice.fromString('0.025uosmo'),
   denom: 'uosmo',
   // VideoCamera signaling contract (would be deployed)
-  videoSignalingContract: 'osmo1videocontractaddresshere...'
+  videoSignalingContract: 'osmo1v9deo5s3y4k7z8w2q3r4t5u6v7w8x9y0z1a2b3c4d5e6f7g8h9'
 }
 
 export interface VideoSession {
