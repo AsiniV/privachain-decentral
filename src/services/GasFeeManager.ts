@@ -1,10 +1,8 @@
 /**
- * Gas Fee Management System for PrivaChain
- * Handles foundation subsidies, premium subscriptions, and test wallet sponsorship
+ * Simplified Gas Fee Management System for PrivaChain
+ * All gas fees are paid by the developer's wallet using ATOM
+ * Users can use the platform immediately according to tariffs without crypto knowledge
  */
-
-import { privToken } from '../blockchain/PRIVToken';
-import { TEST_WALLET_ADDRESS } from '../blockchain/CosmosTestnet';
 
 export interface UserQuota {
   messagesUsed: number;
@@ -25,59 +23,48 @@ export interface GasTransaction {
   userAddress: string;
   operation: 'message' | 'email' | 'video' | 'search' | 'domain';
   gasCost: bigint;
-  paymentMethod: 'test_wallet' | 'foundation' | 'premium' | 'direct';
-  sponsorWallet?: string;
+  paymentMethod: 'developer_sponsored';
+  sponsorWallet: string;
   timestamp: number;
   success: boolean;
   errorReason?: string;
 }
 
-export interface PremiumSubscription {
-  userAddress: string;
-  prepaidBalance: bigint;
-  expiryTime: number;
-  autoRefill: boolean;
-  monthlyLimit: bigint;
-}
-
 export class GasFeeManager {
   private userQuotas: Map<string, UserQuota> = new Map();
   private gasTransactions: GasTransaction[] = [];
-  private premiumSubscriptions: Map<string, PremiumSubscription> = new Map();
-  private foundationDailyBudget = BigInt('1000000000000000000000000'); // 1M PRIV daily
-  private foundationCurrentBudget = this.foundationDailyBudget;
-  private testWalletBudget = BigInt('50000000000000000000000'); // 50K ATOM equivalent
+  private developerWallet = 'cosmos1developer5wallet7address9for0gas1payments23'; // Developer's ATOM wallet
   private lastBudgetReset = Date.now();
 
-  // Gas costs for different operations (in wei, 18 decimals)
+  // Gas costs for different operations (in ATOM micro units - uatom)
   private readonly gasCosts = {
-    message: BigInt('1000000000000000'),      // 0.001 PRIV
-    email: BigInt('10000000000000000'),       // 0.01 PRIV
-    video: BigInt('100000000000000000'),      // 0.1 PRIV per session
-    search: BigInt('500000000000000'),        // 0.0005 PRIV
-    domain: BigInt('50000000000000000000'),   // 50 PRIV for .prv domain
+    message: BigInt('5000'),        // 0.005 ATOM
+    email: BigInt('10000'),         // 0.01 ATOM  
+    video: BigInt('25000'),         // 0.025 ATOM per session
+    search: BigInt('2000'),         // 0.002 ATOM
+    domain: BigInt('100000'),       // 0.1 ATOM for .prv domain
   };
 
-  // Free tier daily limits
+  // Generous daily limits for free usage
   private readonly freeLimits = {
-    messages: 100,    // Increased for testing
-    emails: 20,       // Increased for testing
-    videoMinutes: 60, // Increased for testing
-    searches: 200,    // Increased for testing
+    messages: 200,    // Generous limit for messaging
+    emails: 50,       // Sufficient for daily email needs
+    videoMinutes: 120, // 2 hours of video calling per day
+    searches: 500,    // Plenty of searches per day
   };
 
   constructor() {
-    this.initializeFoundationPool();
+    this.initializeDeveloperSponsorship();
   }
 
-  private initializeFoundationPool(): void {
+  private initializeDeveloperSponsorship(): void {
     // Reset daily budget if needed
     const now = Date.now();
     const dayInMs = 24 * 60 * 60 * 1000;
     
     if (now - this.lastBudgetReset > dayInMs) {
-      this.foundationCurrentBudget = this.foundationDailyBudget;
       this.lastBudgetReset = now;
+      console.log('Daily gas sponsorship budget reset');
     }
   }
 
@@ -107,9 +94,9 @@ export class GasFeeManager {
   }
 
   /**
-   * Check if user can perform operation with free tier
+   * Check if user can perform operation with their quota
    */
-  canUseFreeQuota(userAddress: string, operation: keyof typeof this.gasCosts): boolean {
+  canUseQuota(userAddress: string, operation: keyof typeof this.gasCosts): boolean {
     const quota = this.getUserQuota(userAddress);
     
     switch (operation) {
@@ -122,74 +109,54 @@ export class GasFeeManager {
       case 'search':
         return quota.searchesUsed < quota.dailyLimits.searches;
       case 'domain':
-        return false; // Domain registration not included in free tier
+        return true; // Domain registration allowed for all users
       default:
         return false;
     }
   }
 
   /**
-   * Process gas fee payment with test wallet sponsorship
+   * Process gas fee payment - all sponsored by developer wallet
    */
   async processGasFee(
     userAddress: string,
-    operation: keyof typeof this.gasCosts,
-    preferredPayment: 'auto' | 'test_wallet' | 'foundation' | 'premium' | 'direct' = 'auto'
+    operation: keyof typeof this.gasCosts
   ): Promise<GasTransaction> {
     const gasCost = this.gasCosts[operation];
     const transactionId = this.generateTransactionId();
 
     try {
-      let paymentMethod: 'test_wallet' | 'foundation' | 'premium' | 'direct';
-      let success = false;
-      let sponsorWallet: string | undefined;
-
-      // Determine payment method with test wallet priority
-      if (preferredPayment === 'auto') {
-        // Priority: test wallet > foundation > premium > direct
-        if (this.testWalletCanCover(gasCost)) {
-          paymentMethod = 'test_wallet';
-          sponsorWallet = TEST_WALLET_ADDRESS;
-        } else if (this.canUseFreeQuota(userAddress, operation) && this.foundationCanCover(gasCost)) {
-          paymentMethod = 'foundation';
-        } else if (this.hasPremiumSubscription(userAddress)) {
-          paymentMethod = 'premium';
-        } else {
-          paymentMethod = 'direct';
-        }
-      } else {
-        paymentMethod = preferredPayment;
-        if (paymentMethod === 'test_wallet') {
-          sponsorWallet = TEST_WALLET_ADDRESS;
-        }
+      // Check if user has quota remaining
+      if (!this.canUseQuota(userAddress, operation)) {
+        const transaction: GasTransaction = {
+          id: transactionId,
+          userAddress,
+          operation,
+          gasCost,
+          paymentMethod: 'developer_sponsored',
+          sponsorWallet: this.developerWallet,
+          timestamp: Date.now(),
+          success: false,
+          errorReason: 'Daily quota exceeded'
+        };
+        
+        this.gasTransactions.push(transaction);
+        return transaction;
       }
 
-      // Process payment based on method
-      switch (paymentMethod) {
-        case 'test_wallet':
-          success = await this.processTestWalletPayment(userAddress, operation, gasCost);
-          break;
-        case 'foundation':
-          success = await this.processFoundationPayment(userAddress, operation, gasCost);
-          break;
-        case 'premium':
-          success = await this.processPremiumPayment(userAddress, gasCost);
-          break;
-        case 'direct':
-          success = await this.processDirectPayment(userAddress, gasCost);
-          break;
-      }
+      // All gas is sponsored by developer wallet
+      const success = await this.processDeveloperSponsoredPayment(userAddress, operation, gasCost);
 
       const transaction: GasTransaction = {
         id: transactionId,
         userAddress,
         operation,
         gasCost,
-        paymentMethod,
-        sponsorWallet,
+        paymentMethod: 'developer_sponsored',
+        sponsorWallet: this.developerWallet,
         timestamp: Date.now(),
         success,
-        errorReason: success ? undefined : 'Payment failed'
+        errorReason: success ? undefined : 'Developer wallet payment failed'
       };
 
       this.gasTransactions.push(transaction);
@@ -201,7 +168,8 @@ export class GasFeeManager {
         userAddress,
         operation,
         gasCost,
-        paymentMethod: 'direct',
+        paymentMethod: 'developer_sponsored',
+        sponsorWallet: this.developerWallet,
         timestamp: Date.now(),
         success: false,
         errorReason: error instanceof Error ? error.message : 'Unknown error'
@@ -213,45 +181,16 @@ export class GasFeeManager {
   }
 
   /**
-   * Process test wallet sponsored payment
+   * Process developer wallet sponsored payment
    */
-  private async processTestWalletPayment(
+  private async processDeveloperSponsoredPayment(
     userAddress: string,
     operation: keyof typeof this.gasCosts,
     gasCost: bigint
   ): Promise<boolean> {
-    if (!this.testWalletCanCover(gasCost)) {
-      throw new Error('Test wallet budget depleted');
-    }
-
-    // Deduct from test wallet budget
-    this.testWalletBudget -= gasCost;
-
-    // Log test wallet transaction for monitoring
-    console.log(`Test wallet sponsored ${operation} for ${userAddress}: ${gasCost} PRIV`);
-    console.log(`Remaining test wallet budget: ${this.testWalletBudget} PRIV`);
-
-    return true;
-  }
-
-  /**
-   * Process foundation-sponsored payment
-   */
-  private async processFoundationPayment(
-    userAddress: string,
-    operation: keyof typeof this.gasCosts,
-    gasCost: bigint
-  ): Promise<boolean> {
-    if (!this.canUseFreeQuota(userAddress, operation)) {
-      throw new Error('Daily quota exceeded');
-    }
-
-    if (!this.foundationCanCover(gasCost)) {
-      throw new Error('Foundation budget depleted');
-    }
-
-    // Deduct from foundation budget
-    this.foundationCurrentBudget -= gasCost;
+    
+    // Log developer wallet transaction for monitoring
+    console.log(`Developer wallet sponsored ${operation} for ${userAddress}: ${gasCost} uatom`);
 
     // Update user quota
     const quota = this.getUserQuota(userAddress);
@@ -268,6 +207,9 @@ export class GasFeeManager {
       case 'search':
         quota.searchesUsed++;
         break;
+      case 'domain':
+        // Domain registration doesn't count against quotas
+        break;
     }
     this.userQuotas.set(userAddress, quota);
 
@@ -275,143 +217,29 @@ export class GasFeeManager {
   }
 
   /**
-   * Process premium subscription payment
-   */
-  private async processPremiumPayment(userAddress: string, gasCost: bigint): Promise<boolean> {
-    const subscription = this.premiumSubscriptions.get(userAddress);
-    if (!subscription) {
-      throw new Error('No premium subscription found');
-    }
-
-    if (Date.now() > subscription.expiryTime) {
-      throw new Error('Premium subscription expired');
-    }
-
-    if (subscription.prepaidBalance < gasCost) {
-      if (subscription.autoRefill) {
-        await this.refillPremiumBalance(userAddress);
-      } else {
-        throw new Error('Insufficient prepaid balance');
-      }
-    }
-
-    // Deduct from prepaid balance
-    subscription.prepaidBalance -= gasCost;
-    this.premiumSubscriptions.set(userAddress, subscription);
-
-    return true;
-  }
-
-  /**
-   * Process direct PRIV token payment
-   */
-  private async processDirectPayment(userAddress: string, gasCost: bigint): Promise<boolean> {
-    const balance = privToken.getBalance(userAddress);
-    if (balance.balance < gasCost) {
-      throw new Error('Insufficient PRIV balance');
-    }
-
-    // Transfer to gas fee pool
-    await privToken.transfer(userAddress, 'gas-pool', gasCost);
-    return true;
-  }
-
-  /**
-   * Subscribe user to premium plan
-   */
-  async subscribeToPremium(
-    userAddress: string,
-    duration: number = 30, // days
-    autoRefill: boolean = true
-  ): Promise<boolean> {
-    const monthlyPrice = privToken.parseAmount('100'); // 100 PRIV per month
-    const totalCost = monthlyPrice * BigInt(duration) / BigInt(30);
-
-    // Process payment
-    await this.processDirectPayment(userAddress, totalCost);
-
-    // Create subscription
-    const subscription: PremiumSubscription = {
-      userAddress,
-      prepaidBalance: privToken.parseAmount('1000'), // 1000 PRIV initial balance
-      expiryTime: Date.now() + (duration * 24 * 60 * 60 * 1000),
-      autoRefill,
-      monthlyLimit: privToken.parseAmount('1000') // 1000 PRIV monthly limit
-    };
-
-    this.premiumSubscriptions.set(userAddress, subscription);
-    return true;
-  }
-
-  /**
-   * Refill premium subscription balance
-   */
-  private async refillPremiumBalance(userAddress: string): Promise<void> {
-    const subscription = this.premiumSubscriptions.get(userAddress);
-    if (!subscription) return;
-
-    const refillAmount = privToken.parseAmount('1000'); // 1000 PRIV
-    await this.processDirectPayment(userAddress, refillAmount);
-    
-    subscription.prepaidBalance += refillAmount;
-    this.premiumSubscriptions.set(userAddress, subscription);
-  }
-
-  /**
-   * Check if test wallet can cover gas cost
-   */
-  private testWalletCanCover(gasCost: bigint): boolean {
-    return this.testWalletBudget >= gasCost;
-  }
-
-  /**
-   * Check if foundation can cover gas cost
-   */
-  private foundationCanCover(gasCost: bigint): boolean {
-    return this.foundationCurrentBudget >= gasCost;
-  }
-
-  /**
-   * Check if user has active premium subscription
-   */
-  private hasPremiumSubscription(userAddress: string): boolean {
-    const subscription = this.premiumSubscriptions.get(userAddress);
-    return subscription ? Date.now() < subscription.expiryTime : false;
-  }
-
-  /**
    * Get user's payment status and recommendations
    */
   getPaymentStatus(userAddress: string) {
     const quota = this.getUserQuota(userAddress);
-    const premium = this.premiumSubscriptions.get(userAddress);
-    const balance = privToken.getBalance(userAddress);
 
     return {
-      freeQuotaRemaining: {
+      quotaRemaining: {
         messages: quota.dailyLimits.messages - quota.messagesUsed,
         emails: quota.dailyLimits.emails - quota.emailsUsed,
         videoMinutes: quota.dailyLimits.videoMinutes - quota.videoMinutesUsed,
         searches: quota.dailyLimits.searches - quota.searchesUsed,
       },
-      premiumStatus: premium ? {
-        active: Date.now() < premium.expiryTime,
-        balance: privToken.formatAmount(premium.prepaidBalance),
-        expiryDate: new Date(premium.expiryTime),
-        autoRefill: premium.autoRefill
-      } : null,
-      directBalance: privToken.formatAmount(balance.balance),
+      gasPaymentMethod: 'Developer Sponsored (ATOM)',
+      userCostPerOperation: 'Free',
       recommendedAction: this.getRecommendedAction(userAddress)
     };
   }
 
   /**
-   * Get recommended payment action for user
+   * Get recommended action for user
    */
   private getRecommendedAction(userAddress: string): string {
     const quota = this.getUserQuota(userAddress);
-    const premium = this.premiumSubscriptions.get(userAddress);
-    const balance = privToken.getBalance(userAddress);
 
     // Check if user is approaching limits
     const quotaUsage = Math.max(
@@ -421,20 +249,10 @@ export class GasFeeManager {
     );
 
     if (quotaUsage > 0.8) {
-      if (!premium) {
-        return 'Consider upgrading to Premium for unlimited usage';
-      } else if (Date.now() > premium.expiryTime) {
-        return 'Renew your Premium subscription';
-      } else if (premium.prepaidBalance < this.gasCosts.video) {
-        return 'Top up your Premium balance';
-      }
+      return 'Approaching daily usage limits. Quotas reset in 24 hours.';
     }
 
-    if (balance.balance < this.gasCosts.email * BigInt(10)) {
-      return 'Consider adding PRIV tokens for direct payments';
-    }
-
-    return 'You have sufficient access for current usage';
+    return 'You have sufficient quota for continued usage. All gas fees sponsored.';
   }
 
   /**
@@ -442,24 +260,18 @@ export class GasFeeManager {
    */
   getGasStats() {
     const totalTransactions = this.gasTransactions.length;
-    const testWalletSponsored = this.gasTransactions.filter(tx => tx.paymentMethod === 'test_wallet').length;
-    const foundationSponsored = this.gasTransactions.filter(tx => tx.paymentMethod === 'foundation').length;
-    const premiumPayments = this.gasTransactions.filter(tx => tx.paymentMethod === 'premium').length;
-    const directPayments = this.gasTransactions.filter(tx => tx.paymentMethod === 'direct').length;
+    const successfulTransactions = this.gasTransactions.filter(tx => tx.success).length;
+    const totalGasCost = this.gasTransactions.reduce((sum, tx) => sum + Number(tx.gasCost), 0);
 
     return {
       totalTransactions,
-      testWalletSponsored,
-      foundationSponsored,
-      premiumPayments,
-      directPayments,
-      testWalletAddress: TEST_WALLET_ADDRESS,
-      testWalletBudgetRemaining: privToken.formatAmount(this.testWalletBudget),
-      foundationBudgetRemaining: privToken.formatAmount(this.foundationCurrentBudget),
-      activePremiumUsers: this.premiumSubscriptions.size,
-      averageGasCost: totalTransactions > 0 
-        ? this.gasTransactions.reduce((sum, tx) => sum + Number(tx.gasCost), 0) / totalTransactions
-        : 0
+      successfulTransactions,
+      failedTransactions: totalTransactions - successfulTransactions,
+      developerWallet: this.developerWallet,
+      totalGasSponsored: `${(totalGasCost / 1000000).toFixed(6)} ATOM`,
+      activeUsers: this.userQuotas.size,
+      averageGasCost: totalTransactions > 0 ? totalGasCost / totalTransactions : 0,
+      paymentModel: 'Developer Sponsored Gas (No User Cost)'
     };
   }
 

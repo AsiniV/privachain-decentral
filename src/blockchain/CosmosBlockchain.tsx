@@ -48,12 +48,11 @@ interface CosmosContextType {
   state: BlockchainState
   isConnected: boolean
   walletAddress: string | null
-  privBalance: string
+  atomBalance: string
   connect: () => Promise<void>
   disconnect: () => void
   sendTransaction: (tx: Partial<Transaction>) => Promise<string>
-  stakeTokens: (amount: string, validator: string) => Promise<void>
-  unstakeTokens: (amount: string, validator: string) => Promise<void>
+  // Removed staking functions as per requirements
   delegateVote: (proposal: string, vote: 'yes' | 'no' | 'abstain') => Promise<void>
 }
 
@@ -77,7 +76,7 @@ export function CosmosProvider({ children }: { children: ReactNode }) {
   
   const [isConnected, setIsConnected] = useState(false)
   const [walletAddress, setWalletAddress] = useKV<string | null>('wallet-address', null)
-  const [privBalance, setPrivBalance] = useKV<string>('priv-balance', '1000.0')
+  const [atomBalance, setAtomBalance] = useKV<string>('atom-balance', '1000.0')
 
   // Initialize state if it's incomplete
   const initializeState = useCallback(() => {
@@ -144,12 +143,8 @@ export function CosmosProvider({ children }: { children: ReactNode }) {
 
     const txHash = generateTxHash()
     const gasUsed = calculateGasUsed(tx.type || 'transfer')
-    const fee = gasUsed * state.gasPrice
-
-    if (parseFloat(privBalance) < fee) {
-      throw new Error('Insufficient PRIV for gas fees')
-    }
-
+    
+    // Gas fees are paid by developer's wallet - no user balance check needed
     const newTx: Transaction = {
       hash: txHash,
       type: tx.type || 'transfer',
@@ -168,31 +163,13 @@ export function CosmosProvider({ children }: { children: ReactNode }) {
       transactions: [newTx, ...prev.transactions.slice(0, 99)] // Keep last 100 transactions
     }))
 
-    setPrivBalance(prev => (parseFloat(prev) - fee).toString())
-    toast.success(`Transaction submitted: ${txHash.slice(0, 8)}...`)
+    // Note: Gas fees are sponsored by developer wallet, not deducted from user
+    toast.success(`Transaction submitted: ${txHash.slice(0, 8)}... (gas sponsored)`)
     
     return txHash
   }
 
-  const stakeTokens = async (amount: string, validatorAddress: string) => {
-    await sendTransaction({
-      type: 'delegate',
-      recipient: validatorAddress,
-      amount,
-      data: { action: 'stake' }
-    })
-    toast.success(`Staked ${amount} PRIV to validator`)
-  }
-
-  const unstakeTokens = async (amount: string, validatorAddress: string) => {
-    await sendTransaction({
-      type: 'delegate',
-      recipient: validatorAddress,
-      amount,
-      data: { action: 'unstake' }
-    })
-    toast.success(`Unstaked ${amount} PRIV from validator`)
-  }
+  // Removed staking functions as they are not needed per requirements
 
   const delegateVote = async (proposal: string, vote: 'yes' | 'no' | 'abstain') => {
     await sendTransaction({
@@ -207,12 +184,10 @@ export function CosmosProvider({ children }: { children: ReactNode }) {
       state,
       isConnected,
       walletAddress,
-      privBalance,
+      atomBalance,
       connect,
       disconnect,
       sendTransaction,
-      stakeTokens,
-      unstakeTokens,
       delegateVote
     }}>
       {children}
@@ -248,7 +223,7 @@ function generateValidators(): Validator[] {
 }
 
 function generateCosmosAddress(): string {
-  const prefix = 'priv'
+  const prefix = 'cosmos'
   const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
   let address = ''
   for (let i = 0; i < 39; i++) {
