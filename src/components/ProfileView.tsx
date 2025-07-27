@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useKV } from '../hooks/useKV'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -11,6 +11,7 @@ import { BlockchainStatus } from './BlockchainStatus'
 import { ZKAuthPanel } from './ZKAuthPanel'
 import { ImplementationStatus } from './ImplementationStatus'
 import { IPFSStatus } from './IPFSStatus'
+import { PlanView } from './PlanView'
 import { 
   User,
   Shield,
@@ -26,6 +27,7 @@ import {
   Database
 } from '@phosphor-icons/react'
 import { toast } from 'sonner'
+import { planManager } from '../services/PlanManager'
 
 interface UserProfile {
   address: string
@@ -60,6 +62,45 @@ export function ProfileView() {
   
   const [copied, setCopied] = useState<string | null>(null)
   const [newDisplayName, setNewDisplayName] = useState(profile.displayName)
+  const [planStatus, setPlanStatus] = useState<any>(null)
+
+  // Load plan status on component mount
+  useEffect(() => {
+    const loadPlanStatus = async () => {
+      try {
+        await planManager.initializePlan();
+        const status = await planManager.getPlanStatus();
+        setPlanStatus(status);
+        
+        // Update profile premium status based on plan
+        if (status?.planType === 'premium' && !profile.isPremium) {
+          setProfile({
+            ...profile,
+            isPremium: true
+          });
+        }
+      } catch (error) {
+        console.error('Error loading plan status:', error);
+      }
+    };
+
+    loadPlanStatus();
+  }, [profile, setProfile]);
+
+  // Listen for premium activation
+  useEffect(() => {
+    const handlePremiumActivated = async () => {
+      const status = await planManager.getPlanStatus();
+      setPlanStatus(status);
+      setProfile({
+        ...profile,
+        isPremium: true
+      });
+    };
+
+    window.addEventListener('premium-activated', handlePremiumActivated);
+    return () => window.removeEventListener('premium-activated', handlePremiumActivated);
+  }, [profile, setProfile]);
 
   const copyToClipboard = async (text: string, type: string) => {
     try {
@@ -81,11 +122,8 @@ export function ProfileView() {
   }
 
   const upgradeToPremium = () => {
-    setProfile({
-      ...profile,
-      isPremium: true
-    })
-    toast.success('Upgraded to Premium! Welcome to enhanced privacy features.')
+    // Trigger the plan upgrade dialog
+    window.dispatchEvent(new CustomEvent('show-premium-upgrade'));
   }
 
   return (
@@ -101,7 +139,7 @@ export function ProfileView() {
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-1">
               <h2 className="text-2xl font-bold">{profile.displayName}</h2>
-              {profile.isPremium && (
+              {planStatus?.planType === 'premium' && (
                 <Badge className="bg-gradient-to-r from-accent to-yellow-500 text-white gap-1">
                   <Crown className="w-3 h-3" />
                   Premium
@@ -147,8 +185,9 @@ export function ProfileView() {
 
       <div className="flex-1 p-6">
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="plan">Plan</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
             <TabsTrigger value="zkauth">ZK Auth</TabsTrigger>
             <TabsTrigger value="wallet">Wallet</TabsTrigger>
@@ -171,7 +210,7 @@ export function ProfileView() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Account type</span>
-                    <span>{profile.isPremium ? 'Premium' : 'Free'}</span>
+                    <span>{planStatus?.planType === 'premium' ? 'Premium' : 'Starter'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Reputation</span>
@@ -216,6 +255,10 @@ export function ProfileView() {
 
             {/* Blockchain Status Section */}
             <BlockchainStatus />
+          </TabsContent>
+
+          <TabsContent value="plan" className="space-y-6">
+            <PlanView />
           </TabsContent>
 
           <TabsContent value="security" className="space-y-6">
@@ -337,11 +380,13 @@ export function ProfileView() {
               <h3 className="font-semibold mb-4">Gas Payment Model</h3>
               <p className="text-muted-foreground mb-4">
                 All blockchain operations are sponsored by the developer's ATOM wallet. 
-                You can use PrivaChain features immediately without managing gas fees or cryptocurrency.
+                You can use PrivaChain features according to your plan limits without managing cryptocurrency.
               </p>
               <div className="flex gap-3">
                 <Button variant="outline" disabled>No Action Required</Button>
-                <Button variant="outline">View Usage Quotas</Button>
+                <Button variant="outline" onClick={() => window.dispatchEvent(new CustomEvent('show-plan-view'))}>
+                  View Plan Details
+                </Button>
               </div>
             </Card>
           </TabsContent>
@@ -379,7 +424,7 @@ export function ProfileView() {
                     <div className="bg-accent h-2 rounded-full" style={{ width: '4.2%' }}></div>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {profile.isPremium ? 'Premium plan includes 50GB IPFS storage' : 'Upgrade to Premium for 50GB storage'}
+                    {planStatus?.planType === 'premium' ? 'Premium plan includes 1TB IPFS storage' : 'Starter plan includes 500MB storage. Upgrade for 1TB.'}
                   </p>
                 </div>
               </Card>
