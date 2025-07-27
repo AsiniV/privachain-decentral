@@ -61,15 +61,7 @@ export function BlockchainStatus() {
     }
   }
 
-  const handleStake = () => {
-    const amount = Math.floor(Math.random() * 50) + 10
-    setBlockchainState(prev => ({
-      ...prev,
-      staked: (parseFloat(prev.staked) + amount).toFixed(2),
-      privBalance: (parseFloat(prev.privBalance.replace(',', '')) - amount).toFixed(2)
-    }))
-    toast.success(`Staked ${amount} PRIV tokens`)
-  }
+  // Removed staking functionality as per new requirements
 
   return (
     <Card className="p-4">
@@ -106,24 +98,24 @@ export function BlockchainStatus() {
             </div>
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Gas Price</p>
-            <p className="font-mono text-sm">{blockchainState.gasPrice} PRIV</p>
+            <p className="text-sm text-muted-foreground">Gas Payment</p>
+            <p className="font-mono text-sm">Developer Sponsored (ATOM)</p>
           </div>
         </div>
 
-        {/* Wallet Balance */}
+        {/* Wallet Status */}
         <div className="p-3 bg-accent/20 rounded-lg">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Wallet className="w-4 h-4" />
-              <span className="text-sm font-medium">PRIV Balance</span>
+              <span className="text-sm font-medium">User Cost</span>
             </div>
-            <span className="font-mono text-lg">{blockchainState.privBalance}</span>
+            <span className="font-mono text-lg text-green-600">FREE</span>
           </div>
           
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Staked:</span>
-            <span className="font-mono">{blockchainState.staked} PRIV</span>
+            <span className="text-muted-foreground">Gas fees paid by:</span>
+            <span className="font-mono">Developer Wallet</span>
           </div>
         </div>
 
@@ -150,12 +142,11 @@ export function BlockchainStatus() {
           <Button 
             variant="outline" 
             size="sm"
-            onClick={handleStake}
             className="flex items-center gap-2"
-            disabled={!blockchainState.connected}
+            disabled
           >
             <ChartLine className="w-4 h-4" />
-            Stake PRIV
+            No Action Required
           </Button>
         </div>
 
