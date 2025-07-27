@@ -6,13 +6,13 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Warning, AlertDescription } from '@/components/ui/alert'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useZKAuth } from '@/hooks/useZKAuth'
 import { useCosmos } from '@/hooks/useCosmos'
 import { BlockchainUtils } from '@/lib/crypto'
 import { CosmosWallet } from './CosmosWallet'
 import { toast } from 'sonner'
-import { Shield, Key, Eye, EyeSlash, Copy, Fingerprint, Lightning, CheckCircle, Warning, ArrowSquareOut } from '@phosphor-icons/react'
+import { Shield, Key, Eye, EyeSlash, Copy, Fingerprint, Lightning, CheckCircle, WarningCircle, ArrowSquareOut } from '@phosphor-icons/react'
 
 export function ZKAuthPanel() {
   const {
@@ -205,12 +205,12 @@ export function ZKAuthPanel() {
 
       {/* ZK Authentication Status */}
       {!cosmosConnected && (
-        <Warning>
-          <Warning className="h-4 w-4" />
+        <Alert>
+          <WarningCircle className="h-4 w-4" />
           <AlertDescription>
             Connect to Cosmos testnet above to enable blockchain-based ZK authentication.
           </AlertDescription>
-        </Warning>
+        </Alert>
       )}
 
       {!isAuthenticated ? (
@@ -399,7 +399,7 @@ export function ZKAuthPanel() {
                     ) : registrationStatus === 'success' ? (
                       <CheckCircle className="h-4 w-4" />
                     ) : registrationStatus === 'error' ? (
-                      <Warning className="h-4 w-4" />
+                      <WarningCircle className="h-4 w-4" />
                     ) : (
                       'Register'
                     )}

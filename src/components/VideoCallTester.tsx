@@ -6,7 +6,7 @@ import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { Progress } from './ui/progress'
 import { Slider } from './ui/slider'
-import { Warning, AlertDescription } from './ui/alert'
+import { Alert, AlertDescription } from './ui/alert'
 import { 
   Play,
   Lightning,
@@ -16,7 +16,7 @@ import {
   VideoCamera,
   Globe,
   TrendUp,
-  Activity,
+  ChartLine,
   Target,
   ArrowClockwise
 } from '@phosphor-icons/react'
@@ -350,7 +350,7 @@ export function VideoCallTester() {
           </Badge>
           {isTestRunning && (
             <Badge variant="default" className="bg-green-600">
-              <Activity className="w-4 h-4 mr-1 animate-pulse" />
+              <ChartLine className="w-4 h-4 mr-1 animate-pulse" />
               Live Testing
             </Badge>
           )}
@@ -520,7 +520,7 @@ export function VideoCallTester() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Activity className="w-5 h-5" />
+              <ChartLine className="w-5 h-5" />
               Test in Progress: {currentTest.name}
             </CardTitle>
           </CardHeader>
@@ -679,7 +679,7 @@ export function VideoCallTester() {
         </Card>
       )}
 
-      <Warning>
+      <Alert>
         <Lightning className="w-4 h-4" />
         <AlertDescription>
           <div className="space-y-2">
@@ -696,7 +696,7 @@ export function VideoCallTester() {
             </p>
           </div>
         </AlertDescription>
-      </Warning>
+      </Alert>
     </div>
   )
 }

@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Warning, AlertDescription } from '@/components/ui/alert'
-import { Copy, ArrowSquareOut, ArrowClockwise, WifiHigh, WifiSlash, Activity, Coins, Users, Globe } from '@phosphor-icons/react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Copy, ArrowSquareOut, ArrowClockwise, WifiHigh, WifiSlash, ChartLine, Coins, Users, Globe } from '@phosphor-icons/react'
 import { useCosmosTestnet, TESTNET_ENDPOINTS, TESTNET_EXPLORERS, FAUCET_ENDPOINTS } from '../blockchain/CosmosTestnet'
 import { toast } from 'sonner'
 
@@ -232,16 +232,16 @@ export function TestnetDashboard() {
             </CardHeader>
             <CardContent>
               {!isTestnetConnected ? (
-                <Warning>
+                <Alert>
                   <AlertDescription>
                     Please connect to the testnet to view network status.
                   </AlertDescription>
-                </Warning>
+                </Alert>
               ) : status ? (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="space-y-2">
                     <div className="flex items-center text-sm text-muted-foreground">
-                      <Activity className="w-4 h-4 mr-1" />
+                      <ChartLine className="w-4 h-4 mr-1" />
                       Block Height
                     </div>
                     <div className="text-2xl font-bold">{status.latestBlockHeight.toLocaleString()}</div>
@@ -288,11 +288,11 @@ export function TestnetDashboard() {
               <CardDescription>Request test PRIV tokens for development</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Warning>
+              <Alert>
                 <AlertDescription>
                   You can request test tokens every 24 hours. Each request provides 1000 PRIV tokens.
                 </AlertDescription>
-              </Warning>
+              </Alert>
 
               <div className="space-y-2">
                 <Label htmlFor="faucet-address">Your PrivaChain Address</Label>

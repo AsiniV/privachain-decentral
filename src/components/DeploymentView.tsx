@@ -19,7 +19,7 @@ import {
   Wallet,
   Desktop,
   Database,
-  Activity
+  ChartLine
 } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { cosmosService } from '../services/cosmos'
@@ -375,7 +375,7 @@ export function DeploymentView() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5" />
+                  <ChartLine className="h-5 w-5" />
                   Network Statistics
                 </CardTitle>
               </CardHeader>

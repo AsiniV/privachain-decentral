@@ -6,14 +6,14 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Warning, AlertDescription } from '@/components/ui/alert'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useCosmos } from '@/hooks/useCosmos'
 import { toast } from 'sonner'
 import { 
   Wallet, 
   Copy, 
   ArrowSquareOut, 
-  Warning, 
+  WarningCircle, 
   CheckCircle, 
   Coins,
   Globe,
@@ -74,12 +74,12 @@ export function CosmosWallet() {
 
   if (error) {
     return (
-      <Warning variant="destructive">
-        <Warning className="h-4 w-4" />
+      <Alert variant="destructive">
+        <WarningCircle className="h-4 w-4" />
         <AlertDescription>
           Failed to connect to Cosmos testnet: {error}
         </AlertDescription>
-      </Warning>
+      </Alert>
     )
   }
 
@@ -96,12 +96,12 @@ export function CosmosWallet() {
 
   if (!isConnected) {
     return (
-      <Warning>
-        <Warning className="h-4 w-4" />
+      <Alert>
+        <WarningCircle className="h-4 w-4" />
         <AlertDescription>
           Not connected to Cosmos testnet. The blockchain features require a connection.
         </AlertDescription>
-      </Warning>
+      </Alert>
     )
   }
 
@@ -342,12 +342,12 @@ export function CosmosWallet() {
 
           {/* Balance Warning */}
           {parseInt(account.balance) < 1000000 && (
-            <Warning>
-              <Warning className="h-4 w-4" />
+            <Alert>
+              <WarningCircle className="h-4 w-4" />
               <AlertDescription>
                 Your balance is low. Use the faucet to get testnet tokens for blockchain operations.
               </AlertDescription>
-            </Warning>
+            </Alert>
           )}
         </div>
       )}

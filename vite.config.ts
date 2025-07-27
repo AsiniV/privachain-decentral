@@ -16,4 +16,8 @@ export default defineConfig({
       '@': resolve(projectRoot, 'src')
     }
   },
+  define: {
+    global: 'globalThis',
+    'process.env': {}
+  }
 });
