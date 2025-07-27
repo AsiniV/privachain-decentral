@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useKV } from '../hooks/useKV'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -120,7 +120,7 @@ export function BrowserView({ initialUrl }: BrowserViewProps = {}) {
   const activeTab = tabs.find(tab => tab.id === activeTabId)
 
   // Mock search results that would come from the decentralized search service
-  const mockSearchResults: SearchResult[] = [
+  const mockSearchResults: SearchResult[] = useMemo(() => [
     {
       id: '1',
       type: 'web',
@@ -184,7 +184,7 @@ export function BrowserView({ initialUrl }: BrowserViewProps = {}) {
       encrypted: true,
       relevance: 0.78
     }
-  ]
+  ], [])
 
   // MagnifyingGlass function that integrates with decentralized search
   const performSearch = useCallback(async (query: string) => {
@@ -217,7 +217,7 @@ export function BrowserView({ initialUrl }: BrowserViewProps = {}) {
     
     setTabs(prev => [...prev, searchTab])
     setActiveTabId(searchTab.id)
-  }, [setSearchQuery, setShowSearchResults, setSearchResults, setTabs, setActiveTabId])
+  }, [setSearchQuery, setShowSearchResults, setSearchResults, setTabs, setActiveTabId, mockSearchResults])
 
   // Initialize with a default tab if none exist, or navigate to initial URL
   useEffect(() => {
