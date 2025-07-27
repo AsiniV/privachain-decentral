@@ -187,7 +187,7 @@ export function BrowserView({ initialUrl }: BrowserViewProps = {}) {
   ]
 
   // MagnifyingGlass function that integrates with decentralized search
-  const performSearch = async (query: string) => {
+  const performSearch = useCallback(async (query: string) => {
     if (!query.trim()) {
       setShowSearchResults(false)
       return
@@ -217,7 +217,7 @@ export function BrowserView({ initialUrl }: BrowserViewProps = {}) {
     
     setTabs(prev => [...prev, searchTab])
     setActiveTabId(searchTab.id)
-  }
+  }, [setSearchQuery, setShowSearchResults, setSearchResults, setTabs, setActiveTabId])
 
   // Initialize with a default tab if none exist, or navigate to initial URL
   useEffect(() => {
@@ -436,7 +436,7 @@ export function BrowserView({ initialUrl }: BrowserViewProps = {}) {
     }
 
     setTimeout(() => setLoadingProgress(0), 500)
-  }, [activeTabId, setTabs])
+  }, [activeTabId, setTabs, incognitoMode, performSearch])
 
   const refreshPage = () => {
     if (activeTab) {

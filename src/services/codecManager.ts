@@ -83,7 +83,7 @@ class CodecManager {
     const video = document.createElement('video')
     const audio = document.createElement('audio')
     const canvas = document.createElement('canvas')
-    const context = canvas.getContext('webgl2') || canvas.getContext('webgl')
+    canvas.getContext('webgl2') || canvas.getContext('webgl')
 
     return {
       video: {

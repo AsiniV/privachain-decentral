@@ -113,7 +113,7 @@ export function CallManager({ contacts, onCallStatusChange }: CallManagerProps) 
 
     // Play notification sound (simulated)
     toast.info(`Incoming ${type} call from ${contact.name}`)
-  }, [])
+  }, [setCallState])
 
   const acceptCall = () => {
     setCallState(prev => ({
@@ -132,7 +132,7 @@ export function CallManager({ contacts, onCallStatusChange }: CallManagerProps) 
     })
     
     toast.info('Call declined')
-  }, [])
+  }, [setCallState])
 
   const endCall = () => {
     setCallState({

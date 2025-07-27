@@ -83,6 +83,16 @@ export function VideoCallProvider({ children }: { children: ReactNode }) {
     }
   }, [callState.status, turnRelays, setCallState])
 
+  const declineCall = useCallback(() => {
+    setCallState({
+      type: null,
+      isIncoming: false,
+      status: 'idle'
+    })
+    
+    toast.info('Call declined')
+  }, [setCallState])
+
   // Incoming call timer
   useEffect(() => {
     if (callState.status === 'ringing' && callState.isIncoming) {
@@ -101,7 +111,7 @@ export function VideoCallProvider({ children }: { children: ReactNode }) {
         setIncomingCallTimer(0)
       }
     }
-  }, [callState.status, callState.isIncoming, setCallState])
+  }, [callState.status, callState.isIncoming, setCallState, declineCall])
 
   const initiateCall = async (contact: Contact, type: 'video' | 'audio') => {
     if (!contact.online) {
@@ -149,16 +159,6 @@ export function VideoCallProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       toast.error(`Failed to accept call: ${error}`)
     }
-  }
-
-  const declineCall = () => {
-    setCallState({
-      type: null,
-      isIncoming: false,
-      status: 'idle'
-    })
-    
-    toast.info('Call declined')
   }
 
   const endCall = async () => {

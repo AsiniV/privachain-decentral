@@ -236,7 +236,14 @@ export class ProductionEmailService {
    */
   async getEmails(domain: string, zkProof: Uint8Array): Promise<{
     success: boolean
-    emails?: any[]
+    emails?: Array<{
+      id: string;
+      from: string;
+      subject: string;
+      timestamp: number;
+      contentCid: string;
+      encrypted: boolean;
+    }>
     error?: string
   }> {
     try {
@@ -482,7 +489,12 @@ export class ProductionEmailService {
   private async decryptEmail(
     encryptedData: Uint8Array,
     privateKey: Uint8Array
-  ): Promise<any> {
+  ): Promise<{
+    subject: string;
+    content: string;
+    from: string;
+    timestamp: number;
+  }> {
     const decryptedBytes = await this.pqDecrypt(encryptedData, privateKey)
     const emailData = JSON.parse(new TextDecoder().decode(decryptedBytes))
     

@@ -48,7 +48,7 @@ export function TestnetDashboard() {
     } finally {
       setLoading(false)
     }
-  }, [isTestnetConnected])
+  }, [isTestnetConnected, getTestnetStatus])
 
   useEffect(() => {
     if (isTestnetConnected) {
