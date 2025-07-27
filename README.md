@@ -40,8 +40,15 @@ npm run dev            # Start development server
 This project uses:
 - **Frontend**: React + TypeScript + Vite
 - **Smart Contracts**: CosmWasm (Rust)
-- **Blockchain**: Cosmos SDK
+- **Blockchain**: Cosmos SDK (ATOM gas payments)
 - **Styling**: Tailwind CSS
+- **Gas Model**: Developer-sponsored (users pay nothing)
+
+### 🚀 Key Features:
+- **Zero Crypto Friction**: Users can start immediately without wallets or tokens
+- **Developer-Sponsored Gas**: All ATOM gas fees paid automatically by developer wallet
+- **Generous Quotas**: 200 messages, 50 emails, 2h video daily for free users
+- **Instant Access**: No barriers - install and use immediately
 
 For detailed setup instructions, testing procedures, and troubleshooting, see [LOCAL_TESTING.md](./LOCAL_TESTING.md).
 
