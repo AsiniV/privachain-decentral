@@ -285,12 +285,12 @@ export function TestnetDashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Testnet Faucet</CardTitle>
-              <CardDescription>Request test PRIV tokens for development</CardDescription>
+              <CardDescription>Test gas fees are developer-sponsored</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <Alert>
                 <AlertDescription>
-                  You can request test tokens every 24 hours. Each request provides 1000 PRIV tokens.
+                  All gas fees are sponsored by the developer wallet. No tokens needed for testing.
                 </AlertDescription>
               </Alert>
 
@@ -377,7 +377,7 @@ export function TestnetDashboard() {
                     </span>
                     <div>
                       <strong>Get Test Tokens</strong>
-                      <p className="text-muted-foreground">Use the faucet to request PRIV tokens for testing</p>
+                      <p className="text-muted-foreground">All gas fees are developer-sponsored - no tokens needed</p>
                     </div>
                   </li>
                 </ol>
@@ -396,7 +396,7 @@ export function TestnetDashboard() {
                   </div>
                   <div>
                     <strong>Transaction Failures</strong>
-                    <p className="text-muted-foreground">Ensure you have sufficient PRIV tokens for gas fees</p>
+                    <p className="text-muted-foreground">All gas fees are sponsored by the developer wallet</p>
                   </div>
                 </div>
               </div>

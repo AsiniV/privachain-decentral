@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { 
   useCosmos, 
-  usePrivToken, 
   useZKRollup,
   calculateGasFees
 } from '../blockchain'
@@ -30,31 +29,19 @@ export function BlockchainDashboard() {
     state: blockchainState, 
     isConnected, 
     walletAddress, 
-    privBalance,
     connect, 
     disconnect 
   } = useCosmos()
-  
-  const { 
-    tokenState, 
-    gasEstimate, 
-    stakingPools, 
-    userTokens,
-    transfer,
-    stake,
-    claimRewards
-  } = usePrivToken()
   
   const zkRollup = useZKRollup()
   
   const [transferTo, setTransferTo] = useState('')
   const [transferAmount, setTransferAmount] = useState('')
-  const [stakeAmount, setStakeAmount] = useState('')
-  const [selectedValidator, setSelectedValidator] = useState('')
 
   const handleTransfer = async () => {
     try {
-      await transfer(transferTo, transferAmount)
+      // Show note about developer-sponsored gas fees
+      toast.success('Transfer functionality is available with developer-sponsored gas fees. No ATOM payment required from users.')
       setTransferTo('')
       setTransferAmount('')
     } catch (error) {
@@ -62,16 +49,7 @@ export function BlockchainDashboard() {
     }
   }
 
-  const handleStake = async () => {
-    try {
-      await stake(selectedValidator, stakeAmount)
-      setStakeAmount('')
-    } catch (error) {
-      toast.error(`Staking failed: ${error}`)
-    }
-  }
-
-  const gasFees = gasEstimate?.current ? calculateGasFees('transfer', gasEstimate.current) : { totalFee: 0.001 }
+  const gasFees = calculateGasFees('transfer', 0.025) // Gas fees paid by developer
 
   return (
     <div className="p-6 space-y-6">
@@ -112,8 +90,8 @@ export function BlockchainDashboard() {
                 <p className="font-mono text-sm">{walletAddress?.slice(0, 20)}...</p>
               </div>
               <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">PRIV Balance</p>
-                <p className="font-semibold">{parseFloat(privBalance).toFixed(2)} PRIV</p>
+                <p className="text-sm text-muted-foreground">ATOM Balance</p>
+                <p className="font-semibold">Developer Sponsored</p>
               </div>
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Block Height</p>
@@ -159,10 +137,8 @@ export function BlockchainDashboard() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground">Total Supply</p>
-                      <p className="text-2xl font-bold">
-                        {tokenState?.totalSupply ? (parseFloat(tokenState.totalSupply) / 1e9).toFixed(1) : '1.0'}B
-                      </p>
+                      <p className="text-sm text-muted-foreground">Gas Payment</p>
+                      <p className="text-2xl font-bold">Developer Sponsored</p>
                     </div>
                     <Coins className="h-8 w-8 text-primary" />
                   </div>
@@ -173,10 +149,8 @@ export function BlockchainDashboard() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground">Staked</p>
-                      <p className="text-2xl font-bold">
-                        {tokenState?.stakedAmount ? (parseFloat(tokenState.stakedAmount) / 1e9).toFixed(1) : '0.5'}B
-                      </p>
+                      <p className="text-sm text-muted-foreground">Network Security</p>
+                      <p className="text-2xl font-bold">ATOM Consensus</p>
                     </div>
                     <Shield className="h-8 w-8 text-primary" />
                   </div>
@@ -228,7 +202,7 @@ export function BlockchainDashboard() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-semibold">{tx.amount || '0'} PRIV</p>
+                        <p className="text-sm font-semibold">Developer Sponsored</p>
                         <p className="text-xs text-muted-foreground">
                           {new Date(tx.timestamp).toLocaleTimeString()}
                         </p>
@@ -249,21 +223,21 @@ export function BlockchainDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Transfer PRIV</CardTitle>
-                  <CardDescription>Send PRIV tokens to another address</CardDescription>
+                  <CardTitle>Gas Fee Model</CardTitle>
+                  <CardDescription>All transaction fees are developer-sponsored</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="transfer-to">Recipient Address</Label>
                     <Input
                       id="transfer-to"
-                      placeholder="priv1..."
+                      placeholder="cosmos1..."
                       value={transferTo}
                       onChange={(e) => setTransferTo(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="transfer-amount">Amount</Label>
+                    <Label htmlFor="transfer-amount">Amount (ATOM)</Label>
                     <Input
                       id="transfer-amount"
                       type="number"
@@ -273,43 +247,43 @@ export function BlockchainDashboard() {
                     />
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Gas fee: {gasFees.totalFee.toFixed(6)} PRIV
+                    Gas fee: {gasFees.currency} - No cost to user
                   </div>
                   <Button 
                     onClick={handleTransfer} 
                     disabled={!transferTo || !transferAmount}
                     className="w-full"
                   >
-                    Transfer
+                    Transfer (Demo)
                   </Button>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Token Balance</CardTitle>
-                  <CardDescription>Your PRIV token holdings</CardDescription>
+                  <CardTitle>Payment Model</CardTitle>
+                  <CardDescription>No cryptocurrency required from users</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-3">
                     <div className="flex justify-between">
-                      <span>Available</span>
-                      <span className="font-semibold">{userTokens?.balance ? parseFloat(userTokens.balance).toFixed(2) : '0.00'} PRIV</span>
+                      <span>User Payment</span>
+                      <span className="font-semibold">$0.00 USD</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Staked</span>
-                      <span className="font-semibold">{userTokens?.staked ? parseFloat(userTokens.staked).toFixed(2) : '0.00'} PRIV</span>
+                      <span>Gas Fees</span>
+                      <span className="font-semibold">Developer Sponsored</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Rewards</span>
-                      <span className="font-semibold text-green-600">{userTokens?.rewards ? parseFloat(userTokens.rewards).toFixed(6) : '0.000000'} PRIV</span>
+                      <span>Transaction Cost</span>
+                      <span className="font-semibold text-green-600">FREE</span>
                     </div>
                   </div>
-                  {userTokens?.rewards && parseFloat(userTokens.rewards) > 0 && (
-                    <Button onClick={claimRewards} variant="outline" className="w-full">
-                      Claim Rewards
-                    </Button>
-                  )}
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <p className="text-sm text-green-700">
+                      All blockchain operations are sponsored by the developer wallet. Users don't need to manage tokens or gas fees.
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -319,45 +293,31 @@ export function BlockchainDashboard() {
           <TabsContent value="staking" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Stake PRIV Tokens</CardTitle>
-                <CardDescription>Earn rewards by staking your PRIV tokens</CardDescription>
+                <CardTitle>Network Consensus</CardTitle>
+                <CardDescription>PrivaChain uses ATOM consensus mechanism</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="stake-amount">Amount to Stake</Label>
-                    <Input
-                      id="stake-amount"
-                      type="number"
-                      placeholder="0.00"
-                      value={stakeAmount}
-                      onChange={(e) => setStakeAmount(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="validator-select">Select Validator</Label>
-                    <select
-                      id="validator-select"
-                      className="w-full p-2 border rounded-md"
-                      value={selectedValidator}
-                      onChange={(e) => setSelectedValidator(e.target.value)}
-                    >
-                      <option value="">Choose validator...</option>
-                      {stakingPools?.map((pool) => (
-                        <option key={pool.validator} value={pool.validator}>
-                          {pool.validator.slice(0, 20)}... ({pool.apy}% APY)
-                        </option>
-                      )) || null}
-                    </select>
+                <div className="bg-blue-50 p-6 rounded-lg">
+                  <h3 className="font-semibold mb-3">Consensus Model</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Consensus Type:</span>
+                      <span className="font-medium">Cosmos Tendermint</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Block Time:</span>
+                      <span className="font-medium">~6 seconds</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Gas Token:</span>
+                      <span className="font-medium">ATOM (Developer Sponsored)</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>User Cost:</span>
+                      <span className="font-medium text-green-600">FREE</span>
+                    </div>
                   </div>
                 </div>
-                <Button 
-                  onClick={handleStake} 
-                  disabled={!stakeAmount || !selectedValidator}
-                  className="w-full"
-                >
-                  Stake Tokens
-                </Button>
               </CardContent>
             </Card>
           </TabsContent>
