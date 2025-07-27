@@ -220,79 +220,82 @@ class PlanManager {
     const usage = plan.usage;
 
     switch (operation) {
-      case 'message':
-        if (limits.dailyQuotas.messages === -1) {
-          return { allowed: true }; // Unlimited
-        }
-        const remainingMessages = limits.dailyQuotas.messages - usage.dailyUsage.messages;
+      case 'message': {
+        const remainingMessages = limits.dailyQuotas.messages === -1 ? 'unlimited' : 
+          Math.max(0, limits.dailyQuotas.messages - usage.dailyUsage.messages);
         return {
-          allowed: remainingMessages > 0,
-          reason: remainingMessages <= 0 ? 'Daily message limit reached' : undefined,
-          remainingQuota: remainingMessages
+          allowed: limits.dailyQuotas.messages === -1 || usage.dailyUsage.messages < limits.dailyQuotas.messages,
+          reason: limits.dailyQuotas.messages !== -1 && usage.dailyUsage.messages >= limits.dailyQuotas.messages 
+            ? 'Daily message limit reached' : undefined,
+          remainingQuota: typeof remainingMessages === 'number' ? remainingMessages : undefined
         };
+      }
 
-      case 'email':
-        if (limits.dailyQuotas.emails === -1) {
-          return { allowed: true }; // Unlimited
-        }
-        const remainingEmails = limits.dailyQuotas.emails - usage.dailyUsage.emails;
+      case 'email': {
+        const remainingEmails = limits.dailyQuotas.emails === -1 ? 'unlimited' : 
+          Math.max(0, limits.dailyQuotas.emails - usage.dailyUsage.emails);
         return {
-          allowed: remainingEmails > 0,
-          reason: remainingEmails <= 0 ? 'Daily email limit reached' : undefined,
-          remainingQuota: remainingEmails
+          allowed: limits.dailyQuotas.emails === -1 || usage.dailyUsage.emails < limits.dailyQuotas.emails,
+          reason: limits.dailyQuotas.emails !== -1 && usage.dailyUsage.emails >= limits.dailyQuotas.emails 
+            ? 'Daily email limit reached' : undefined,
+          remainingQuota: typeof remainingEmails === 'number' ? remainingEmails : undefined
         };
+      }
 
-      case 'video':
+      case 'video': {
         if (!limits.videoCallsAllowed) {
           return { allowed: false, reason: 'Video calls not available in Starter plan' };
         }
-        if (limits.dailyQuotas.videoMinutes === -1) {
-          return { allowed: true }; // Unlimited
-        }
-        const remainingVideo = limits.dailyQuotas.videoMinutes - usage.dailyUsage.videoMinutes;
+        const remainingVideo = limits.dailyQuotas.videoMinutes === -1 ? 'unlimited' : 
+          Math.max(0, limits.dailyQuotas.videoMinutes - usage.dailyUsage.videoMinutes);
         return {
-          allowed: remainingVideo > 0,
-          reason: remainingVideo <= 0 ? 'Daily video limit reached' : undefined,
-          remainingQuota: remainingVideo
+          allowed: limits.dailyQuotas.videoMinutes === -1 || usage.dailyUsage.videoMinutes < limits.dailyQuotas.videoMinutes,
+          reason: limits.dailyQuotas.videoMinutes !== -1 && usage.dailyUsage.videoMinutes >= limits.dailyQuotas.videoMinutes 
+            ? 'Daily video limit reached' : undefined,
+          remainingQuota: typeof remainingVideo === 'number' ? remainingVideo : undefined
         };
+      }
 
-      case 'search':
-        if (limits.dailyQuotas.searches === -1) {
-          return { allowed: true }; // Unlimited
-        }
-        const remainingSearches = limits.dailyQuotas.searches - usage.dailyUsage.searches;
+      case 'search': {
+        const remainingSearches = limits.dailyQuotas.searches === -1 ? 'unlimited' : 
+          Math.max(0, limits.dailyQuotas.searches - usage.dailyUsage.searches);
         return {
-          allowed: remainingSearches > 0,
-          reason: remainingSearches <= 0 ? 'Daily search limit reached' : undefined,
-          remainingQuota: remainingSearches
+          allowed: limits.dailyQuotas.searches === -1 || usage.dailyUsage.searches < limits.dailyQuotas.searches,
+          reason: limits.dailyQuotas.searches !== -1 && usage.dailyUsage.searches >= limits.dailyQuotas.searches 
+            ? 'Daily search limit reached' : undefined,
+          remainingQuota: typeof remainingSearches === 'number' ? remainingSearches : undefined
         };
+      }
 
-      case 'domain':
-        const remainingDomains = limits.prvDomains - usage.prvDomainsUsed;
+      case 'domain': {
+        const remainingDomains = Math.max(0, limits.prvDomains - usage.prvDomainsUsed);
         return {
           allowed: remainingDomains > 0,
           reason: remainingDomains <= 0 ? '.prv domain limit reached' : undefined,
           remainingQuota: remainingDomains
         };
+      }
 
-      case 'storage':
-        const remainingStorage = limits.storage - usage.storageUsed;
+      case 'storage': {
+        const remainingStorage = Math.max(0, limits.storage - usage.storageUsed);
         return {
           allowed: remainingStorage > 0,
           reason: remainingStorage <= 0 ? 'Storage limit reached' : undefined,
           remainingQuota: remainingStorage
         };
+      }
 
-      case 'traffic':
+      case 'traffic': {
         if (limits.traffic === -1) {
           return { allowed: true }; // Unlimited
         }
-        const remainingTraffic = limits.traffic - usage.trafficUsed;
+        const remainingTraffic = Math.max(0, limits.traffic - usage.trafficUsed);
         return {
           allowed: remainingTraffic > 0,
           reason: remainingTraffic <= 0 ? 'Traffic limit reached' : undefined,
           remainingQuota: remainingTraffic
         };
+      }
 
       default:
         return { allowed: false, reason: 'Unknown operation' };
