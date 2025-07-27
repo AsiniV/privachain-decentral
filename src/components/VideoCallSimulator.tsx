@@ -60,7 +60,6 @@ export function VideoCallSimulator({ onBack }: VideoCallSimulatorProps) {
   const [premiumFeatures] = useKV('premium_access', null)
   
   const videoRef = useRef<HTMLVideoElement>(null)
-  const _remoteVideoRef = useRef<HTMLVideoElement>(null)
   
   const [callMetrics, setCallMetrics] = useState<CallMetrics>({
     bitrate: 1200,
@@ -182,7 +181,7 @@ export function VideoCallSimulator({ onBack }: VideoCallSimulatorProps) {
             videoRef.current.srcObject = stream
           }
           toast.success('CameraPlus and microphone access granted')
-        } catch (error) {
+        } catch {
           toast.warning('Using simulated video stream')
         }
       }
@@ -192,7 +191,7 @@ export function VideoCallSimulator({ onBack }: VideoCallSimulatorProps) {
       setCallDuration(0)
       toast.success('Call connected successfully!')
       
-    } catch (error) {
+    } catch {
       setConnectionStatus('failed')
       toast.error('Failed to establish connection')
     }

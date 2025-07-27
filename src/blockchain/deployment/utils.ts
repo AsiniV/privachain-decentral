@@ -175,14 +175,14 @@ export function estimateDeploymentCosts(gasPrice: string): {
 }
 
 // Contract interaction helpers
-export function buildExecuteMsg(contractType: ContractType, action: string, params: any): any {
-  const msg: any = {}
+export function buildExecuteMsg(contractType: ContractType, action: string, params: Record<string, unknown>): Record<string, unknown> {
+  const msg: Record<string, unknown> = {}
   msg[action] = params
   return msg
 }
 
-export function buildQueryMsg(contractType: ContractType, query: string, params: any = {}): any {
-  const msg: any = {}
+export function buildQueryMsg(contractType: ContractType, query: string, params: Record<string, unknown> = {}): Record<string, unknown> {
+  const msg: Record<string, unknown> = {}
   msg[query] = params
   return msg
 }
@@ -264,12 +264,12 @@ export async function retryDeployment<T>(
 export interface UpgradeParams {
   contractAddress: string
   newCodeId: number
-  migrateMsg: any
+  migrateMsg: Record<string, unknown>
 }
 
-export function buildMigrateMsg(contractType: ContractType, fromVersion: string, toVersion: string): any {
+export function buildMigrateMsg(contractType: ContractType, fromVersion: string, toVersion: string): Record<string, unknown> {
   // Contract-specific migration logic
-  const migrations: Record<ContractType, any> = {
+  const migrations: Record<ContractType, Record<string, unknown>> = {
     mail: { upgrade_version: toVersion },
     domain: { upgrade_version: toVersion },
     videoSignaling: { upgrade_version: toVersion },

@@ -211,7 +211,7 @@ class ProxyVPNService {
     }
   }
 
-  private async performHandshake(_node: ProxyNode): Promise<void> {
+  private async performHandshake(): Promise<void> {
     // Simulate secure handshake with encryption key exchange
     return new Promise((resolve, reject) => {
       setTimeout(() => {
@@ -416,7 +416,7 @@ class ProxyVPNService {
       })
 
       const data = await response.json()
-      return data.Answer?.map((answer: any) => answer.data) || []
+      return data.Answer?.map((answer: Record<string, unknown>) => answer.data) || []
     } catch (error) {
       console.error('DNS resolution failed:', error)
       return []
@@ -456,8 +456,8 @@ class ProxyVPNService {
 
   disableKillSwitch(): void {
     // Restore original fetch function
-    if ((window.fetch as any).original) {
-      window.fetch = (window.fetch as any).original
+    if ((window.fetch as Record<string, unknown>).original) {
+      window.fetch = (window.fetch as Record<string, unknown>).original
     }
   }
 

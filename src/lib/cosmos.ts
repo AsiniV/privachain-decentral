@@ -7,7 +7,7 @@ import { SigningStargateClient, StargateClient } from '@cosmjs/stargate'
 import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing'
 import { stringToPath } from '@cosmjs/crypto'
 import { coins, GasPrice } from '@cosmjs/stargate'
-import { MsgExecuteContract, MsgInstantiateContract } from 'cosmjs-types/cosmwasm/wasm/v1/tx'
+import { MsgExecuteContract } from 'cosmjs-types/cosmwasm/wasm/v1/tx'
 import { toUtf8 } from '@cosmjs/encoding'
 
 // Osmosis testnet configuration
@@ -287,7 +287,7 @@ export class CosmosClient {
     }
   }
 
-  async queryDomain(domainName: string): Promise<any> {
+  async queryDomain(domainName: string): Promise<Record<string, unknown> | null> {
     if (!this.client) return null
 
     try {
@@ -307,7 +307,7 @@ export class CosmosClient {
     }
   }
 
-  async queryZKIdentity(publicHash: string): Promise<any> {
+  async queryZKIdentity(publicHash: string): Promise<Record<string, unknown> | null> {
     if (!this.client) return null
 
     try {

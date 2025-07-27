@@ -30,7 +30,6 @@ export function PaymentView({ onBack }: PaymentViewProps) {
     name: ''
   })
   const [processing, setProcessing] = useState(false)
-  const [_premiumStatus] = useKV('premium_access', null)
 
   const plans = {
     monthly: {
@@ -69,7 +68,7 @@ export function PaymentView({ onBack }: PaymentViewProps) {
       const order = await paymentService.createOrder(selectedPlan)
       setCurrentOrder(order)
       setStep('method')
-    } catch (error) {
+    } catch {
       toast.error('Failed to create order. Please try again.')
     }
   }
@@ -86,7 +85,7 @@ export function PaymentView({ onBack }: PaymentViewProps) {
       })
       setCurrentInvoice(invoice)
       setStep('processing')
-    } catch (error) {
+    } catch {
       toast.error('Failed to create payment invoice. Please try again.')
     } finally {
       setProcessing(false)
@@ -115,7 +114,7 @@ export function PaymentView({ onBack }: PaymentViewProps) {
         toast.error(result.message)
         setStep('card')
       }
-    } catch (error) {
+    } catch {
       toast.error('Payment processing failed. Please try again.')
       setStep('card')
     } finally {

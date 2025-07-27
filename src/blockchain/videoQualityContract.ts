@@ -344,7 +344,7 @@ export class MockVideoQualityContract implements VideoQualityContract {
     console.log(`Penalized server ${serverId}: ${penalty} PRIV slashed`)
   }
 
-  async reportServerIssue(serverId: string, issueType: string, _evidence: string): Promise<void> {
+  async reportServerIssue(serverId: string, issueType: string): Promise<void> {
     const server = this.servers.get(serverId)
     if (!server) throw new Error('Desktop not found')
 
@@ -411,7 +411,7 @@ export class MockVideoQualityContract implements VideoQualityContract {
     }
   }
 
-  async getUserOptimizationHistory(_userAddress: string): Promise<OptimizationEvent[]> {
+  async getUserOptimizationHistory(): Promise<OptimizationEvent[]> {
     // Return recent optimization events (in production, filter by user)
     return this.optimizationHistory.slice(-10)
   }

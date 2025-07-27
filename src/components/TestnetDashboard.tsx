@@ -43,7 +43,7 @@ export function TestnetDashboard() {
     try {
       const newStatus = await getTestnetStatus()
       setStatus(newStatus)
-    } catch (error) {
+    } catch {
       toast.error('Failed to fetch testnet status')
     } finally {
       setLoading(false)
@@ -56,13 +56,13 @@ export function TestnetDashboard() {
       const interval = setInterval(refreshStatus, 10000) // Refresh every 10 seconds
       return () => clearInterval(interval)
     }
-  }, [isTestnetConnected])
+  }, [isTestnetConnected, refreshStatus])
 
   const handleConnect = async () => {
     setLoading(true)
     try {
       await connectToTestnet()
-    } catch (error) {
+    } catch {
       // Error already handled in context
     } finally {
       setLoading(false)
@@ -73,7 +73,7 @@ export function TestnetDashboard() {
     setLoading(true)
     try {
       await switchTestnet(endpoint)
-    } catch (error) {
+    } catch {
       // Error already handled in context
     } finally {
       setLoading(false)
@@ -97,7 +97,7 @@ export function TestnetDashboard() {
       await new Promise(resolve => setTimeout(resolve, 2000))
       toast.success('Faucet tokens requested successfully!')
       setFaucetAddress('')
-    } catch (error) {
+    } catch {
       toast.error('Failed to request faucet tokens')
     } finally {
       setLoading(false)

@@ -99,7 +99,7 @@ export function WalletManager() {
     }
   };
 
-  const connectWallet = async (_type: 'keplr' | 'leap' | 'cosmostation') => {
+  const connectWallet = async () => {
     // Simulate wallet connection
     setWalletConnected(true);
     setWalletBalance({
@@ -135,8 +135,6 @@ export function WalletManager() {
       recommendedAction: 'Premium activated - unlimited secure communication'
     }));
   };
-
-  const _selectedMethod = paymentMethods.find(m => m.id === selectedPayment);
 
   return (
     <div className="space-y-6">

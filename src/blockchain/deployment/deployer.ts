@@ -140,7 +140,7 @@ export class PrivaChainDeployer {
     return await this.deployContract('prvToken', initMsg, 'PRIV Token')
   }
 
-  async deployNFTContract(_prvTokenAddress: string): Promise<ContractAddress> {
+  async deployNFTContract(): Promise<ContractAddress> {
     const initMsg = {
       name: 'PrivaChain Identity NFT',
       symbol: 'PRIV-ID',
@@ -224,31 +224,31 @@ export class PrivaChainDeployer {
       
       // Deploy NFT contract
       console.log('2/8 Deploying NFT Contract...')
-      const _nft = await this.deployNFTContract(prvToken.contractAddress)
+      await this.deployNFTContract()
       
       // Deploy mail contract
       console.log('3/8 Deploying Envelope Contract...')
-      const _mail = await this.deployMailContract()
+      await this.deployMailContract()
       
       // Deploy domain contract
       console.log('4/8 Deploying Domain Contract...')
-      const _domain = await this.deployDomainContract()
+      await this.deployDomainContract()
       
       // Deploy video signaling
       console.log('5/8 Deploying VideoCamera Signaling...')
-      const _videoSignaling = await this.deployVideoSignalingContract()
+      await this.deployVideoSignalingContract()
       
       // Deploy rewards contract (depends on PRIV token)
       console.log('6/8 Deploying Rewards Contract...')
-      const _rewards = await this.deployRewardsContract(prvToken.contractAddress)
+      await this.deployRewardsContract(prvToken.contractAddress)
       
       // Deploy consensus contract
       console.log('7/8 Deploying Consensus Contract...')
-      const _consensus = await this.deployConsensusContract()
+      await this.deployConsensusContract()
       
       // Deploy ZK rollup
       console.log('8/8 Deploying ZK Rollup...')
-      const _zkRollup = await this.deployZKRollupContract()
+      await this.deployZKRollupContract()
 
       console.log('✅ All contracts deployed successfully!')
       

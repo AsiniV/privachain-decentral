@@ -288,7 +288,7 @@ export class AnonymousDNS {
     }
 
     // Verify ownership through ZK proof
-    const ownershipProof = await zkCrypto.generateAuthProof(
+    await zkCrypto.generateAuthProof(
       identity,
       domainName,
       'domain-update'

@@ -22,10 +22,10 @@ interface VideoQualityDashboardProps {
   onServerSelected?: (server: TurnServerInfo) => void
   currentSessionId?: string
   isInCall?: boolean
-  onSettingsChange?: (settings: any) => void
+  onSettingsChange?: (settings: Record<string, unknown>) => void
 }
 
-export function VideoQualityDashboard({ onServerSelected, currentSessionId, isInCall, onSettingsChange }: VideoQualityDashboardProps) {
+export function VideoQualityDashboard({ onServerSelected, currentSessionId }: VideoQualityDashboardProps) {
   const [servers, setServers] = useState<TurnServerInfo[]>([])
   const [selectedRegion, setSelectedRegion] = useState<string>('auto')
   const [qualityRequirement, setQualityRequirement] = useState<string>('HD')
@@ -38,7 +38,7 @@ export function VideoQualityDashboard({ onServerSelected, currentSessionId, isIn
     if (currentSessionId) {
       simulateQualityMetrics()
     }
-  }, [currentSessionId])
+  }, [currentSessionId, simulateQualityMetrics])
 
   const loadServers = async () => {
     try {
@@ -84,7 +84,7 @@ export function VideoQualityDashboard({ onServerSelected, currentSessionId, isIn
         }
       ]
       setServers(mockServers)
-    } catch (error) {
+    } catch {
       toast.error('Failed to load TURN servers')
     }
   }
@@ -122,7 +122,7 @@ export function VideoQualityDashboard({ onServerSelected, currentSessionId, isIn
       setOptimalServer(server)
       onServerSelected?.(server)
       toast.success(`Optimized to server: ${server.region} (${server.latency}ms)`)
-    } catch (error) {
+    } catch {
       toast.error('Failed to optimize connection')
     } finally {
       setIsOptimizing(false)
@@ -141,7 +141,7 @@ export function VideoQualityDashboard({ onServerSelected, currentSessionId, isIn
       setOptimalServer(newServer)
       onServerSelected?.(newServer)
       toast.success(`Switched to backup server: ${newServer.region}`)
-    } catch (error) {
+    } catch {
       toast.error('Failover failed')
     }
   }
@@ -152,7 +152,7 @@ export function VideoQualityDashboard({ onServerSelected, currentSessionId, isIn
     try {
       await videoQualityContract.reportQualityMetrics(currentSessionId, qualityMetrics)
       toast.success('Quality metrics reported')
-    } catch (error) {
+    } catch {
       toast.error('Failed to report quality metrics')
     }
   }

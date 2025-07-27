@@ -299,8 +299,8 @@ export class ZKCryptography {
    */
   private async generateCircuitProof(
     circuitName: string,
-    privateInputs: any,
-    publicInputs: any
+    privateInputs: Record<string, unknown>,
+    publicInputs: Record<string, unknown>
   ): Promise<string> {
     // Simplified proof generation - in production would use snarkjs
     const combined = JSON.stringify({ circuitName, privateInputs, publicInputs });

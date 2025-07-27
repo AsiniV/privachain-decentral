@@ -220,7 +220,7 @@ export class ZKIdentityManager {
   }
 
   // Import identity from backup
-  async importIdentity(exportedData: string, _password?: string): Promise<ZKIdentity> {
+  async importIdentity(exportedData: string): Promise<ZKIdentity> {
     try {
       // In production, decrypt with password first
       const data = JSON.parse(exportedData)

@@ -5,7 +5,6 @@
 
 import { randomBytes } from '@noble/hashes/utils'
 import { sha256 } from '@noble/hashes/sha256'
-import { secp256k1 } from '@noble/curves/secp256k1'
 
 // TEE (Trusted Execution Environment) interface
 export interface TEEConfig {
@@ -172,7 +171,7 @@ export class ProductionCryptography {
     activityData: {
       timestamp: number
       action: string
-      metadata: Record<string, any>
+      metadata: Record<string, unknown>
       networkData: {
         sourceIP: string
         userAgent: string
@@ -331,13 +330,13 @@ export class ProductionCryptography {
     return new Uint8Array(1024) // Placeholder
   }
 
-  private async generateWitness(circuitWasm: Uint8Array, inputs: Record<string, string>): Promise<Uint8Array> {
+  private async generateWitness(): Promise<Uint8Array> {
     // Generate witness using snarkjs
     // This would use actual snarkjs library
     return new Uint8Array(512) // Placeholder
   }
 
-  private async groth16Prove(circuit: string, witness: Uint8Array): Promise<any> {
+  private async groth16Prove(): Promise<Record<string, unknown>> {
     // Generate Groth16 proof using snarkjs
     // This would use actual snarkjs library
     return {
@@ -346,7 +345,7 @@ export class ProductionCryptography {
     }
   }
 
-  private async formallyVerifyProof(circuit: string, proof: any): Promise<any> {
+  private async formallyVerifyProof(circuit: string): Promise<Record<string, unknown>> {
     // Formal verification using Lean or Coq
     // This would interface with theorem provers
     return {
@@ -381,7 +380,7 @@ export class ProductionCryptography {
     }
   }
 
-  private async detectBehavioralAnomalies(userId: string, activities: any[]): Promise<ThreatDetectionResult[]> {
+  private async detectBehavioralAnomalies(userId: string, activities: unknown[]): Promise<ThreatDetectionResult[]> {
     const threats: ThreatDetectionResult[] = []
     
     // Get user's behavioral baseline
@@ -406,7 +405,7 @@ export class ProductionCryptography {
     return threats
   }
 
-  private async detectNetworkIntrusions(activities: any[]): Promise<ThreatDetectionResult[]> {
+  private async detectNetworkIntrusions(activities: unknown[]): Promise<ThreatDetectionResult[]> {
     const threats: ThreatDetectionResult[] = []
     
     // Check for suspicious network patterns
@@ -439,7 +438,7 @@ export class ProductionCryptography {
     return threats
   }
 
-  private async detectKnownAttackPatterns(activities: any[]): Promise<ThreatDetectionResult[]> {
+  private async detectKnownAttackPatterns(activities: unknown[]): Promise<ThreatDetectionResult[]> {
     const threats: ThreatDetectionResult[] = []
     
     // Known attack patterns
@@ -468,7 +467,7 @@ export class ProductionCryptography {
     return threats
   }
 
-  private async mlBasedThreatDetection(activities: any[]): Promise<ThreatDetectionResult[]> {
+  private async mlBasedThreatDetection(activities: unknown[]): Promise<ThreatDetectionResult[]> {
     // ML-based threat detection would use actual ML models
     // This is a simplified heuristic-based implementation
     const threats: ThreatDetectionResult[] = []
@@ -494,7 +493,7 @@ export class ProductionCryptography {
 
   // Helper methods for threat detection
   
-  private extractActivityPattern(activities: any[]): number[] {
+  private extractActivityPattern(activities: unknown[]): number[] {
     // Extract numerical features from activities
     return [
       activities.length,
@@ -517,7 +516,7 @@ export class ProductionCryptography {
     return Math.min(score, 1)
   }
 
-  private isRateLimitViolation(networkData: any): boolean {
+  private isRateLimitViolation(networkData: Record<string, unknown>): boolean {
     // Check if request rate exceeds limits
     return networkData.requestSize > 10000 || networkData.responseTime < 10
   }
@@ -534,7 +533,7 @@ export class ProductionCryptography {
     return suspiciousPatterns.some(pattern => pattern.test(userAgent))
   }
 
-  private extractMLFeatures(activities: any[]): number[] {
+  private extractMLFeatures(activities: unknown[]): number[] {
     // Extract features for ML model
     return [
       activities.length,
@@ -559,17 +558,17 @@ export class ProductionCryptography {
 
   // Cryptographic implementations (simplified)
   
-  private async sealKeyInTEE(key: Uint8Array): Promise<void> {
+  private async sealKeyInTEE(): Promise<void> {
     // Seal key using TEE
     console.log('🔒 Key sealed in TEE')
   }
 
-  private async storeKeyInHSM(key: Uint8Array): Promise<void> {
+  private async storeKeyInHSM(): Promise<void> {
     // Store key in HSM
     console.log('🔐 Key stored in HSM')
   }
 
-  private async generateKeyInTEE(purpose: string): Promise<{ publicKey: Uint8Array; privateKey: Uint8Array }> {
+  private async generateKeyInTEE(): Promise<{ publicKey: Uint8Array; privateKey: Uint8Array }> {
     // Generate key inside TEE
     return {
       publicKey: randomBytes(65),

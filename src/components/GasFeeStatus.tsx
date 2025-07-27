@@ -46,7 +46,7 @@ export function GasFeeStatus() {
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
-  const { wallet, canAffordGas: _canAffordGas, estimateGasFee: _estimateGasFee } = useTestWallet();
+  const { wallet } = useTestWallet();
 
   useEffect(() => {
     loadPaymentStatus();

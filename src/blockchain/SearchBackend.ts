@@ -347,7 +347,7 @@ export class DecentralizedSearchBackend {
   /**
    * MagnifyingGlass ComposeDB content database
    */
-  private async searchComposeDB(query: string, _filters: Record<string, unknown>): Promise<SearchIndexEntry[]> {
+  private async searchComposeDB(query: string): Promise<SearchIndexEntry[]> {
     try {
       if (!this.composeDbInitialized) {
         return []

@@ -68,8 +68,6 @@ interface PrivacyAnalysis {
 
 export function ExtensionManager() {
   const [extensions, setExtensions] = useKV<Extension[]>('installed-extensions', [])
-  const [showPrivacyWarnings, setShowPrivacyWarnings] = useKV('show-extension-privacy-warnings', true)
-  const [_extensionPermissions, _setExtensionPermissions] = useKV('extension-permissions-granted', {})
   const [selectedExtension, setSelectedExtension] = useState<Extension | null>(null)
   const [privacyAnalysis, setPrivacyAnalysis] = useState<PrivacyAnalysis | null>(null)
   const [installProgress, setInstallProgress] = useState(0)
@@ -154,7 +152,7 @@ export function ExtensionManager() {
     if (extensions.length === 0) {
       setExtensions(mockExtensions)
     }
-  }, [extensions.length, setExtensions])
+  }, [extensions.length, setExtensions, mockExtensions])
 
   const analyzeExtensionPrivacy = (extension: Extension): PrivacyAnalysis => {
     const analysis: PrivacyAnalysis = {
@@ -329,7 +327,7 @@ export function ExtensionManager() {
         description: 'Review permissions before enabling'
       })
 
-    } catch (_error) {
+    } catch {
       toast.error('Failed to install extension', {
         description: 'Please check the extension file and try again'
       })
