@@ -39,7 +39,7 @@ interface NetworkMetrics {
 }
 
 export class ProductionNetworking {
-  private node: any = null // libp2p node
+  private node: unknown = null // libp2p node
   private mixnetNodes: Map<string, MixnetNode> = new Map()
   private activeCircuits: Map<string, OnionRoute> = new Map()
   private peerDatabase: Map<string, PeerInfo> = new Map()
@@ -244,7 +244,7 @@ export class ProductionNetworking {
       this.activeCircuits.set(routeId, {
         nodes: route,
         circuits,
-        totalLatency: route.reduce((sum, node) => sum + (100 + Math.random() * 200), 0),
+        totalLatency: route.reduce((sum, _node) => sum + (100 + Math.random() * 200), 0),
         bandwidth: Math.min(...route.map(node => node.bandwidth))
       })
 
@@ -286,7 +286,7 @@ export class ProductionNetworking {
    * Establish direct P2P connection for video calls
    */
   async establishDirectConnection(peerId: string): Promise<{
-    connection: any
+    connection: unknown
     bandwidth: number
     latency: number
   }> {
@@ -361,7 +361,7 @@ export class ProductionNetworking {
 
   // Event handlers
 
-  private handlePeerConnect(event: any): void {
+  private handlePeerConnect(event: { detail: { toString(): string } }): void {
     const peerId = event.detail.toString()
     console.log('🔗 Peer connected:', peerId)
     
@@ -369,12 +369,12 @@ export class ProductionNetworking {
     this.updatePeerInfo(peerId)
   }
 
-  private handlePeerDisconnect(event: any): void {
+  private handlePeerDisconnect(event: { detail: { toString(): string } }): void {
     const peerId = event.detail.toString()
     console.log('🔌 Peer disconnected:', peerId)
   }
 
-  private handlePeerDiscoveryMessage(event: any): void {
+  private handlePeerDiscoveryMessage(_event: unknown): void {
     // Handle peer discovery announcements
     console.log('📡 Peer discovery message received')
   }
@@ -415,7 +415,7 @@ export class ProductionNetworking {
     return nodes[0] // Fallback
   }
 
-  private async buildOnionCircuit(route: MixnetNode[], destination: string): Promise<string[]> {
+  private async buildOnionCircuit(route: MixnetNode[], _destination: string): Promise<string[]> {
     const circuits: string[] = []
     
     for (let i = 0; i < route.length; i++) {
@@ -442,7 +442,7 @@ export class ProductionNetworking {
     console.log(`📤 Sending ${data.length} bytes to ${node.id}`)
   }
 
-  private async measureConnectionQuality(connection: any): Promise<{
+  private async measureConnectionQuality(_connection: unknown): Promise<{
     bandwidth: number
     latency: number
   }> {
@@ -504,7 +504,7 @@ export class ProductionNetworking {
     console.log('📧 Starting mail relay service...')
     
     // Register mail relay protocol
-    await this.node.handle('/privachain/mail/1.0.0', ({ stream }) => {
+    await this.node.handle('/privachain/mail/1.0.0', ({ stream: _stream }) => {
       console.log('📨 Mail relay request received')
       // Handle mail relay requests
     })
@@ -514,7 +514,7 @@ export class ProductionNetworking {
     console.log('📹 Starting video signaling service...')
     
     // Register video signaling protocol
-    await this.node.handle('/privachain/video/1.0.0', ({ stream }) => {
+    await this.node.handle('/privachain/video/1.0.0', ({ stream: _stream }) => {
       console.log('📞 Video signaling request received')
       // Handle video signaling
     })
@@ -524,7 +524,7 @@ export class ProductionNetworking {
     console.log('📁 Starting content distribution service...')
     
     // Register content distribution protocol
-    await this.node.handle('/privachain/content/1.0.0', ({ stream }) => {
+    await this.node.handle('/privachain/content/1.0.0', ({ stream: _stream }) => {
       console.log('📦 Content request received')
       // Handle content distribution
     })

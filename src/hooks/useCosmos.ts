@@ -237,7 +237,7 @@ export function useCosmos() {
     }
   }
 
-  const queryDomain = async (domainName: string): Promise<any> => {
+  const queryDomain = async (domainName: string): Promise<unknown> => {
     try {
       return await cosmosClient.queryDomain(domainName)
     } catch (error) {

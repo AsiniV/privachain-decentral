@@ -207,7 +207,7 @@ export function IPFSIntegrationDemo() {
       } else {
         toast.error(result.error || 'VideoCamera call demo failed')
       }
-    } catch (_error) {
+    } catch {
       toast.error('VideoCamera call demo failed')
     }
   }
@@ -230,7 +230,7 @@ export function IPFSIntegrationDemo() {
       } else {
         toast.error(result.error || 'Email failed')
       }
-    } catch (_error) {
+    } catch {
       toast.error('Email demo failed')
     }
   }

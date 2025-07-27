@@ -16,7 +16,7 @@ export interface PRVDomain {
   metadata: {
     description?: string;
     avatar?: string;
-    preferences?: Record<string, any>;
+    preferences?: Record<string, unknown>;
   };
 }
 

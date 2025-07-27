@@ -3,7 +3,7 @@
  * Displays user's payment status, quotas, and upgrade options
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useKV } from '../hooks/useKV';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -52,7 +52,7 @@ export function GasFeeStatus() {
     loadPaymentStatus();
   }, [userAddress, loadPaymentStatus]);
 
-  const loadPaymentStatus = () => {
+  const loadPaymentStatus = useCallback(() => {
     try {
       const status = gasFeeManager.getPaymentStatus(userAddress);
       setPaymentStatus(status);
@@ -60,7 +60,7 @@ export function GasFeeStatus() {
       console.error('Failed to load payment status:', error);
       toast.error('Failed to load payment status');
     }
-  };
+  }, [userAddress]);
 
   const handleUpgradeToPremium = async () => {
     setIsLoading(true);

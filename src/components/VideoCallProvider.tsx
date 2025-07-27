@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react'
+import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react'
 import { useKV } from '../hooks/useKV'
 import { VideoCall } from './VideoCall'
 import { Button } from './ui/button'
@@ -81,7 +81,17 @@ export function VideoCallProvider({ children }: { children: ReactNode }) {
       const interval = setInterval(simulateIncomingCall, 15000)
       return () => clearInterval(interval)
     }
-  }, [callState.status, turnRelays])
+  }, [callState.status, turnRelays, setCallState])
+
+  const declineCall = useCallback(() => {
+    setCallState({
+      type: null,
+      isIncoming: false,
+      status: 'idle'
+    })
+    
+    toast.info('Call declined')
+  }, [setCallState])
 
   // Incoming call timer
   useEffect(() => {
@@ -101,7 +111,7 @@ export function VideoCallProvider({ children }: { children: ReactNode }) {
         setIncomingCallTimer(0)
       }
     }
-  }, [callState.status, callState.isIncoming])
+  }, [callState.status, callState.isIncoming, setCallState, declineCall])
 
   const initiateCall = async (contact: Contact, type: 'video' | 'audio') => {
     if (!contact.online) {
@@ -149,16 +159,6 @@ export function VideoCallProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       toast.error(`Failed to accept call: ${error}`)
     }
-  }
-
-  const declineCall = () => {
-    setCallState({
-      type: null,
-      isIncoming: false,
-      status: 'idle'
-    })
-    
-    toast.info('Call declined')
   }
 
   const endCall = async () => {

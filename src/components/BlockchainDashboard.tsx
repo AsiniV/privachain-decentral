@@ -9,7 +9,6 @@ import { Label } from '@/components/ui/label'
 import { 
   useCosmos, 
   usePrivToken, 
-  useSmartContracts,
   useZKRollup,
   calculateGasFees
 } from '../blockchain'

@@ -3,7 +3,7 @@
  * Handles anonymous .prv domain emails with IPFS storage and ZK-SNARK privacy
  */
 
-import { ipfsService, type IPFSUploadResult } from './ipfs'
+import { ipfsService } from './ipfs'
 import { gasFeeManager } from './GasFeeManager'
 import { anonymousDNS } from './AnonymousDNS'
 
@@ -453,7 +453,7 @@ export class EmailService {
   /**
    * Get recipient's public key from DNS
    */
-  private async getRecipientPublicKey(domain: string): Promise<CryptoKey> {
+  private async getRecipientPublicKey(_domain: string): Promise<CryptoKey> {
     // In production, this would query the blockchain DNS
     // For now, generate a mock key
     return crypto.subtle.generateKey(

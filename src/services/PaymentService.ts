@@ -315,7 +315,7 @@ class PaymentService {
   /**
    * Check blockchain for payment confirmation
    */
-  private async checkBlockchainPayment(invoice: PaymentInvoice): Promise<boolean> {
+  private async checkBlockchainPayment(_invoice: PaymentInvoice): Promise<boolean> {
     // Simulate blockchain API call
     // In production, use actual blockchain APIs:
     // - Monero: monerod RPC
@@ -363,14 +363,14 @@ class PaymentService {
   /**
    * Get current premium access status
    */
-  async getPremiumStatus(): Promise<any> {
+  async getPremiumStatus(): Promise<{ isPremium: boolean; expiresAt?: string; plan?: string }> {
     const premiumAccess = await spark.kv.get('premium_access')
     
     if (!premiumAccess) {
       return { isPremium: false }
     }
 
-    const access = premiumAccess as any
+    const access = premiumAccess as { expiresAt: string; plan: string }
     const isExpired = new Date() > new Date(access.expiresAt)
     
     return {

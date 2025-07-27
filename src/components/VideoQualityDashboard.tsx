@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Badge } from './ui/badge'
 import { Button } from './ui/button'
@@ -89,7 +89,7 @@ export function VideoQualityDashboard({ onServerSelected, currentSessionId }: Vi
     }
   }
 
-  const simulateQualityMetrics = () => {
+  const simulateQualityMetrics = useCallback(() => {
     if (!currentSessionId || !optimalServer) return
 
     const interval = setInterval(() => {
@@ -109,7 +109,7 @@ export function VideoQualityDashboard({ onServerSelected, currentSessionId }: Vi
     }, 5000) // Update every 5 seconds
 
     return () => clearInterval(interval)
-  }
+  }, [currentSessionId, optimalServer, qualityRequirement])
 
   const handleOptimizeConnection = async () => {
     setIsOptimizing(true)

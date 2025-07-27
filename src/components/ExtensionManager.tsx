@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useKV } from '../hooks/useKV'
 import { Button } from './ui/button'
 import { Card } from './ui/card'
@@ -74,7 +74,7 @@ export function ExtensionManager() {
   const [isInstalling, setIsInstalling] = useState(false)
 
   // Mock extensions data for demonstration
-  const mockExtensions: Extension[] = [
+  const mockExtensions: Extension[] = useMemo(() => [
     {
       id: 'ublock-origin',
       name: 'uBlock Origin',
@@ -146,7 +146,7 @@ export function ExtensionManager() {
       size: 8.7,
       updateAvailable: false
     }
-  ]
+  ], [])
 
   useEffect(() => {
     if (extensions.length === 0) {

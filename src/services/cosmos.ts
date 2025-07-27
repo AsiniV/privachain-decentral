@@ -225,7 +225,13 @@ export class CosmosBlockchainService {
         get_emails: { domain, limit }
       })
 
-      return result.emails.map((email: any) => ({
+      return result.emails.map((email: {
+        id: string;
+        sender_alias: string;
+        content_cid: string;
+        timestamp: number;
+        delivered: boolean;
+      }) => ({
         id: email.id,
         senderAlias: email.sender_alias,
         contentCid: email.content_cid,
@@ -366,7 +372,7 @@ export class CosmosBlockchainService {
     return '0'.repeat(96) // Fallback for demo
   }
 
-  private extractSessionId(result: any): string {
+  private extractSessionId(result: { events: Array<{ attributes: Array<{ key: string; value: string }> }> }): string {
     // Extract session ID from transaction events
     for (const event of result.events) {
       if (event.type === 'wasm') {
@@ -380,7 +386,7 @@ export class CosmosBlockchainService {
     return Math.random().toString(36).substring(7)
   }
 
-  private extractEmailId(result: any): string {
+  private extractEmailId(result: { events: Array<{ attributes: Array<{ key: string; value: string }> }> }): string {
     // Extract email ID from transaction events
     for (const event of result.events) {
       if (event.type === 'wasm') {

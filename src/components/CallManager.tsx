@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useKV } from '../hooks/useKV'
 import { VideoCall } from './VideoCall'
 import { Button } from './ui/button'
@@ -103,7 +103,7 @@ export function CallManager({ contacts, onCallStatusChange }: CallManagerProps) 
     toast.info(`Starting ${type} call with ${contact.name}`)
   }
 
-  const initiateIncomingCall = (contact: Contact, type: 'video' | 'audio') => {
+  const initiateIncomingCall = useCallback((contact: Contact, type: 'video' | 'audio') => {
     setCallState({
       type,
       contact,
@@ -113,7 +113,7 @@ export function CallManager({ contacts, onCallStatusChange }: CallManagerProps) 
 
     // Play notification sound (simulated)
     toast.info(`Incoming ${type} call from ${contact.name}`)
-  }
+  }, [setCallState])
 
   const acceptCall = () => {
     setCallState(prev => ({
@@ -124,7 +124,7 @@ export function CallManager({ contacts, onCallStatusChange }: CallManagerProps) 
     toast.success('Call accepted')
   }
 
-  const declineCall = () => {
+  const declineCall = useCallback(() => {
     setCallState({
       type: null,
       isIncoming: false,
@@ -132,7 +132,7 @@ export function CallManager({ contacts, onCallStatusChange }: CallManagerProps) 
     })
     
     toast.info('Call declined')
-  }
+  }, [setCallState])
 
   const endCall = () => {
     setCallState({

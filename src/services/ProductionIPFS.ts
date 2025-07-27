@@ -4,7 +4,6 @@
  */
 
 import { create, IPFSHTTPClient } from 'ipfs-http-client'
-import { CID } from 'multiformats/cid'
 
 export interface FilecoinDeal {
   dealId: string
@@ -79,7 +78,7 @@ export class ProductionIPFS {
     }
 
     try {
-      const { filename, encrypt = true, pin = true, redundancy = 3 } = options
+      const { encrypt = true, pin = true, redundancy = 3 } = options
 
       let finalContent: Uint8Array
       if (content instanceof File) {

@@ -194,7 +194,7 @@ export const useTestWallet = () => {
       
       // In real implementation, fetch actual balances from blockchain
       toast.success('Balances refreshed')
-    } catch (error) {
+    } catch {
       toast.error('Failed to refresh balances')
     } finally {
       setIsLoading(false)

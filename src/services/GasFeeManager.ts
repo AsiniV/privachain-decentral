@@ -3,7 +3,7 @@
  * Handles foundation subsidies, premium subscriptions, and test wallet sponsorship
  */
 
-import { privToken, TokenBalance } from '../blockchain/PRIVToken';
+import { privToken } from '../blockchain/PRIVToken';
 import { TEST_WALLET_ADDRESS } from '../blockchain/CosmosTestnet';
 
 export interface UserQuota {
