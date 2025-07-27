@@ -49,7 +49,7 @@ export function WalletManager() {
     freeQuotaRemaining: { messages: 8, emails: 2, videoMinutes: 10, searches: 45 },
     premiumStatus: null,
     directBalance: '0.0',
-    recommendedAction: 'Consider adding PRIV tokens for enhanced privacy'
+    recommendedAction: 'Enjoy developer-sponsored gas fees'
   });
   const [walletBalance, setWalletBalance] = useState<WalletBalance>({
     priv: '0.0',
@@ -198,7 +198,7 @@ export function WalletManager() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="text-center p-4 bg-muted rounded-lg">
                 <div className="text-2xl font-bold text-primary">{walletBalance.priv}</div>
-                <div className="text-sm text-muted-foreground">PRIV Tokens</div>
+                <div className="text-sm text-muted-foreground">Developer Sponsored</div>
               </div>
               <div className="text-center p-4 bg-muted rounded-lg">
                 <div className="text-2xl font-bold text-blue-600">{walletBalance.atom}</div>
@@ -273,7 +273,7 @@ export function WalletManager() {
           <AlertDescription className="text-yellow-800">
             <strong>Privacy Notice:</strong> Using ATOM for payments will create public transaction records 
             that can be linked to your wallet address. Your PrivaChain usage patterns may become visible. 
-            For maximum privacy, consider using PRIV tokens instead.
+            All gas fees are sponsored by the developer wallet, ensuring maximum privacy.
           </AlertDescription>
         </Alert>
       )}

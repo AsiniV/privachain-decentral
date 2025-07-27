@@ -74,10 +74,10 @@ export function ProfileView() {
         
         // Update profile premium status based on plan
         if (status?.planType === 'premium' && !profile.isPremium) {
-          setProfile({
-            ...profile,
+          setProfile(prev => ({
+            ...prev,
             isPremium: true
-          });
+          }));
         }
       } catch (error) {
         console.error('Error loading plan status:', error);
@@ -85,22 +85,22 @@ export function ProfileView() {
     };
 
     loadPlanStatus();
-  }, [profile, setProfile]);
+  }, []); // Remove dependency on profile to prevent infinite re-renders
 
   // Listen for premium activation
   useEffect(() => {
     const handlePremiumActivated = async () => {
       const status = await planManager.getPlanStatus();
       setPlanStatus(status);
-      setProfile({
-        ...profile,
+      setProfile(prev => ({
+        ...prev,
         isPremium: true
-      });
+      }));
     };
 
     window.addEventListener('premium-activated', handlePremiumActivated);
     return () => window.removeEventListener('premium-activated', handlePremiumActivated);
-  }, [profile, setProfile]);
+  }, []); // Remove dependency on profile to prevent infinite re-renders
 
   const copyToClipboard = async (text: string, type: string) => {
     try {
@@ -185,9 +185,10 @@ export function ProfileView() {
 
       <div className="flex-1 p-6">
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8">
+          <TabsList className="grid w-full grid-cols-9">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="plan">Plan</TabsTrigger>
+            <TabsTrigger value="premium">Premium</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
             <TabsTrigger value="zkauth">ZK Auth</TabsTrigger>
             <TabsTrigger value="wallet">Wallet</TabsTrigger>

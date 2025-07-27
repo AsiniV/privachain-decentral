@@ -88,8 +88,8 @@ interface BrowserViewProps {
 export function BrowserView({ initialUrl }: BrowserViewProps = {}) {
   const [tabs, setTabs] = useKV<BrowserTab[]>('browser-tabs', [])
   const [activeTabId, setActiveTabId] = useKV<string>('active-tab', '')
-  // const [bookmarks, setBookmarks] = useKV<Bookmark[]>('browser-bookmarks', [])
-  // const [history, setHistory] = useKV<string[]>('browser-history', [])
+  const [bookmarks, setBookmarks] = useKV<Bookmark[]>('browser-bookmarks', [])
+  const [history, setHistory] = useKV<string[]>('browser-history', [])
   const [proxyEnabled, setProxyEnabled] = useKV('proxy-enabled', true)
   const [vpnEnabled, setVpnEnabled] = useKV('vpn-enabled', true)
   const [adBlockEnabled, setAdBlockEnabled] = useKV('adblock-enabled', true)
@@ -232,7 +232,8 @@ export function BrowserView({ initialUrl }: BrowserViewProps = {}) {
       }
       setTabs(prev => [...prev, newTab])
       setActiveTabId(newTab.id)
-      navigateToUrl(initialUrl, newTab.id)
+      // Navigate to the URL after setting up the tab
+      setTimeout(() => navigateToUrl(initialUrl, newTab.id), 100)
     } else if (tabs.length === 0) {
       const defaultTab: BrowserTab = {
         id: '1',
@@ -245,7 +246,7 @@ export function BrowserView({ initialUrl }: BrowserViewProps = {}) {
       setTabs([defaultTab])
       setActiveTabId('1')
     }
-  }, [initialUrl, tabs.length, setTabs, setActiveTabId, navigateToUrl])
+  }, [initialUrl]) // Remove dependencies that cause circular updates
 
   // Initialize services
   useEffect(() => {
