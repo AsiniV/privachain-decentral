@@ -470,7 +470,7 @@ export class ProductionEmailService {
     const emailBytes = new TextEncoder().encode(JSON.stringify(emailData))
 
     // Use post-quantum encryption
-    const keyPair = await productionCrypto.generatePQKeyPair('CRYSTALS-Kyber')
+    await productionCrypto.generatePQKeyPair('CRYSTALS-Kyber')
     const encryptedData = await this.pqEncrypt(emailBytes, recipientPublicKey)
 
     return encryptedData
@@ -501,7 +501,7 @@ export class ProductionEmailService {
     const selectedRelays = this.selectRandomRelays(availableRelays, 3)
     
     // Create onion route
-    const routeId = await productionNetworking.createOnionRoute(
+    await productionNetworking.createOnionRoute(
       email.toDomain,
       selectedRelays.length
     )
@@ -563,28 +563,28 @@ export class ProductionEmailService {
     // Initialize dynamic PoW difficulty adjustment
   }
 
-  private async getSenderReputation(alias: string): Promise<number> {
+  private async getSenderReputation(_alias: string): Promise<number> {
     return 50 // Placeholder
   }
 
-  private async analyzeContent(content: string): Promise<{ spamScore: number; reasons: string[] }> {
+  private async analyzeContent(_content: string): Promise<{ spamScore: number; reasons: string[] }> {
     return { spamScore: 0, reasons: [] } // Placeholder
   }
 
-  private async checkRateLimit(from: string): Promise<boolean> {
+  private async checkRateLimit(_from: string): Promise<boolean> {
     return false // Placeholder
   }
 
-  private async analyzeBehavior(from: string): Promise<number> {
+  private async analyzeBehavior(_from: string): Promise<number> {
     return 0 // Placeholder
   }
 
-  private async pqEncrypt(data: Uint8Array, publicKey: Uint8Array): Promise<Uint8Array> {
+  private async pqEncrypt(data: Uint8Array, _publicKey: Uint8Array): Promise<Uint8Array> {
     // Post-quantum encryption implementation
     return data // Placeholder
   }
 
-  private async pqDecrypt(data: Uint8Array, privateKey: Uint8Array): Promise<Uint8Array> {
+  private async pqDecrypt(data: Uint8Array, _privateKey: Uint8Array): Promise<Uint8Array> {
     // Post-quantum decryption implementation
     return data // Placeholder
   }
@@ -594,19 +594,19 @@ export class ProductionEmailService {
     return shuffled.slice(0, count)
   }
 
-  private async registerDomainOnChain(domain: PrvDomain): Promise<void> {
+  private async registerDomainOnChain(_domain: PrvDomain): Promise<void> {
     // Register domain on blockchain
   }
 
-  private async createDNSRecords(domain: string, mxRecords: string[]): Promise<void> {
+  private async createDNSRecords(_domain: string, _mxRecords: string[]): Promise<void> {
     // Create actual DNS records
   }
 
-  private async verifyDomainOwnership(domain: string, zkProof: Uint8Array): Promise<boolean> {
+  private async verifyDomainOwnership(_domain: string, _zkProof: Uint8Array): Promise<boolean> {
     return true // Placeholder
   }
 
-  private async updateDomainReputation(domain: string, action: string): Promise<void> {
+  private async updateDomainReputation(_domain: string, _action: string): Promise<void> {
     // Update domain reputation based on actions
   }
 

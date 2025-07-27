@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react'
+import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react'
 import { useKV } from '../hooks/useKV'
 import { VideoCall } from './VideoCall'
 import { Button } from './ui/button'
@@ -81,7 +81,7 @@ export function VideoCallProvider({ children }: { children: ReactNode }) {
       const interval = setInterval(simulateIncomingCall, 15000)
       return () => clearInterval(interval)
     }
-  }, [callState.status, turnRelays])
+  }, [callState.status, turnRelays, setCallState])
 
   // Incoming call timer
   useEffect(() => {
@@ -101,7 +101,7 @@ export function VideoCallProvider({ children }: { children: ReactNode }) {
         setIncomingCallTimer(0)
       }
     }
-  }, [callState.status, callState.isIncoming])
+  }, [callState.status, callState.isIncoming, setCallState])
 
   const initiateCall = async (contact: Contact, type: 'video' | 'audio') => {
     if (!contact.online) {

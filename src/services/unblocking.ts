@@ -287,7 +287,7 @@ class WebsiteUnblockingService {
         const response = await fetch(`https://${mirror}`, { 
           method: 'HEAD',
           timeout: 5000 
-        } as any)
+        } as RequestInit)
         
         if (response.ok) {
           return mirror
@@ -373,7 +373,7 @@ class WebsiteUnblockingService {
 
         const data = await response.json()
         if (data.Answer && data.Answer.length > 0) {
-          return data.Answer.map((answer: any) => answer.data)
+          return data.Answer.map((answer: { data: string }) => answer.data)
         }
       } catch {
         continue

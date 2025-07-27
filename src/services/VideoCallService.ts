@@ -398,7 +398,7 @@ export class VideoCallService {
   /**
    * Get call history and statistics
    */
-  getCallHistory(domain: string): {
+  getCallHistory(_domain: string): {
     totalCalls: number
     totalDuration: number
     averageDuration: number
@@ -594,7 +594,7 @@ export class VideoCallService {
     return this.currentSession?.sessionId === sessionId ? this.currentSession : null
   }
 
-  private async getSignalingData(_sessionId: string): Promise<any> {
+  private async getSignalingData(_sessionId: string): Promise<{ type: string; sdp: string }> {
     // Mock implementation - would fetch from IPFS
     return { type: 'offer', sdp: 'mock_sdp_data' }
   }

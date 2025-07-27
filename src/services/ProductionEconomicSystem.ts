@@ -652,28 +652,28 @@ export class ProductionEconomicSystem {
 
   // Placeholder methods for blockchain integration
 
-  private async recordStakingOnChain(position: StakingPosition): Promise<void> {
+  private async recordStakingOnChain(_position: StakingPosition): Promise<void> {
     // Record staking transaction on blockchain
   }
 
-  private async startUnbondingProcess(position: StakingPosition, completionTime: number): Promise<void> {
+  private async startUnbondingProcess(_position: StakingPosition, _completionTime: number): Promise<void> {
     // Start unbonding process on blockchain
   }
 
-  private async processRewardClaim(staker: string, amount: string): Promise<void> {
+  private async processRewardClaim(_staker: string, _amount: string): Promise<void> {
     // Process reward claim on blockchain
   }
 
-  private async lockChannelFunds(sender: string, amount: string): Promise<void> {
+  private async lockChannelFunds(_sender: string, _amount: string): Promise<void> {
     // Lock funds for payment channel
   }
 
-  private async verifyPaymentSignature(channel: MicropaymentChannel, amount: string, signature: string): Promise<boolean> {
+  private async verifyPaymentSignature(_channel: MicropaymentChannel, _amount: string, _signature: string): Promise<boolean> {
     // Verify payment signature
     return true // Placeholder
   }
 
-  private async lockProposalDeposit(proposer: string, deposit: string): Promise<void> {
+  private async lockProposalDeposit(_proposer: string, _deposit: string): Promise<void> {
     // Lock proposal deposit
   }
 }

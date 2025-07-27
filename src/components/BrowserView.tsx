@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useKV } from '../hooks/useKV'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
@@ -289,7 +289,7 @@ export function BrowserView({ initialUrl }: BrowserViewProps = {}) {
     }
   }
 
-  const navigateToUrl = async (url: string, tabId?: string) => {
+  const navigateToUrl = useCallback(async (url: string, tabId?: string) => {
     const targetTabId = tabId || activeTabId
     if (!targetTabId) return
 
@@ -436,7 +436,7 @@ export function BrowserView({ initialUrl }: BrowserViewProps = {}) {
     }
 
     setTimeout(() => setLoadingProgress(0), 500)
-  }
+  }, [activeTabId, setTabs])
 
   const refreshPage = () => {
     if (activeTab) {
