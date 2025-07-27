@@ -30,7 +30,11 @@ export class ZKIdentityManager {
       const publicHash = this.bytesToHex(sha256(privateKey))
       
       // Create commitment for ZK proofs
-      const commitment = this.bytesToHex(sha256(privateKey.concat(randomBytes(32))))
+      const randomSalt = randomBytes(32)
+      const combined = new Uint8Array(privateKey.length + randomSalt.length)
+      combined.set(privateKey, 0)
+      combined.set(randomSalt, privateKey.length)
+      const commitment = this.bytesToHex(sha256(combined))
       
       this.identity = {
         privateKey,
@@ -55,7 +59,11 @@ export class ZKIdentityManager {
     try {
       const privateKey = this.hexToBytes(privateKeyHex)
       const publicHash = this.bytesToHex(sha256(privateKey))
-      const commitment = this.bytesToHex(sha256(privateKey.concat(randomBytes(32))))
+      const randomSalt = randomBytes(32)
+      const combined = new Uint8Array(privateKey.length + randomSalt.length)
+      combined.set(privateKey, 0)
+      combined.set(randomSalt, privateKey.length)
+      const commitment = this.bytesToHex(sha256(combined))
       
       this.identity = {
         privateKey,
@@ -81,7 +89,11 @@ export class ZKIdentityManager {
       // This is a simplified demonstration
       
       const secret = this.identity.privateKey
-      const nullifier = sha256(secret.concat(this.stringToBytes(groupId)))
+      const groupIdBytes = this.stringToBytes(groupId)
+      const combined = new Uint8Array(secret.length + groupIdBytes.length)
+      combined.set(secret, 0)
+      combined.set(groupIdBytes, secret.length)
+      const nullifier = sha256(combined)
       const nullifierHash = this.bytesToHex(nullifier)
       
       // Create proof (simplified)
@@ -114,7 +126,10 @@ export class ZKIdentityManager {
     try {
       const secret = this.identity.privateKey
       const domainBytes = this.stringToBytes(domain)
-      const nullifier = sha256(secret.concat(domainBytes))
+      const combined = new Uint8Array(secret.length + domainBytes.length)
+      combined.set(secret, 0)
+      combined.set(domainBytes, secret.length)
+      const nullifier = sha256(combined)
       const nullifierHash = this.bytesToHex(nullifier)
       
       // Create ownership proof
@@ -153,7 +168,11 @@ export class ZKIdentityManager {
       }
       
       const secret = this.identity.privateKey
-      const nullifier = sha256(secret.concat(this.stringToBytes('reputation')))
+      const reputationBytes = this.stringToBytes('reputation')
+      const combined = new Uint8Array(secret.length + reputationBytes.length)
+      combined.set(secret, 0)
+      combined.set(reputationBytes, secret.length)
+      const nullifier = sha256(combined)
       const nullifierHash = this.bytesToHex(nullifier)
       
       const proofData = {
@@ -268,14 +287,20 @@ export class PostQuantumCrypto {
   // CRYSTALS-Dilithium signature (simplified)
   async signWithDilithium(message: Uint8Array, privateKey: Uint8Array): Promise<Uint8Array> {
     // This is a placeholder - in production, use a real Dilithium implementation
-    const signature = sha256(message.concat(privateKey))
+    const combined = new Uint8Array(message.length + privateKey.length)
+    combined.set(message, 0)
+    combined.set(privateKey, message.length)
+    const signature = sha256(combined)
     return signature
   }
 
   // Verify Dilithium signature (simplified)
   async verifyDilithium(message: Uint8Array, signature: Uint8Array, publicKey: Uint8Array): Promise<boolean> {
     // This is a placeholder - in production, use a real Dilithium implementation
-    const expectedSignature = sha256(message.concat(publicKey))
+    const combined = new Uint8Array(message.length + publicKey.length)
+    combined.set(message, 0)
+    combined.set(publicKey, message.length)
+    const expectedSignature = sha256(combined)
     return this.constantTimeEquals(signature, expectedSignature)
   }
 

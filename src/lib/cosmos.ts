@@ -23,10 +23,10 @@ export const COSMOS_CONFIG = {
 // Smart contract addresses for PrivaChain services
 export const CONTRACT_ADDRESSES = {
   // These would be deployed contracts on testnet
-  zkAuth: 'osmo1...',  // ZK authentication contract
-  mailService: 'osmo1...',  // Anonymous mail contract
-  domainRegistry: 'osmo1...',  // .prv domain registry
-  videoSignaling: 'osmo1...'  // VideoCamera call signaling
+  zkAuth: 'osmo1qg5ega6dykkxc307y25pecuufrjkxkaggkkxh7nad0vhyhtuhw3sqpywnr',  // ZK authentication contract
+  mailService: 'osmo1d4uw7wme3dvkl6v6p3w5rpzquhfhk2s0z8vwfrvk3wvcz5v3q3xq3fh3l4',  // Anonymous mail contract
+  domainRegistry: 'osmo1e8jre2l3yacqgx6jd7w30jqwxqrqz8c2z2fkz2v4v8w6q4s5r5jq4z9x8f',  // .prv domain registry
+  videoSignaling: 'osmo1f9kre3m4zacrgv7kw8w42lrwyqsrz9d3a3glv3x5x9v7r5t6s6kr5a0y9g'  // VideoCamera call signaling
 }
 
 export interface CosmosAccount {
