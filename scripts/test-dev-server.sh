@@ -35,8 +35,12 @@ start_dev_server() {
     # Check if the process is still running
     if ! kill -0 $DEV_PID 2>/dev/null; then
         # Process died, check for rollup error
-        if grep -q "Cannot find module @rollup/rollup-darwin-arm64" "$temp_log"; then
+        if grep -q "Cannot find module @rollup/rollup-darwin-arm64" "$temp_log" || 
+           grep -q "@rollup/rollup-darwin-arm64" "$temp_log"; then
             echo "🔧 Detected rollup darwin-arm64 dependency issue. Applying fix..."
+            if [ -s "$temp_log" ]; then
+                echo "   Error details: $(head -n 3 "$temp_log" | tail -n 1)"
+            fi
             rm -f "$temp_log"
             DEV_PID=""  # Clear PID since process failed
             return 1  # Signal that we need to retry with fix
@@ -58,8 +62,14 @@ if ! start_dev_server 1; then
     echo "🛠️  Applying npm optional dependency fix..."
     echo "   Removing package-lock.json and node_modules..."
     rm -rf package-lock.json node_modules
-    echo "   Reinstalling dependencies..."
-    npm install
+    echo "   Reinstalling dependencies (this may take a few minutes)..."
+    
+    # Set a timeout for npm install to prevent hanging
+    timeout 300 npm install || {
+        echo "❌ npm install timed out after 5 minutes"
+        exit 1
+    }
+    
     echo "✅ Dependencies reinstalled. Retrying dev server..."
     
     # Kill any remaining processes
