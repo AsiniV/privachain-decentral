@@ -3,8 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { Separator } from './ui/separator'
-import { useTestWallet } from '../hooks/useTestWallet'
-import { TEST_WALLET_ADDRESS } from '../blockchain/CosmosTestnet'
 import { 
   Play, 
   CheckCircle, 
@@ -17,6 +15,7 @@ import {
   Coins
 } from '@phosphor-icons/react'
 import { toast } from 'sonner'
+import { gasFeeManager } from '../services/GasFeeManager'
 
 interface TestOperation {
   id: string
@@ -30,7 +29,7 @@ interface TestOperation {
 export function GasSponsorshipDemo() {
   const [testResults, setTestResults] = useState<Map<string, 'pending' | 'success' | 'error'>>(new Map())
   const [isRunningTest, setIsRunningTest] = useState(false)
-  const { wallet, payGasFee, estimateGasFee, config } = useTestWallet()
+  const mockUserAddress = 'cosmos1user5example7address9for0testing1purposes23'
 
   const testOperations: TestOperation[] = [
     {
@@ -39,7 +38,7 @@ export function GasSponsorshipDemo() {
       operation: 'message',
       icon: ChatCircle,
       description: 'Send an encrypted message to another user',
-      estimatedGas: '5000' // 0.005 ATOM
+      estimatedGas: '0.005 ATOM'
     },
     {
       id: 'email',
@@ -47,23 +46,23 @@ export function GasSponsorshipDemo() {
       operation: 'email',
       icon: Envelope,
       description: 'Send an anonymous email via .prv domain',
-      estimatedGas: '10000' // 0.01 ATOM
+      estimatedGas: '0.01 ATOM'
     },
     {
       id: 'video',
-      name: 'VideoCamera Call',
+      name: 'Video Call',
       operation: 'video',
       icon: VideoCamera,
       description: 'Start a secure video call session',
-      estimatedGas: '25000' // 0.025 ATOM
+      estimatedGas: '0.025 ATOM'
     },
     {
       id: 'search',
-      name: 'MagnifyingGlass Query',
+      name: 'Search Query',
       operation: 'search',
       icon: MagnifyingGlass,
       description: 'Perform a decentralized search',
-      estimatedGas: '2000' // 0.002 ATOM
+      estimatedGas: '0.002 ATOM'
     }
   ]
 
@@ -71,13 +70,17 @@ export function GasSponsorshipDemo() {
     setTestResults(prev => new Map(prev.set(operation.id, 'pending')))
     
     try {
-      const gasAmount = estimateGasFee(operation.operation + '_test')
-      await payGasFee(gasAmount, `test_${operation.operation}`, `Testing ${operation.name}`)
+      const transaction = await gasFeeManager.processGasFee(mockUserAddress, operation.operation)
       
       // Simulate blockchain confirmation delay
       setTimeout(() => {
-        setTestResults(prev => new Map(prev.set(operation.id, 'success')))
-        toast.success(`${operation.name} test completed successfully!`)
+        if (transaction.success) {
+          setTestResults(prev => new Map(prev.set(operation.id, 'success')))
+          toast.success(`${operation.name} completed - gas sponsored by developer wallet!`)
+        } else {
+          setTestResults(prev => new Map(prev.set(operation.id, 'error')))
+          toast.error(`${operation.name} failed: ${transaction.errorReason}`)
+        }
       }, 1500)
       
     } catch (error) {
@@ -97,7 +100,7 @@ export function GasSponsorshipDemo() {
         await new Promise(resolve => setTimeout(resolve, 500))
       }
       
-      toast.success('All gas sponsorship tests completed!')
+      toast.success('All developer-sponsored gas tests completed!')
     } catch {
       toast.error('Test suite failed')
     } finally {
@@ -133,40 +136,48 @@ export function GasSponsorshipDemo() {
     }
   }
 
+  const gasStats = gasFeeManager.getGasStats()
+  const userStatus = gasFeeManager.getPaymentStatus(mockUserAddress)
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Coins className="w-5 h-5" />
-          Gas Sponsorship Testing
+          Developer-Sponsored Gas System
         </CardTitle>
         <CardDescription>
-          Test platform operations using the sponsored test wallet for gas fees
+          Test platform operations with gas fees automatically paid by the developer's ATOM wallet
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Wallet Status */}
+        {/* System Status */}
         <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="font-semibold text-blue-800">Test Wallet Status</h4>
-            <Badge variant={wallet.isConnected ? "default" : "secondary"}>
-              {wallet.isConnected ? "Connected" : "Disconnected"}
-            </Badge>
+            <h4 className="font-semibold text-blue-800">System Status</h4>
+            <Badge variant="default">Developer Sponsored</Badge>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
             <div>
-              <span className="text-blue-600 font-medium">Address:</span>
-              <div className="font-mono text-xs mt-1">{config.address}</div>
+              <span className="text-blue-600 font-medium">Gas Currency:</span>
+              <div className="mt-1">ATOM (Cosmos Network)</div>
             </div>
             <div>
-              <span className="text-blue-600 font-medium">Balance:</span>
+              <span className="text-blue-600 font-medium">User Cost:</span>
+              <div className="mt-1 font-semibold text-green-600">FREE</div>
+            </div>
+            <div>
+              <span className="text-blue-600 font-medium">Quota Remaining:</span>
               <div className="mt-1">
-                {wallet.isConnected 
-                  ? wallet.balances.find(b => b.denom === 'uatom')?.formatted || '0 ATOM'
-                  : 'Not Available'
-                }
+                Messages: {userStatus.quotaRemaining.messages}, 
+                Emails: {userStatus.quotaRemaining.emails}, 
+                Video: {userStatus.quotaRemaining.videoMinutes}min
               </div>
+            </div>
+            <div>
+              <span className="text-blue-600 font-medium">Payment Method:</span>
+              <div className="mt-1">{userStatus.gasPaymentMethod}</div>
             </div>
           </div>
         </div>
@@ -177,7 +188,7 @@ export function GasSponsorshipDemo() {
             <h4 className="font-semibold">Test Operations</h4>
             <Button 
               onClick={runAllTests}
-              disabled={isRunningTest || !wallet.isConnected}
+              disabled={isRunningTest}
               className="flex items-center gap-2"
             >
               <Play className="w-4 h-4" />
@@ -207,9 +218,9 @@ export function GasSponsorshipDemo() {
                     <div className="flex items-center gap-3">
                       <div className="text-right">
                         <div className="text-sm font-mono">
-                          {(parseInt(operation.estimatedGas) / 1000000).toFixed(6)} ATOM
+                          {operation.estimatedGas}
                         </div>
-                        <div className="text-xs text-muted-foreground">Est. Gas</div>
+                        <div className="text-xs text-muted-foreground">Developer Pays</div>
                       </div>
                       
                       <div className="flex items-center gap-2">
@@ -218,7 +229,7 @@ export function GasSponsorshipDemo() {
                           size="sm"
                           variant="outline"
                           onClick={() => runSingleTest(operation)}
-                          disabled={testResults.get(operation.id) === 'pending' || !wallet.isConnected}
+                          disabled={testResults.get(operation.id) === 'pending'}
                         >
                           Test
                         </Button>
@@ -235,39 +246,41 @@ export function GasSponsorshipDemo() {
 
         {/* Test Results Summary */}
         <div>
-          <h4 className="font-semibold mb-3">Test Results Summary</h4>
+          <h4 className="font-semibold mb-3">Test Results & Gas Statistics</h4>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center p-3 bg-gray-50 rounded">
-              <div className="text-lg font-bold">{testOperations.length}</div>
-              <div className="text-xs text-muted-foreground">Total Tests</div>
+              <div className="text-lg font-bold">{gasStats.totalTransactions}</div>
+              <div className="text-xs text-muted-foreground">Total Operations</div>
             </div>
             <div className="text-center p-3 bg-green-50 rounded">
               <div className="text-lg font-bold text-green-600">
-                {Array.from(testResults.values()).filter(status => status === 'success').length}
+                {gasStats.successfulTransactions}
               </div>
               <div className="text-xs text-muted-foreground">Successful</div>
             </div>
-            <div className="text-center p-3 bg-yellow-50 rounded">
-              <div className="text-lg font-bold text-yellow-600">
-                {Array.from(testResults.values()).filter(status => status === 'pending').length}
+            <div className="text-center p-3 bg-blue-50 rounded">
+              <div className="text-lg font-bold text-blue-600">
+                {gasStats.activeUsers}
               </div>
-              <div className="text-xs text-muted-foreground">Pending</div>
+              <div className="text-xs text-muted-foreground">Active Users</div>
             </div>
-            <div className="text-center p-3 bg-red-50 rounded">
-              <div className="text-lg font-bold text-red-600">
-                {Array.from(testResults.values()).filter(status => status === 'error').length}
+            <div className="text-center p-3 bg-purple-50 rounded">
+              <div className="text-lg font-bold text-purple-600">
+                {gasStats.totalGasSponsored}
               </div>
-              <div className="text-xs text-muted-foreground">Failed</div>
+              <div className="text-xs text-muted-foreground">Total Sponsored</div>
             </div>
           </div>
         </div>
 
-        {/* Additional Info */}
+        {/* System Info */}
         <div className="text-xs text-muted-foreground bg-muted p-3 rounded">
-          <strong>Note:</strong> These tests simulate real blockchain operations where gas fees are automatically 
-          sponsored by the test wallet ({TEST_WALLET_ADDRESS.slice(0, 20)}...). 
-          In production, users can choose between sponsored operations (within quotas), premium subscriptions, 
-          or direct PRIV token payments.
+          <strong>System Update:</strong> PrivaChain now uses a simplified gas payment model. 
+          All blockchain operations are sponsored by the developer's ATOM wallet 
+          ({gasStats.developerWallet.slice(0, 20)}...). 
+          Users enjoy free access to platform features within generous daily quotas, 
+          with no need to understand or manage cryptocurrency. 
+          {userStatus.recommendedAction}
         </div>
       </CardContent>
     </Card>

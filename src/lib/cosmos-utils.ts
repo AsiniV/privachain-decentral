@@ -36,8 +36,8 @@ export const COSMOS_TESTNET_CONFIGS: Record<string, CosmosConfig> = {
     chainId: 'privachain-testnet-1',
     rpc: 'https://rpc-testnet.privachain.network',
     rest: 'https://api-testnet.privachain.network',
-    gasPrice: '0.001upriv',
-    addressPrefix: 'priv'
+    gasPrice: '0.025uatom',
+    addressPrefix: 'cosmos'
   },
   'cosmos-testnet': {
     chainId: 'theta-testnet-001',
@@ -83,8 +83,6 @@ export function calculateGasForTransaction(txType: string): number {
 // Convert between different token denominations
 export function convertTokenDenom(amount: string, fromDenom: string, toDenom: string): string {
   const denomMap: Record<string, number> = {
-    'priv': 1e6,    // 1 PRIV = 1,000,000 upriv
-    'upriv': 1,     // Base denomination
     'atom': 1e6,    // 1 ATOM = 1,000,000 uatom
     'uatom': 1      // Base denomination
   }
@@ -99,7 +97,7 @@ export function convertTokenDenom(amount: string, fromDenom: string, toDenom: st
 }
 
 // Validate Cosmos addresses
-export function isValidCosmosAddress(address: string, prefix: string = 'priv'): boolean {
+export function isValidCosmosAddress(address: string, prefix: string = 'cosmos'): boolean {
   const regex = new RegExp(`^${prefix}1[a-z0-9]{38}$`)
   return regex.test(address)
 }

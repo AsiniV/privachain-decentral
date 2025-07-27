@@ -38,8 +38,8 @@ interface UserProfile {
 
 interface WalletInfo {
   balance: string
-  staked: string
-  earned: string
+  gasSponsored: string
+  usageQuota: string
 }
 
 export function ProfileView() {
@@ -54,8 +54,8 @@ export function ProfileView() {
   
   const [walletInfo] = useKV<WalletInfo>('wallet-info', {
     balance: '1,247.58',
-    staked: '500.00',
-    earned: '47.23'
+    gasSponsored: 'FREE',
+    usageQuota: '80%'
   })
   
   const [copied, setCopied] = useState<string | null>(null)
@@ -317,37 +317,31 @@ export function ProfileView() {
           </TabsContent>
 
           <TabsContent value="wallet" className="space-y-6">
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 gap-6">
               <Card className="p-6 text-center">
                 <Wallet className="w-8 h-8 mx-auto mb-2 text-accent" />
-                <h3 className="font-semibold mb-1">Balance</h3>
+                <h3 className="font-semibold mb-1">ATOM Balance</h3>
                 <p className="text-2xl font-bold">{walletInfo.balance}</p>
-                <p className="text-sm text-muted-foreground">PRIV tokens</p>
-              </Card>
-              
-              <Card className="p-6 text-center">
-                <Lock className="w-8 h-8 mx-auto mb-2 text-blue-500" />
-                <h3 className="font-semibold mb-1">Staked</h3>
-                <p className="text-2xl font-bold">{walletInfo.staked}</p>
-                <p className="text-sm text-muted-foreground">PRIV tokens</p>
+                <p className="text-sm text-muted-foreground">ATOM tokens</p>
               </Card>
               
               <Card className="p-6 text-center">
                 <Star className="w-8 h-8 mx-auto mb-2 text-yellow-500" />
-                <h3 className="font-semibold mb-1">Earned</h3>
-                <p className="text-2xl font-bold">{walletInfo.earned}</p>
-                <p className="text-sm text-muted-foreground">PRIV rewards</p>
+                <h3 className="font-semibold mb-1">Gas Sponsored</h3>
+                <p className="text-2xl font-bold">FREE</p>
+                <p className="text-sm text-muted-foreground">Developer paid</p>
               </Card>
             </div>
 
             <Card className="p-6">
-              <h3 className="font-semibold mb-4">Staking Rewards</h3>
+              <h3 className="font-semibold mb-4">Gas Payment Model</h3>
               <p className="text-muted-foreground mb-4">
-                Earn rewards by staking PRIV tokens to secure the network and run infrastructure nodes.
+                All blockchain operations are sponsored by the developer's ATOM wallet. 
+                You can use PrivaChain features immediately without managing gas fees or cryptocurrency.
               </p>
               <div className="flex gap-3">
-                <Button>Stake More Tokens</Button>
-                <Button variant="outline">Claim Rewards</Button>
+                <Button variant="outline" disabled>No Action Required</Button>
+                <Button variant="outline">View Usage Quotas</Button>
               </div>
             </Card>
           </TabsContent>
