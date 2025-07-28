@@ -8,7 +8,8 @@ import {
   List,
   X,
   Rocket,
-  Globe
+  Globe,
+  CheckCircle
 } from '@phosphor-icons/react'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
@@ -18,7 +19,7 @@ import { useIsMobile } from '../hooks/use-mobile'
 
 interface SidebarProps {
   currentView: string
-  onViewChange: (view: 'messenger' | 'email' | 'search' | 'browser' | 'profile' | 'deployment') => void
+  onViewChange: (view: 'messenger' | 'email' | 'search' | 'browser' | 'profile' | 'deployment' | 'readiness') => void
   open: boolean
   onOpenChange: (open: boolean) => void
 }
@@ -45,6 +46,12 @@ export function Sidebar({ currentView, onViewChange, open, onOpenChange }: Sideb
       id: 'search',
       label: 'Search',
       icon: MagnifyingGlass,
+      badge: null
+    },
+    {
+      id: 'readiness',
+      label: 'Readiness',
+      icon: CheckCircle,
       badge: null
     },
     {
@@ -91,7 +98,7 @@ export function Sidebar({ currentView, onViewChange, open, onOpenChange }: Sideb
               currentView === item.id && "bg-accent text-accent-foreground"
             )}
             onClick={() => {
-              onViewChange(item.id as 'messenger' | 'email' | 'search' | 'browser' | 'profile' | 'deployment')
+              onViewChange(item.id as 'messenger' | 'email' | 'search' | 'browser' | 'profile' | 'deployment' | 'readiness')
               if (isMobile) onOpenChange(false)
             }}
           >
