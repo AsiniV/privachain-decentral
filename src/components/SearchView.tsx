@@ -19,7 +19,11 @@ import {
   Database,
   Brain,
   Lightning,
-  ArrowSquareOut
+  ArrowSquareOut,
+  VideoCamera,
+  IdentificationCard,
+  Network,
+  Command
 } from '@phosphor-icons/react'
 import { cn } from '../lib/utils'
 import { useDecentralizedSearch, SearchIndexEntry } from '../blockchain/SearchBackend'
@@ -78,6 +82,8 @@ export function SearchView({ onNavigateToBrowser }: SearchViewProps = {}) {
       case 'file': return File
       case 'domain': return Globe
       case 'transaction': return Database
+      case 'video': return VideoCamera
+      case 'identity': return IdentificationCard
       default: return File
     }
   }
@@ -90,6 +96,8 @@ export function SearchView({ onNavigateToBrowser }: SearchViewProps = {}) {
       case 'file': return 'bg-orange-500/20 text-orange-400'
       case 'domain': return 'bg-pink-500/20 text-pink-400'
       case 'transaction': return 'bg-cyan-500/20 text-cyan-400'
+      case 'video': return 'bg-red-500/20 text-red-400'
+      case 'identity': return 'bg-indigo-500/20 text-indigo-400'
       default: return 'bg-gray-500/20 text-gray-400'
     }
   }
@@ -99,8 +107,10 @@ export function SearchView({ onNavigateToBrowser }: SearchViewProps = {}) {
       <div className="p-6 border-b border-border bg-card">
         <div className="space-y-4">
           <div>
-            <h2 className="text-2xl font-bold mb-2">Decentralized MagnifyingGlass</h2>
-            <p className="text-muted-foreground">MagnifyingGlass across your encrypted communications and network content</p>
+            <h2 className="text-2xl font-bold mb-2">PrivaChain Hybrid Search</h2>
+            <p className="text-muted-foreground">
+              Privacy-first search powered by OrbitDB • Zero tracking • Bang commands supported
+            </p>
           </div>
           
           <div className="relative">
@@ -115,7 +125,7 @@ export function SearchView({ onNavigateToBrowser }: SearchViewProps = {}) {
                   setResults([])
                 }
               }}
-              placeholder="MagnifyingGlass messages, emails, contacts, and files..."
+              placeholder="Search or try bang commands like !w wikipedia, !prv domains, !mail encrypted emails..."
               className="pl-12 h-12 text-lg"
             />
             {isSearching && (
@@ -129,6 +139,12 @@ export function SearchView({ onNavigateToBrowser }: SearchViewProps = {}) {
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Shield className="w-4 h-4" />
               <span>Zero-knowledge search • No tracking • Fully encrypted</span>
+              {indexStats.orbitDBConnected && (
+                <>
+                  <Network className="w-4 h-4 ml-2" />
+                  <span>OrbitDB Connected</span>
+                </>
+              )}
             </div>
             
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
@@ -140,12 +156,38 @@ export function SearchView({ onNavigateToBrowser }: SearchViewProps = {}) {
                 <Lock className="w-3 h-3" />
                 <span>{indexStats.encryptedEntries} encrypted</span>
               </div>
+              {indexStats.peerConnections > 0 && (
+                <div className="flex items-center gap-1">
+                  <Network className="w-3 h-3" />
+                  <span>{indexStats.peerConnections} peers</span>
+                </div>
+              )}
               <div className="flex items-center gap-1">
                 <Lightning className="w-3 h-3" />
                 <span>{indexStats.queryHistory} queries</span>
               </div>
             </div>
           </div>
+
+          {/* Bang Commands Help */}
+          {query.startsWith('!') && (
+            <Card className="p-3 bg-accent/10 border-accent/20">
+              <div className="flex items-center gap-2 mb-2">
+                <Command className="w-4 h-4 text-accent" />
+                <span className="text-sm font-medium">Bang Commands Available:</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div><code>!w</code> - Search Wikipedia</div>
+                <div><code>!prv</code> - Search .prv domains</div>
+                <div><code>!mail</code> - Search encrypted emails</div>
+                <div><code>!video</code> - Search video calls</div>
+                <div><code>!file</code> - Search files</div>
+                <div><code>!cosmos</code> - Search blockchain</div>
+                <div><code>!ipfs</code> - Search IPFS network</div>
+                <div><code>!onion</code> - Search onion services</div>
+              </div>
+            </Card>
+          )}
         </div>
       </div>
 
@@ -157,25 +199,35 @@ export function SearchView({ onNavigateToBrowser }: SearchViewProps = {}) {
             <p className="text-muted-foreground mb-6">Enter a search term to find content across your encrypted network</p>
             
             <div className="max-w-2xl mx-auto">
-              <h4 className="font-semibold mb-3">MagnifyingGlass Features</h4>
+              <h4 className="font-semibold mb-3">Search Features</h4>
               <div className="grid md:grid-cols-2 gap-4 text-left">
                 <Card className="p-4">
                   <div className="flex items-center gap-3 mb-2">
                     <Lock className="w-5 h-5 text-accent" />
-                    <span className="font-medium">Encrypted MagnifyingGlass</span>
+                    <span className="font-medium">Encrypted Search</span>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    MagnifyingGlass through encrypted content without exposing data to servers
+                    Search through encrypted content without exposing data to servers
                   </p>
                 </Card>
                 
                 <Card className="p-4">
                   <div className="flex items-center gap-3 mb-2">
-                    <Globe className="w-5 h-5 text-accent" />
-                    <span className="font-medium">Network-wide</span>
+                    <Network className="w-5 h-5 text-accent" />
+                    <span className="font-medium">OrbitDB P2P</span>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Find content across the entire PrivaChain network
+                    Decentralized search across peer-to-peer network
+                  </p>
+                </Card>
+                
+                <Card className="p-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Command className="w-5 h-5 text-accent" />
+                    <span className="font-medium">Bang Commands</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Use !w for Wikipedia, !prv for domains, !mail for emails
                   </p>
                 </Card>
                 
@@ -191,11 +243,11 @@ export function SearchView({ onNavigateToBrowser }: SearchViewProps = {}) {
                 
                 <Card className="p-4">
                   <div className="flex items-center gap-3 mb-2">
-                    <ChatCircle className="w-5 h-5 text-accent" />
-                    <span className="font-medium">Blockchain MagnifyingGlass</span>
+                    <VideoCamera className="w-5 h-5 text-accent" />
+                    <span className="font-medium">Video & Identity</span>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    MagnifyingGlass .prv domains, IPFS content, and transaction history
+                    Search encrypted video calls and anonymous identities
                   </p>
                 </Card>
                 
@@ -206,16 +258,6 @@ export function SearchView({ onNavigateToBrowser }: SearchViewProps = {}) {
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Browse and search decentralized file storage network
-                  </p>
-                </Card>
-                
-                <Card className="p-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Globe className="w-5 h-5 text-accent" />
-                    <span className="font-medium">.onion Network</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Access dark web resources and hidden services
                   </p>
                 </Card>
               </div>
@@ -234,12 +276,13 @@ export function SearchView({ onNavigateToBrowser }: SearchViewProps = {}) {
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-6">
+              <TabsList className="grid w-full grid-cols-7">
                 <TabsTrigger value="all">All</TabsTrigger>
                 <TabsTrigger value="message">Messages</TabsTrigger>
                 <TabsTrigger value="email">Emails</TabsTrigger>
-                <TabsTrigger value="contact">Contacts</TabsTrigger>
+                <TabsTrigger value="video">Videos</TabsTrigger>
                 <TabsTrigger value="file">Files</TabsTrigger>
+                <TabsTrigger value="domain">Domains</TabsTrigger>
                 <TabsTrigger value="ipfs" onClick={() => handleIPFSSearch(query)}>
                   <Database className="w-4 h-4 mr-1" />
                   IPFS
