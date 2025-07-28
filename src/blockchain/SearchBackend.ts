@@ -1,11 +1,13 @@
 /**
- * Decentralized MagnifyingGlass Backend Integration
- * Connects to SubQuery Cosmos, ComposeDB, and implements ZK queries
+ * Decentralized Search Backend Integration
+ * OrbitDB-powered hybrid indexing with privacy-first search
+ * Emulates Google/Yandex capabilities with DuckDuckGo privacy features
  */
 
 import { toast } from 'sonner'
 import { GraphQLClient } from 'graphql-request'
 import { useState, useEffect } from 'react'
+import { orbitDBIndexing, SearchDocument, SearchQuery, SearchResult } from '../services/orbitdb'
 
 // SubQuery Cosmos configuration
 const SUBQUERY_CONFIG = {
@@ -27,7 +29,7 @@ const COMPOSEDB_CONFIG = {
 
 export interface SearchIndexEntry {
   id: string
-  type: 'message' | 'email' | 'contact' | 'file' | 'domain' | 'transaction'
+  type: 'message' | 'email' | 'contact' | 'file' | 'domain' | 'transaction' | 'video' | 'identity'
   contentHash: string
   metadata: {
     title: string
@@ -55,10 +57,75 @@ export class DecentralizedSearchBackend {
   private queryHistory: ZKQuery[] = []
   private subqueryClient: GraphQLClient
   private composeDbInitialized = false
+  private orbitDBReady = false
 
   constructor() {
     this.initializeMockIndex()
     this.initializeBackends()
+    this.checkOrbitDBStatus()
+  }
+
+  /**
+   * Check OrbitDB initialization status
+   */
+  private async checkOrbitDBStatus() {
+    try {
+      // Wait for OrbitDB to initialize
+      let attempts = 0
+      const maxAttempts = 30 // 30 seconds timeout
+      
+      while (!orbitDBIndexing.getStats().isInitialized && attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        attempts++
+      }
+      
+      if (orbitDBIndexing.getStats().isInitialized) {
+        this.orbitDBReady = true
+        console.log('✅ OrbitDB backend ready for hybrid search')
+        
+        // Populate OrbitDB with initial content
+        await this.migrateToOrbitDB()
+      } else {
+        console.warn('⚠️ OrbitDB initialization timeout, using fallback mode')
+      }
+    } catch (error) {
+      console.error('❌ OrbitDB status check failed:', error)
+    }
+  }
+
+  /**
+   * Migrate existing mock data to OrbitDB
+   */
+  private async migrateToOrbitDB() {
+    try {
+      for (const entry of this.searchIndex.values()) {
+        const document: Omit<SearchDocument, 'id' | 'timestamp' | 'relevanceScore'> = {
+          type: entry.type as any,
+          title: entry.metadata.title,
+          description: entry.metadata.description,
+          content: entry.metadata.description, // Use description as content for now
+          keywords: entry.metadata.tags,
+          cid: entry.contentHash,
+          source: entry.metadata.source,
+          encrypted: entry.metadata.encrypted,
+          privacy: {
+            anonymous: entry.metadata.encrypted,
+            zkProof: entry.zkProof,
+            onionRouted: entry.metadata.source.includes('.prv') || entry.metadata.source.includes('.onion')
+          },
+          metadata: {
+            migrated: true,
+            originalId: entry.id
+          }
+        }
+        
+        await orbitDBIndexing.indexContent(document)
+      }
+      
+      console.log('📚 Migrated mock data to OrbitDB')
+    } catch (error) {
+      console.error('❌ Failed to migrate to OrbitDB:', error)
+    }
   }
 
   /**
@@ -148,7 +215,7 @@ export class DecentralizedSearchBackend {
         contentHash: 'QmXyZ123abc456def789',
         metadata: {
           title: 'Encrypted Communication Protocol',
-          description: 'Discussion about implementing WaveTriangle Protocol for E2E encryption',
+          description: 'Discussion about implementing Signal Protocol for E2E encryption',
           tags: ['encryption', 'signal', 'protocol'],
           timestamp: Date.now() - 3600000,
           source: 'whistleblower.prv',
@@ -215,6 +282,51 @@ export class DecentralizedSearchBackend {
         },
         zkProof: 'zk_proof_domain_001',
         relevanceScore: 0.90
+      },
+      {
+        id: 'video_001',
+        type: 'video',
+        contentHash: 'QmMno901pqr234stu567',
+        metadata: {
+          title: 'Encrypted Video Call with Whistleblower',
+          description: 'Anonymous video interview about corporate misconduct',
+          tags: ['video', 'interview', 'whistleblower', 'encrypted'],
+          timestamp: Date.now() - 21600000,
+          source: 'video.secure.prv',
+          encrypted: true
+        },
+        zkProof: 'zk_proof_video_001',
+        relevanceScore: 0.87
+      },
+      {
+        id: 'identity_001',
+        type: 'identity',
+        contentHash: 'QmPqr567stu890vwx123',
+        metadata: {
+          title: 'Anonymous Identity Certificate',
+          description: 'ZK-proof verified anonymous identity for secure communications',
+          tags: ['identity', 'zk-proof', 'anonymous', 'verified'],
+          timestamp: Date.now() - 25200000,
+          source: 'identity.ceramic.network',
+          encrypted: true
+        },
+        zkProof: 'zk_proof_identity_001',
+        relevanceScore: 0.93
+      },
+      {
+        id: 'transaction_001',
+        type: 'transaction',
+        contentHash: 'QmStu890vwx123yza456',
+        metadata: {
+          title: 'Anonymous Payment Transaction',
+          description: 'Private payment for secure hosting services via Cosmos',
+          tags: ['payment', 'cosmos', 'anonymous', 'hosting'],
+          timestamp: Date.now() - 28800000,
+          source: 'cosmos:privachain-1',
+          encrypted: true
+        },
+        zkProof: 'zk_proof_tx_001',
+        relevanceScore: 0.84
       }
     ]
 
@@ -224,7 +336,7 @@ export class DecentralizedSearchBackend {
   }
 
   /**
-   * Perform zero-knowledge search
+   * Perform zero-knowledge search with OrbitDB hybrid indexing
    */
   async zkSearch(
     query: string,
@@ -236,10 +348,91 @@ export class DecentralizedSearchBackend {
     } = {}
   ): Promise<SearchIndexEntry[]> {
     try {
+      // Use OrbitDB if available, otherwise fallback to existing implementation
+      if (this.orbitDBReady) {
+        return await this.searchWithOrbitDB(query, filters)
+      }
+      
+      // Fallback to original implementation
+      return await this.legacyZkSearch(query, filters)
+    } catch (error) {
+      toast.error(`Search failed: ${error}`)
+      throw error
+    }
+  }
+
+  /**
+   * Search using OrbitDB hybrid indexing
+   */
+  private async searchWithOrbitDB(
+    query: string,
+    filters: Record<string, any>
+  ): Promise<SearchIndexEntry[]> {
+    try {
+      const searchQuery: SearchQuery = {
+        term: query,
+        type: filters.type,
+        filters: {
+          encrypted: filters.encrypted,
+          timeRange: filters.timeRange,
+          source: filters.source,
+          privacy: true
+        },
+        zkEncrypted: true
+      }
+
+      const result: SearchResult = await orbitDBIndexing.search(searchQuery)
+      
+      // Convert OrbitDB results to SearchIndexEntry format
+      const entries: SearchIndexEntry[] = result.documents.map(doc => ({
+        id: doc.id,
+        type: doc.type as any,
+        contentHash: doc.cid || doc.id,
+        metadata: {
+          title: doc.title,
+          description: doc.description,
+          tags: doc.keywords,
+          timestamp: doc.timestamp,
+          source: doc.source,
+          encrypted: doc.encrypted
+        },
+        zkProof: doc.privacy.zkProof,
+        relevanceScore: doc.relevanceScore
+      }))
+
+      // Update query statistics
+      const zkQuery = await this.generateZKQuery(query)
+      zkQuery.resultCount = entries.length
+      this.queryHistory.push(zkQuery)
+
+      const stats = orbitDBIndexing.getStats()
+      toast.success(
+        `Found ${entries.length} results via OrbitDB (${stats.peerConnections} peers connected)`,
+        {
+          description: `Search time: ${result.searchTime}ms • Privacy: ${result.privacy.trackingPrevented ? 'Protected' : 'Standard'}`
+        }
+      )
+
+      return entries
+    } catch (error) {
+      console.error('OrbitDB search failed:', error)
+      toast.error(`OrbitDB search failed: ${error}`)
+      return []
+    }
+  }
+
+  /**
+   * Legacy search implementation (fallback)
+   */
+  private async legacyZkSearch(
+    query: string,
+    filters: Record<string, any>
+  ): Promise<SearchIndexEntry[]> {
+    try {
       // Generate ZK query proof
       const zkQuery = await this.generateZKQuery(query)
       
-      // MagnifyingGlass through multiple backends
+      // Search through multiple backends
       const [localResults, subqueryResults, composeDbResults] = await Promise.all([
         this.searchLocalIndex(query, filters),
         this.searchSubQuery(query, filters),
@@ -265,7 +458,7 @@ export class DecentralizedSearchBackend {
       return allResults
       
     } catch (error) {
-      toast.error(`MagnifyingGlass failed: ${error}`)
+      toast.error(`Search failed: ${error}`)
       throw error
     }
   }
@@ -541,11 +734,11 @@ export class DecentralizedSearchBackend {
   }
 
   /**
-   * Index new content for search
+   * Index new content for search (updated to use OrbitDB)
    */
   async indexContent(
     content: {
-      type: 'message' | 'email' | 'contact' | 'file' | 'domain'
+      type: 'message' | 'email' | 'contact' | 'file' | 'domain' | 'video' | 'identity'
       title: string
       description: string
       tags: string[]
@@ -555,41 +748,73 @@ export class DecentralizedSearchBackend {
     }
   ): Promise<string> {
     try {
-      const id = `${content.type}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
-      
-      const entry: SearchIndexEntry = {
-        id,
-        type: content.type,
-        contentHash: content.ipfsHash || `Qm${Math.random().toString(36).substring(2, 46)}`,
-        metadata: {
+      // Use OrbitDB if available
+      if (this.orbitDBReady) {
+        const document: Omit<SearchDocument, 'id' | 'timestamp' | 'relevanceScore'> = {
+          type: content.type,
           title: content.title,
           description: content.description,
-          tags: content.tags,
-          timestamp: Date.now(),
+          content: content.description, // Use description as content
+          keywords: content.tags,
+          cid: content.ipfsHash,
           source: content.source,
-          encrypted: content.encrypted
-        },
-        zkProof: content.encrypted ? await this.generateContentZKProof(content) : undefined,
-        relevanceScore: 1.0
+          encrypted: content.encrypted,
+          privacy: {
+            anonymous: content.encrypted,
+            onionRouted: content.source.includes('.prv') || content.source.includes('.onion')
+          },
+          metadata: {
+            indexedAt: Date.now()
+          }
+        }
+        
+        const id = await orbitDBIndexing.indexContent(document)
+        toast.success(`Content indexed in OrbitDB: ${content.title}`)
+        return id
       }
       
-      // Index in local storage
-      this.searchIndex.set(id, entry)
-      
-      // Index in parallel across backends
-      await Promise.all([
-        this.indexOnSubQuery(entry),
-        this.indexOnComposeDB(entry),
-        this.indexOnBlockchain(entry)
-      ])
-      
-      toast.success(`Content indexed across decentralized backends: ${content.title}`)
-      return id
-      
+      // Fallback to legacy indexing
+      return await this.legacyIndexContent(content)
     } catch (error) {
       toast.error(`Indexing failed: ${error}`)
       throw error
     }
+  }
+
+  /**
+   * Legacy indexing implementation
+   */
+  private async legacyIndexContent(content: any): Promise<string> {
+    const id = `${content.type}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
+    
+    const entry: SearchIndexEntry = {
+      id,
+      type: content.type,
+      contentHash: content.ipfsHash || `Qm${Math.random().toString(36).substring(2, 46)}`,
+      metadata: {
+        title: content.title,
+        description: content.description,
+        tags: content.tags,
+        timestamp: Date.now(),
+        source: content.source,
+        encrypted: content.encrypted
+      },
+      zkProof: content.encrypted ? await this.generateContentZKProof(content) : undefined,
+      relevanceScore: 1.0
+    }
+    
+    // Index in local storage
+    this.searchIndex.set(id, entry)
+    
+    // Index in parallel across backends
+    await Promise.all([
+      this.indexOnSubQuery(entry),
+      this.indexOnComposeDB(entry),
+      this.indexOnBlockchain(entry)
+    ])
+    
+    toast.success(`Content indexed across decentralized backends: ${content.title}`)
+    return id
   }
 
   /**
@@ -729,14 +954,31 @@ export class DecentralizedSearchBackend {
   }
 
   /**
-   * Get search statistics
+   * Get search statistics (updated with OrbitDB stats)
    */
   getSearchStats() {
+    if (this.orbitDBReady) {
+      const orbitStats = orbitDBIndexing.getStats()
+      return {
+        totalIndexed: orbitStats.totalIndexed,
+        encryptedEntries: orbitStats.encryptedEntries,
+        queryHistory: this.queryHistory.length,
+        lastIndexed: Date.now(), // Would track actual last indexed time
+        orbitDBConnected: true,
+        peerConnections: orbitStats.peerConnections,
+        torEnabled: orbitStats.torEnabled
+      }
+    }
+    
+    // Fallback to legacy stats
     return {
       totalIndexed: this.searchIndex.size,
       encryptedEntries: Array.from(this.searchIndex.values()).filter(e => e.metadata.encrypted).length,
       queryHistory: this.queryHistory.length,
-      lastIndexed: Math.max(...Array.from(this.searchIndex.values()).map(e => e.metadata.timestamp))
+      lastIndexed: Math.max(...Array.from(this.searchIndex.values()).map(e => e.metadata.timestamp)),
+      orbitDBConnected: false,
+      peerConnections: 0,
+      torEnabled: false
     }
   }
 
@@ -748,9 +990,49 @@ export class DecentralizedSearchBackend {
   }
 
   /**
-   * MagnifyingGlass IPFS content
+   * Search IPFS content (enhanced with OrbitDB)
    */
   async searchIPFS(query: string): Promise<SearchIndexEntry[]> {
+    if (this.orbitDBReady) {
+      try {
+        const searchQuery: SearchQuery = {
+          term: query,
+          bangCommand: 'ipfs',
+          filters: {
+            privacy: true
+          },
+          zkEncrypted: true
+        }
+        
+        const result = await orbitDBIndexing.search(searchQuery)
+        
+        // Convert to SearchIndexEntry format
+        const entries = result.documents
+          .filter(doc => doc.cid && doc.cid.startsWith('Qm'))
+          .map(doc => ({
+            id: doc.id,
+            type: doc.type as any,
+            contentHash: doc.cid || doc.id,
+            metadata: {
+              title: doc.title,
+              description: doc.description,
+              tags: doc.keywords,
+              timestamp: doc.timestamp,
+              source: doc.source,
+              encrypted: doc.encrypted
+            },
+            zkProof: doc.privacy.zkProof,
+            relevanceScore: doc.relevanceScore
+          }))
+        
+        toast.info(`Searched IPFS via OrbitDB: ${entries.length} results`)
+        return entries
+      } catch (error) {
+        console.error('OrbitDB IPFS search failed:', error)
+      }
+    }
+    
+    // Fallback to legacy IPFS search
     const ipfsResults = Array.from(this.searchIndex.values())
       .filter(entry => 
         entry.contentHash.startsWith('Qm') && 
