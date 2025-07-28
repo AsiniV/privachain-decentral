@@ -96,7 +96,7 @@ export function usePlanSystem() {
   }, []);
 
   // Create payment invoice for premium upgrade
-  const createUpgradeInvoice = useCallback(async (currency: 'ATOM' | 'USDT') => {
+  const createUpgradeInvoice = useCallback(async (currency: 'ATOM' | 'USDC') => {
     if (!planStatus) {
       throw new Error('Plan not loaded');
     }

@@ -1,6 +1,6 @@
 /**
  * PrivaChain Payment Service
- * Handles ATOM/USDT payment processing for premium plan activation
+ * Handles ATOM/USDC payment processing for premium plan activation
  * Integrated with smart contract for automatic plan activation
  */
 
@@ -32,14 +32,14 @@ export const SUPPORTED_CRYPTOS: CryptoCurrency[] = [
     processingTime: '3-5 seconds'
   },
   {
-    id: 'usdt',
-    name: 'Tether USD',
-    symbol: 'USDT',
-    network: 'Ethereum',
+    id: 'usdc',
+    name: 'USD Coin (Noble)',
+    symbol: 'USDC',
+    network: 'Noble',
     decimals: 6,
-    icon: '💲',
+    icon: '💙',
     anonymityLevel: 'low',
-    processingTime: '1-5 minutes'
+    processingTime: '10-30 seconds'
   }
 ]
 
@@ -73,7 +73,7 @@ class PaymentService {
     try {
       const invoice = await planActivationContract.generatePaymentInvoice(
         options.planId,
-        options.selectedCrypto.symbol as 'ATOM' | 'USDT'
+        options.selectedCrypto.symbol as 'ATOM' | 'USDC'
       );
 
       return {
@@ -86,7 +86,7 @@ class PaymentService {
         expiresAt: invoice.expiresAt,
         status: 'pending',
         confirmations: 0,
-        requiredConfirmations: options.selectedCrypto.symbol === 'ATOM' ? 1 : 3,
+        requiredConfirmations: options.selectedCrypto.symbol === 'ATOM' ? 1 : 2,
         createdAt: new Date()
       };
     } catch (error) {

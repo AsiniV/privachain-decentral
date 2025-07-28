@@ -52,7 +52,7 @@ export interface ZKQuery {
 }
 
 export class DecentralizedSearchBackend {
-  private testWallet = 'osmo1hcgd3hg6kpvsfuklsgkzjratda53vwsymrp24k'
+  private testWallet = 'osmo1hcgd3hg6kpvsfuklsgkzjratda53vwsynq5zdc'
   private searchIndex: Map<string, SearchIndexEntry> = new Map()
   private queryHistory: ZKQuery[] = []
   private subqueryClient: GraphQLClient

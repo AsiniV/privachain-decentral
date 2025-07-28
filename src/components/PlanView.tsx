@@ -30,7 +30,7 @@ export function PlanView({ onClose }: PlanViewProps) {
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState(false);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
-  const [selectedCurrency, setSelectedCurrency] = useState<'ATOM' | 'USDT'>('ATOM');
+  const [selectedCurrency, setSelectedCurrency] = useState<'ATOM' | 'USDC'>('ATOM');
   const [paymentInvoice, setPaymentInvoice] = useState<any>(null);
 
   useEffect(() => {
@@ -361,12 +361,12 @@ export function PlanView({ onClose }: PlanViewProps) {
                   <div className="text-xs">Cosmos Network</div>
                 </Button>
                 <Button
-                  variant={selectedCurrency === 'USDT' ? 'default' : 'outline'}
-                  onClick={() => setSelectedCurrency('USDT')}
+                  variant={selectedCurrency === 'USDC' ? 'default' : 'outline'}
+                  onClick={() => setSelectedCurrency('USDC')}
                   className="h-16 flex-col"
                 >
-                  <div className="text-lg mb-1">💲 USDT</div>
-                  <div className="text-xs">Ethereum Network</div>
+                  <div className="text-lg mb-1">💙 USDC</div>
+                  <div className="text-xs">Noble Network</div>
                 </Button>
               </div>
 
