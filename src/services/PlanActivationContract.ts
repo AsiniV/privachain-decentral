@@ -1,6 +1,6 @@
 /**
  * Smart Contract Interface for Plan Activation
- * Handles automatic premium plan activation after ATOM/USDT payment confirmation
+ * Handles automatic premium plan activation after ATOM/USDC payment confirmation
  */
 
 import '../lib/kvStorage'; // Initialize KV storage
@@ -9,7 +9,7 @@ export interface PlanActivationTransaction {
   transactionHash: string;
   fromAddress: string;
   amount: number;
-  currency: 'ATOM' | 'USDT';
+  currency: 'ATOM' | 'USDC';
   planId: string;
   timestamp: number;
   blockHeight: number;
@@ -18,7 +18,7 @@ export interface PlanActivationTransaction {
 
 export interface PaymentWallet {
   address: string;
-  currency: 'ATOM' | 'USDT';
+  currency: 'ATOM' | 'USDC';
   network: string;
 }
 
@@ -31,32 +31,32 @@ class PlanActivationContract {
       network: 'cosmos-hub'
     },
     {
-      address: '0x742d35Cc6688Bb2f2C7C5CCf07A7a90A8b3F9876',
-      currency: 'USDT',
-      network: 'ethereum'
+      address: 'noble1hcgd3hg6kpvsfuklsgkzjratda53vwsynq5zdc',
+      currency: 'USDC',
+      network: 'noble'
     }
   ];
 
   private readonly PREMIUM_COST_USD = 10;
   private readonly REQUIRED_CONFIRMATIONS = {
     ATOM: 1,
-    USDT: 3
+    USDC: 2
   };
 
   /**
    * Get payment wallet for specified currency
    */
-  getPaymentWallet(currency: 'ATOM' | 'USDT'): PaymentWallet | null {
+  getPaymentWallet(currency: 'ATOM' | 'USDC'): PaymentWallet | null {
     return this.PAYMENT_WALLETS.find(w => w.currency === currency) || null;
   }
 
   /**
    * Generate payment invoice for premium upgrade
    */
-  async generatePaymentInvoice(planId: string, currency: 'ATOM' | 'USDT'): Promise<{
+  async generatePaymentInvoice(planId: string, currency: 'ATOM' | 'USDC'): Promise<{
     walletAddress: string;
     amount: number;
-    currency: 'ATOM' | 'USDT';
+    currency: 'ATOM' | 'USDC';
     qrCode: string;
     expiresAt: Date;
     invoiceId: string;
@@ -99,8 +99,8 @@ class PlanActivationContract {
   /**
    * Calculate payment amount based on current exchange rates
    */
-  private async calculatePaymentAmount(currency: 'ATOM' | 'USDT'): Promise<number> {
-    if (currency === 'USDT') {
+  private async calculatePaymentAmount(currency: 'ATOM' | 'USDC'): Promise<number> {
+    if (currency === 'USDC') {
       return this.PREMIUM_COST_USD; // 1:1 with USD
     }
 
@@ -121,15 +121,15 @@ class PlanActivationContract {
   /**
    * Generate QR code data for payment
    */
-  private generatePaymentQR(address: string, amount: number, currency: 'ATOM' | 'USDT'): string {
+  private generatePaymentQR(address: string, amount: number, currency: 'ATOM' | 'USDC'): string {
     let qrData: string;
     
     if (currency === 'ATOM') {
       // Cosmos payment URI
       qrData = `cosmos:${address}?amount=${amount}uatom&memo=PrivaChain_Premium_Upgrade`;
     } else {
-      // Ethereum USDT payment URI  
-      qrData = `ethereum:${address}?value=${amount}&token=0xdAC17F958D2ee523a2206206994597C13D831ec7`;
+      // Noble USDC payment URI  
+      qrData = `noble:${address}?amount=${amount}uusdc&memo=PrivaChain_Premium_Upgrade`;
     }
 
     // In production, use a proper QR code library
@@ -160,7 +160,7 @@ class PlanActivationContract {
   /**
    * Monitor blockchain for payment confirmation
    */
-  private async monitorPayment(invoiceId: string, planId: string, currency: 'ATOM' | 'USDT'): Promise<void> {
+  private async monitorPayment(invoiceId: string, planId: string, currency: 'ATOM' | 'USDC'): Promise<void> {
     const checkPayment = async () => {
       try {
         const invoice = await spark.kv.get(`payment_invoice_${invoiceId}`);
@@ -215,13 +215,13 @@ class PlanActivationContract {
   private async checkBlockchainPayment(
     walletAddress: string, 
     expectedAmount: number, 
-    currency: 'ATOM' | 'USDT'
+    currency: 'ATOM' | 'USDC'
   ): Promise<PlanActivationTransaction | null> {
     try {
       if (currency === 'ATOM') {
         return await this.checkCosmosPayment(walletAddress, expectedAmount);
       } else {
-        return await this.checkEthereumUSDTPayment(walletAddress, expectedAmount);
+        return await this.checkNobleUSDCPayment(walletAddress, expectedAmount);
       }
     } catch (error) {
       console.error(`Error checking ${currency} payment:`, error);
@@ -267,27 +267,27 @@ class PlanActivationContract {
   }
 
   /**
-   * Check Ethereum blockchain for USDT payment
+   * Check Noble blockchain for USDC payment
    */
-  private async checkEthereumUSDTPayment(walletAddress: string, expectedAmount: number): Promise<PlanActivationTransaction | null> {
+  private async checkNobleUSDCPayment(walletAddress: string, expectedAmount: number): Promise<PlanActivationTransaction | null> {
     try {
-      // In production, use Infura/Alchemy API to check USDT transfers
+      // In production, use Noble REST API to check USDC transfers
       // For demo, simulate payment detection
       if (Math.random() > 0.8) {
         return {
-          transactionHash: `0x${Math.random().toString(16).substring(2, 66)}`,
-          fromAddress: '0x1234567890123456789012345678901234567890',
+          transactionHash: `noble_tx_${Math.random().toString(16).substring(2, 66)}`,
+          fromAddress: 'noble1user5address7example9xyz',
           amount: expectedAmount,
-          currency: 'USDT',
+          currency: 'USDC',
           planId: '',
           timestamp: Date.now(),
-          blockHeight: Math.floor(Math.random() * 20000000),
-          confirmations: this.REQUIRED_CONFIRMATIONS.USDT
+          blockHeight: Math.floor(Math.random() * 1000000),
+          confirmations: this.REQUIRED_CONFIRMATIONS.USDC
         };
       }
       return null;
     } catch (error) {
-      console.error('USDT payment check error:', error);
+      console.error('USDC payment check error:', error);
       return null;
     }
   }

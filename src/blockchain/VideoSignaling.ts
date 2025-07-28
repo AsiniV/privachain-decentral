@@ -43,7 +43,7 @@ export interface TurnRelay {
 }
 
 export class VideoSignalingContract {
-  private testWallet = 'osmo1hcgd3hg6kpvsfuklsgkzjratda53vwsymrp24k'
+  private testWallet = 'osmo1hcgd3hg6kpvsfuklsgkzjratda53vwsynq5zdc'
   private client: CosmWasmClient | null = null
   private signingClient: SigningCosmWasmClient | null = null
   private wallet: DirectSecp256k1HdWallet | null = null
@@ -501,7 +501,7 @@ export function useVideoSignaling() {
   useEffect(() => {
     // Update local state when sessions change
     const updateSessions = () => {
-      const activeSessions = videoSignaling.getActiveSessions('osmo1hcgd3hg6kpvsfuklsgkzjratda53vwsymrp24k')
+      const activeSessions = videoSignaling.getActiveSessions('osmo1hcgd3hg6kpvsfuklsgkzjratda53vwsynq5zdc')
       setSessions(activeSessions)
     }
     
@@ -517,20 +517,20 @@ export function useVideoSignaling() {
     sdpOffer: string
   ) => {
     const sessionId = await videoSignaling.startSession(receiver, callType, sdpOffer)
-    const activeSessions = videoSignaling.getActiveSessions('osmo1hcgd3hg6kpvsfuklsgkzjratda53vwsymrp24k')
+    const activeSessions = videoSignaling.getActiveSessions('osmo1hcgd3hg6kpvsfuklsgkzjratda53vwsynq5zdc')
     setSessions(activeSessions)
     return sessionId
   }
 
   const acceptSession = async (sessionId: string, sdpAnswer: string) => {
     await videoSignaling.acceptSession(sessionId, sdpAnswer)
-    const activeSessions = videoSignaling.getActiveSessions('osmo1hcgd3hg6kpvsfuklsgkzjratda53vwsymrp24k')
+    const activeSessions = videoSignaling.getActiveSessions('osmo1hcgd3hg6kpvsfuklsgkzjratda53vwsynq5zdc')
     setSessions(activeSessions)
   }
 
   const endSession = async (sessionId: string, dataTransferred: number) => {
     await videoSignaling.endSession(sessionId, dataTransferred)
-    const activeSessions = videoSignaling.getActiveSessions('osmo1hcgd3hg6kpvsfuklsgkzjratda53vwsymrp24k')
+    const activeSessions = videoSignaling.getActiveSessions('osmo1hcgd3hg6kpvsfuklsgkzjratda53vwsynq5zdc')
     setSessions(activeSessions)
   }
 
