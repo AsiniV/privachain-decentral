@@ -8,11 +8,12 @@ import { SearchView } from './components/SearchView'
 import { ProfileView } from './components/ProfileView'
 import { DeploymentView } from './components/DeploymentView'
 import { BrowserView } from './components/BrowserView'
+import ProductReadinessDashboard from './components/ProductReadinessDashboard'
 import { Toaster } from './components/ui/sonner'
 import { usePlanSystem } from './hooks/usePlanSystem'
 import { toast } from 'sonner'
 
-export type View = 'messenger' | 'email' | 'search' | 'profile' | 'deployment' | 'browser'
+export type View = 'messenger' | 'email' | 'search' | 'profile' | 'deployment' | 'browser' | 'readiness'
 
 function App() {
   const [currentView, setCurrentView] = useState<View>('messenger')
@@ -62,6 +63,8 @@ function App() {
         return <ProfileView />
       case 'deployment':
         return <DeploymentView />
+      case 'readiness':
+        return <ProductReadinessDashboard />
       default:
         return <MessengerView />
     }
