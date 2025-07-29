@@ -607,8 +607,7 @@ async function main() {
   }
 }
 
-if (require.main === module) {
-  main().catch(console.error);
-}
+// Run main if this is the main module
+main().catch(console.error);
 
 export { FeatureTester, type TestResult, type TestSuite };
