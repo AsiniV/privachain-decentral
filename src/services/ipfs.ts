@@ -8,10 +8,22 @@ import { yamux } from '@chainsafe/libp2p-yamux'
 import { webSockets } from '@libp2p/websockets'
 import { bootstrap } from '@libp2p/bootstrap'
 import { identify } from '@libp2p/identify'
-import { create } from '@orbitdb/core'
 import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate'
 import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing'
 import * as sodium from 'libsodium-wrappers'
+
+// Graceful OrbitDB import handling
+let createOrbitDB: any = null
+try {
+  // Try to import OrbitDB dynamically
+  import('@orbitdb/core').then(module => {
+    createOrbitDB = module.create || module.default?.create || module.default
+  }).catch(() => {
+    console.warn('⚠️ OrbitDB not available, indexing features will be limited')
+  })
+} catch (error) {
+  console.warn('⚠️ OrbitDB not available, indexing features will be limited')
+}
 
 /**
  * Custom error class for IPFS operations
@@ -118,8 +130,12 @@ export class PrivaChainIPFSService {
       this.helia = await createHelia({ libp2p: this.libp2p })
       this.fs = unixfs(this.helia)
 
-      // Initialize OrbitDB for indexing
-      this.orbitdb = await create({ ipfs: this.helia })
+      // Initialize OrbitDB for indexing if available
+      if (createOrbitDB) {
+        this.orbitdb = await createOrbitDB({ ipfs: this.helia })
+      } else {
+        console.warn('⚠️ OrbitDB not available, search indexing will be limited')
+      }
 
       this.initialized = true
       console.log('✅ PrivaChain IPFS service initialized with Nym anonymity')
@@ -133,7 +149,7 @@ export class PrivaChainIPFSService {
 
   /** @throws {IPFSError} If content indexing fails */
   async indexContent(content: string, keywords: string[]): Promise<string> {
-    if (!this.initialized || !this.fs || !this.orbitdb) {
+    if (!this.initialized || !this.fs) {
       throw new IPFSError('IPFS service not initialized')
     }
 
@@ -153,20 +169,24 @@ export class PrivaChainIPFSService {
       const cid = await this.fs.addBytes(finalContent)
       const cidString = cid.toString()
 
-      // Index in OrbitDB with access control
-      const indexDb = await this.orbitdb.open('priva-index', { 
-        type: 'keyvalue',
-        AccessController: { 
-          write: ['*'], 
-          admin: [process.env.DEVELOPER_WALLET || 'cosmos1default']
-        }
-      })
+      // Index in OrbitDB with access control if available
+      if (this.orbitdb) {
+        const indexDb = await this.orbitdb.open('priva-index', { 
+          type: 'keyvalue',
+          AccessController: { 
+            write: ['*'], 
+            admin: [process.env.DEVELOPER_WALLET || 'cosmos1default']
+          }
+        })
 
-      // Add keywords to index
-      for (const keyword of keywords) {
-        const existing = await indexDb.get(keyword) || []
-        existing.push(cidString)
-        await indexDb.put(keyword, existing)
+        // Add keywords to index
+        for (const keyword of keywords) {
+          const existing = await indexDb.get(keyword) || []
+          existing.push(cidString)
+          await indexDb.put(keyword, existing)
+        }
+      } else {
+        console.warn('⚠️ OrbitDB not available, content indexed without search capability')
       }
 
       // Trigger Cosmos contract for gas sponsorship and quota tracking
@@ -184,11 +204,16 @@ export class PrivaChainIPFSService {
 
   /** @throws {IPFSError} If search fails */
   async searchIndex(query: string): Promise<string[]> {
-    if (!this.initialized || !this.orbitdb) {
+    if (!this.initialized) {
       throw new IPFSError('IPFS service not initialized')
     }
 
     try {
+      if (!this.orbitdb) {
+        console.warn('⚠️ OrbitDB not available, returning empty search results')
+        return []
+      }
+
       const indexDb = await this.orbitdb.open('priva-index', { type: 'keyvalue' })
       const results = await indexDb.get(query) || []
 
@@ -199,7 +224,7 @@ export class PrivaChainIPFSService {
       }
 
       // Check P2P replication
-      const peers = this.libp2p.getPeers()
+      const peers = this.libp2p?.getPeers() || []
       console.log(`🌐 Search performed with ${peers.length} connected peers`)
 
       return results
