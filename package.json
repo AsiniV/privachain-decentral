@@ -29,7 +29,13 @@
         "deploy:status": "ts-node src/blockchain/deployment/cli.ts status",
         "deploy:estimate": "ts-node src/blockchain/deployment/cli.ts estimate",
         "contracts:build": "cd contracts/mail && cargo build --release --target wasm32-unknown-unknown",
-        "contracts:test": "cd contracts && ./scripts/test.sh"
+        "contracts:test": "cd contracts && ./scripts/test.sh",
+        "populate-search": "tsx scripts/populate-search-data.ts",
+        "populate-search:full": "tsx scripts/populate-search-data.ts --num=1000 --verbose",
+        "populate-search:testnet": "tsx scripts/populate-search-data.ts --num=1000 --chain-id=privachain-testnet --verbose",
+        "verify-features": "tsx scripts/verify-features.ts",
+        "verify-features:json": "tsx scripts/verify-features.ts --json",
+        "verify-features:verbose": "tsx scripts/verify-features.ts --verbose"
     },
     "dependencies": {
         "@chainsafe/libp2p-gossipsub": "^14.1.1",
@@ -124,6 +130,7 @@
         "eslint-plugin-react-refresh": "^0.4.19",
         "globals": "^16.3.0",
         "tailwindcss": "^4.0.17",
+        "tsx": "^4.20.3",
         "typescript": "~5.7.2",
         "typescript-eslint": "^8.38.0",
         "vite": "^6.3.5"
