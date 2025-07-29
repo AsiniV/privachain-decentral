@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EmailsResponse",
+  "type": "object",
+  "required": [
+    "emails"
+  ],
+  "properties": {
+    "emails": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/EmailInfo"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "EmailInfo": {
+      "type": "object",
+      "required": [
+        "content_cid",
+        "delivered",
+        "id",
+        "sender_alias",
+        "timestamp"
+      ],
+      "properties": {
+        "content_cid": {
+          "description": "IPFS content hash",
+          "type": "string"
+        },
+        "delivered": {
+          "description": "Delivery confirmation",
+          "type": "boolean"
+        },
+        "id": {
+          "description": "Unique email ID",
+          "type": "string"
+        },
+        "sender_alias": {
+          "description": "Anonymous sender alias",
+          "type": "string"
+        },
+        "timestamp": {
+          "description": "Email timestamp",
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0.0
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
