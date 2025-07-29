@@ -8,7 +8,6 @@ on:
 
 env:
   CARGO_TARGET_DIR: ./target
-  RUSTFLAGS: "--cfg target_arch=\"wasm32\""
 
 jobs:
   test:
