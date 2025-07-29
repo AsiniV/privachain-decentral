@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DomainResponse",
+  "type": "object",
+  "required": [
+    "active",
+    "domain",
+    "expires_at",
+    "mx_records",
+    "owner_hash",
+    "public_key",
+    "registered_at",
+    "reputation"
+  ],
+  "properties": {
+    "active": {
+      "description": "Whether domain is active",
+      "type": "boolean"
+    },
+    "domain": {
+      "description": "Domain name",
+      "type": "string"
+    },
+    "expires_at": {
+      "description": "Domain expiration timestamp",
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "mx_records": {
+      "description": "Mail exchanger records",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "owner_hash": {
+      "description": "Domain owner address (hashed for privacy)",
+      "allOf": [
+        {
+          "$ref": "#/definitions/Binary"
+        }
+      ]
+    },
+    "public_key": {
+      "description": "PGP public key for encryption",
+      "allOf": [
+        {
+          "$ref": "#/definitions/Binary"
+        }
+      ]
+    },
+    "registered_at": {
+      "description": "Domain registration timestamp",
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "reputation": {
+      "description": "Domain reputation score (0-100)",
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0.0
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "Binary": {
+      "description": "Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.\n\nThis is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>. See also <https://github.com/CosmWasm/cosmwasm/blob/main/docs/MESSAGE_TYPES.md>.",
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "StatsResponse",
+  "type": "object",
+  "required": [
+    "active_domains",
+    "active_relays",
+    "total_domains",
+    "total_emails",
+    "total_relays"
+  ],
+  "properties": {
+    "active_domains": {
+      "description": "Active domains",
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "active_relays": {
+      "description": "Active relay nodes",
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "total_domains": {
+      "description": "Total domains registered",
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "total_emails": {
+      "description": "Total emails sent",
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "total_relays": {
+      "description": "Total relay nodes",
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
+    }
+  },
+  "additionalProperties": false
+}

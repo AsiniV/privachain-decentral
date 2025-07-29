@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  CARGO_TARGET_DIR: ./target
+  RUSTFLAGS: "--cfg target_arch=\"wasm32\""
+
 jobs:
   test:
     name: Build and Test

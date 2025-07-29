@@ -4,6 +4,7 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 use sha2::{Sha256, Digest};
+use log::{error, info};
 
 use crate::error::ContractError;
 use crate::msg::{
@@ -26,6 +27,9 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
+    crate::init_logging();
+    info!("Instantiate started");
+    
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     let admin = msg
@@ -44,6 +48,7 @@ pub fn instantiate(
 
     CONFIG.save(deps.storage, &config)?;
 
+    info!("Instantiate completed successfully");
     Ok(Response::new()
         .add_attribute("method", "instantiate")
         .add_attribute("owner", info.sender)
@@ -65,26 +70,62 @@ pub fn execute(
             zk_proof,
             public_key,
             mx_records,
-        } => execute_register_domain(deps, env, info, domain, zk_proof, public_key, mx_records),
+        } => {
+            let result = execute_register_domain(deps, env, info, domain, zk_proof, public_key, mx_records);
+            if let Err(ref e) = result {
+                error!("Error in register_domain: {e}");
+            }
+            result
+        },
         ExecuteMsg::SendEmail {
             recipient_domain,
             content_cid,
             pow_proof,
             sender_alias,
-        } => execute_send_email(deps, env, info, recipient_domain, content_cid, pow_proof, sender_alias),
+        } => {
+            let result = execute_send_email(deps, env, info, recipient_domain, content_cid, pow_proof, sender_alias);
+            if let Err(ref e) = result {
+                error!("Error in send_email: {e}");
+            }
+            result
+        },
         ExecuteMsg::UpdateDomain {
             domain,
             public_key,
             mx_records,
             active,
-        } => execute_update_domain(deps, info, domain, public_key, mx_records, active),
+        } => {
+            let result = execute_update_domain(deps, info, domain, public_key, mx_records, active);
+            if let Err(ref e) = result {
+                error!("Error in update_domain: {e}");
+            }
+            result
+        },
         ExecuteMsg::RegisterRelay {
             location,
             stake,
             endpoint,
-        } => execute_register_relay(deps, env, info, location, stake, endpoint),
-        ExecuteMsg::ClaimRelayRewards {} => execute_claim_relay_rewards(deps, info),
-        ExecuteMsg::ReportSpam { target, evidence } => execute_report_spam(deps, info, target, evidence),
+        } => {
+            let result = execute_register_relay(deps, env, info, location, stake, endpoint);
+            if let Err(ref e) = result {
+                error!("Error in register_relay: {e}");
+            }
+            result
+        },
+        ExecuteMsg::ClaimRelayRewards {} => {
+            let result = execute_claim_relay_rewards(deps, info);
+            if let Err(ref e) = result {
+                error!("Error in claim_relay_rewards: {e}");
+            }
+            result
+        },
+        ExecuteMsg::ReportSpam { target, evidence } => {
+            let result = execute_report_spam(deps, info, target, evidence);
+            if let Err(ref e) = result {
+                error!("Error in report_spam: {e}");
+            }
+            result
+        },
     }
 }
 
@@ -660,7 +701,8 @@ mod tests {
         let proof = Binary::from(vec![0u8; 32]); // This will get hashed
         let result = verify_pow(&proof, 1);
         // We can't guarantee what the hash will be, so let's just test that the function runs
-        assert!(result == true || result == false); // Function should return a boolean
+        // and returns a boolean (the function itself verifies this by returning bool)
+        let _ = result; // Just verify the function compiles and runs
         
         // Test with too short proof
         let short_proof = Binary::from(vec![0u8; 16]); // Less than 32 bytes

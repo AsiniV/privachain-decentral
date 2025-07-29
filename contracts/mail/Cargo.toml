@@ -13,7 +13,8 @@ exclude = [
 ]
 
 [lib]
-crate-type = ["cdylib", "rlib"]
+path = "src/lib.rs"  # Use relative paths
+crate-type = ["cdylib", "rlib"]  # Explicitly set for WASM compatibility
 
 [profile.release]
 opt-level = 3
@@ -50,6 +51,8 @@ serde = { version = "1.0", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0" }
 sha2 = "0.10"
 hex = "0.4"
+env_logger = "0.10.0"
+log = "0.4.17"
 
 [dev-dependencies]
 cw-multi-test = "0.16"
