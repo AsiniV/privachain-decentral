@@ -112,7 +112,7 @@
         "react-error-boundary": "^6.0.0",
         "react-hook-form": "^7.61.1",
         "react-resizable-panels": "^2.1.7",
-        "recharts": "^2.15.1",
+        "recharts": "^3.1.0",
         "snarkjs": "^0.7.5",
         "socks-proxy-agent": "^8.0.5",
         "sonner": "^2.0.6",
