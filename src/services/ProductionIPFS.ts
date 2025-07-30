@@ -1,9 +1,12 @@
 /**
  * Production IPFS Integration with Filecoin incentives
- * Real decentralized storage for PrivaChain
+ * Real decentralized storage for PrivaChain using Helia
  */
 
-import { create, IPFSHTTPClient } from 'ipfs-http-client'
+import { createHelia } from 'helia'
+import { unixfs } from '@helia/unixfs'
+import type { Helia } from 'helia'
+import type { UnixFS } from '@helia/unixfs'
 
 export interface FilecoinDeal {
   dealId: string
@@ -29,36 +32,28 @@ export interface PinningResult {
 }
 
 export class ProductionIPFS {
-  private client: IPFSHTTPClient | null = null
+  private helia: Helia | null = null
+  private fs: UnixFS | null = null
   private initialized = false
   private pinningNodes: string[] = [
     'https://privachain-ipfs-1.herokuapp.com',
     'https://privachain-ipfs-2.herokuapp.com', 
     'https://privachain-ipfs-3.herokuapp.com'
   ]
+  private filebaseGateway = 'https://ipfs.filebase.io/ipfs/'
+  private s3ApiEndpoint = 'https://s3.filebase.com'
+  private rpcApiEndpoint = 'https://rpc.filebase.io'
   
   async initialize(): Promise<boolean> {
     try {
-      // Initialize IPFS client with production endpoints
-      const projectId = process.env.INFURA_PROJECT_ID || process.env.VITE_INFURA_PROJECT_ID
-      const projectSecret = process.env.INFURA_SECRET || process.env.VITE_INFURA_SECRET
+      // Initialize Helia node for IPFS operations
+      this.helia = await createHelia()
+      this.fs = unixfs(this.helia)
       
-      if (!projectId || !projectSecret) {
-        throw new Error('INFURA_PROJECT_ID and INFURA_SECRET environment variables are required')
-      }
-
-      this.client = create({
-        host: 'ipfs.infura.io',
-        port: 5001,
-        protocol: 'https',
-        headers: {
-          authorization: `Basic ${btoa(projectId + ':' + projectSecret)}`
-        }
-      })
-
-      // Test connection
-      const version = await this.client.version()
-      console.log('🌐 Connected to IPFS network:', version.version)
+      // Log connection info
+      console.log('🌐 Connected to IPFS network via Helia')
+      console.log('🌐 Filebase.com RPC API:', this.rpcApiEndpoint)
+      console.log('🌐 Filebase.com S3 API:', this.s3ApiEndpoint)
       
       this.initialized = true
       return true
@@ -80,7 +75,7 @@ export class ProductionIPFS {
       redundancy?: number
     } = {}
   ): Promise<PinningResult> {
-    if (!this.client || !this.initialized) {
+    if (!this.fs || !this.initialized) {
       throw new Error('IPFS not initialized')
     }
 
@@ -99,22 +94,19 @@ export class ProductionIPFS {
         finalContent = await this.encryptContent(finalContent)
       }
 
-      // Add to IPFS
-      const addResult = await this.client.add(finalContent, {
-        pin: false, // We'll pin manually for redundancy
-        cidVersion: 1,
-        hashAlg: 'sha2-256'
-      })
-
-      const cid = addResult.cid.toString()
-      console.log('📁 Content added to IPFS:', cid)
+      // Add to IPFS using Helia
+      const cid = await this.fs.addBytes(finalContent)
+      console.log('📁 Content added to IPFS:', cid.toString())
 
       if (pin) {
-        // Pin across multiple nodes for redundancy
-        const pinnedNodes = await this.pinAcrossNodes(cid, redundancy)
+        // Pin the content
+        await this.helia!.pins.add(cid)
+        
+        // Pin across multiple nodes for redundancy using Filebase API
+        const pinnedNodes = await this.pinAcrossNodes(cid.toString(), redundancy)
         
         return {
-          cid,
+          cid: cid.toString(),
           status: pinnedNodes.length >= redundancy ? 'pinned' : 'pinning',
           nodes: pinnedNodes,
           redundancy: pinnedNodes.length
@@ -122,7 +114,7 @@ export class ProductionIPFS {
       }
 
       return {
-        cid,
+        cid: cid.toString(),
         status: 'pinned',
         nodes: ['local'],
         redundancy: 1
@@ -134,21 +126,44 @@ export class ProductionIPFS {
   }
 
   /**
-   * Pin content across multiple IPFS nodes for redundancy
+   * Pin content across multiple IPFS nodes for redundancy using Filebase API
    */
   private async pinAcrossNodes(cid: string, targetRedundancy: number): Promise<string[]> {
     const pinnedNodes: string[] = []
     
-    // Pin on primary node first
+    // Already pinned locally
+    pinnedNodes.push('local')
+
+    // Pin using Filebase RPC API
     try {
-      await this.client!.pin.add(cid)
-      pinnedNodes.push('primary')
+      const filebaseAccessKey = process.env.FILEBASE_ACCESS_KEY || process.env.VITE_FILEBASE_ACCESS_KEY
+      const filebaseSecretKey = process.env.FILEBASE_SECRET_KEY || process.env.VITE_FILEBASE_SECRET_KEY
+      
+      if (filebaseAccessKey && filebaseSecretKey) {
+        const authHeader = `Basic ${btoa(filebaseAccessKey + ':' + filebaseSecretKey)}`
+        
+        // Pin using Filebase RPC API
+        const response = await fetch(`${this.rpcApiEndpoint}/api/v0/pin/add?arg=${cid}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': authHeader
+          }
+        })
+        
+        if (response.ok) {
+          pinnedNodes.push('filebase-rpc')
+          console.log('📌 Content pinned to Filebase:', cid)
+        } else {
+          console.warn('Failed to pin to Filebase RPC:', await response.text())
+        }
+      }
     } catch (error) {
-      console.error('Failed to pin on primary node:', error)
+      console.error('Failed to pin to Filebase RPC:', error)
     }
 
-    // Pin on additional nodes
-    const pinPromises = this.pinningNodes.slice(0, targetRedundancy - 1).map(async (nodeUrl) => {
+    // Pin on additional nodes if configured
+    const additionalPins = Math.min(this.pinningNodes.length, targetRedundancy - pinnedNodes.length)
+    const pinPromises = this.pinningNodes.slice(0, additionalPins).map(async (nodeUrl) => {
       try {
         const response = await fetch(`${nodeUrl}/api/v0/pin/add?arg=${cid}`, {
           method: 'POST',
@@ -247,25 +262,22 @@ export class ProductionIPFS {
    * Get storage metrics and network statistics
    */
   async getStorageMetrics(): Promise<StorageMetrics> {
-    if (!this.client || !this.initialized) {
+    if (!this.helia || !this.initialized) {
       throw new Error('IPFS not initialized')
     }
 
     try {
-      // Get repository stats
-      const repoStat = await this.client.repo.stat()
-      
       // Get connected peers
-      const peers = await this.client.swarm.peers()
+      const peers = this.helia.libp2p.getPeers()
       
       // Get pinned content
       const pins = []
-      for await (const pin of this.client.pin.ls()) {
+      for await (const pin of this.helia.pins.ls()) {
         pins.push(pin)
       }
 
       return {
-        totalStored: repoStat.repoSize,
+        totalStored: 0, // TODO: Get repo stats from Helia
         totalPinned: pins.length,
         activeDemos: 0, // TODO: Track from blockchain
         networkedPeers: peers.length,
@@ -281,20 +293,20 @@ export class ProductionIPFS {
    * Retrieve content with automatic failover across nodes
    */
   async retrieveWithFailover(cid: string, decrypt = true): Promise<Uint8Array> {
-    if (!this.client || !this.initialized) {
+    if (!this.fs || !this.initialized) {
       throw new Error('IPFS not initialized')
     }
 
-    const allNodes = ['primary', ...this.pinningNodes]
+    const allNodes = ['local', 'filebase-gateway', ...this.pinningNodes]
     
     for (const node of allNodes) {
       try {
         let content: Uint8Array
         
-        if (node === 'primary') {
-          // Use main client
+        if (node === 'local') {
+          // Use local Helia node
           const chunks: Uint8Array[] = []
-          for await (const chunk of this.client.cat(cid)) {
+          for await (const chunk of this.fs.cat(cid)) {
             chunks.push(chunk)
           }
           content = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0))
@@ -303,6 +315,11 @@ export class ProductionIPFS {
             content.set(chunk, offset)
             offset += chunk.length
           }
+        } else if (node === 'filebase-gateway') {
+          // Use Filebase gateway
+          const response = await fetch(`${this.filebaseGateway}${cid}`)
+          if (!response.ok) throw new Error(`HTTP ${response.status}`)
+          content = new Uint8Array(await response.arrayBuffer())
         } else {
           // Use backup node
           const response = await fetch(`${node}/ipfs/${cid}`)
@@ -395,30 +412,39 @@ export class ProductionIPFS {
   }
 
   /**
+   * Get Filebase S3 API configuration for direct S3 operations
+   */
+  getFilebaseS3Config(): {
+    endpoint: string;
+    accessKeyId: string | undefined;
+    secretAccessKey: string | undefined;
+    region: string;
+  } {
+    return {
+      endpoint: this.s3ApiEndpoint,
+      accessKeyId: process.env.FILEBASE_ACCESS_KEY || process.env.VITE_FILEBASE_ACCESS_KEY,
+      secretAccessKey: process.env.FILEBASE_SECRET_KEY || process.env.VITE_FILEBASE_SECRET_KEY,
+      region: 'us-east-1' // Filebase uses us-east-1 region
+    }
+  }
+
+  /**
    * Garbage collection - remove unpinned content
    */
   async garbageCollect(): Promise<{ removed: string[], freedSpace: number }> {
-    if (!this.client || !this.initialized) {
+    if (!this.helia || !this.initialized) {
       throw new Error('IPFS not initialized')
     }
 
     try {
-      const beforeStat = await this.client.repo.stat()
-      
-      // Run garbage collection
+      // Run garbage collection on local node
       const removed: string[] = []
-      for await (const result of this.client.repo.gc()) {
-        if (result.cid) {
-          removed.push(result.cid.toString())
-        }
-      }
-
-      const afterStat = await this.client.repo.stat()
-      const freedSpace = beforeStat.repoSize - afterStat.repoSize
-
-      console.log(`🧹 Garbage collection completed: ${removed.length} items removed, ${freedSpace} bytes freed`)
       
-      return { removed, freedSpace }
+      // In Helia, garbage collection is typically handled automatically
+      // This is a placeholder for future implementation
+      console.log('🧹 Garbage collection not yet implemented in Helia, automatic cleanup enabled')
+      
+      return { removed, freedSpace: 0 }
     } catch (error) {
       console.error('❌ Garbage collection failed:', error)
       throw error
@@ -429,13 +455,11 @@ export class ProductionIPFS {
 // Singleton instance
 export const productionIPFS = new ProductionIPFS()
 
-// Auto-initialize in production environment only with proper configuration
-if (process.env.NODE_ENV === 'production' && 
-    process.env.INFURA_PROJECT_ID && 
-    process.env.INFURA_SECRET) {
+// Auto-initialize in production environment
+if (process.env.NODE_ENV === 'production') {
   productionIPFS.initialize().catch(error => {
     console.error('❌ Failed to auto-initialize ProductionIPFS in production:', error)
   })
 } else {
-  console.log('⚠️ ProductionIPFS not auto-initialized - missing required environment variables')
+  console.log('⚠️ ProductionIPFS not auto-initialized - development environment')
 }
