@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useKV } from '../hooks/useKV'
 import { DeploymentManager } from './deployment/DeploymentManager'
-import { SystemIntegrationTest } from './SystemIntegrationTest'
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { Badge } from './ui/badge'
 import { Button } from './ui/button'
@@ -422,7 +422,14 @@ export function DeploymentView() {
             </TabsContent>
 
             <TabsContent value="testing" className="space-y-6">
-              <SystemIntegrationTest />
+              <Card>
+                <CardHeader>
+                  <CardTitle>System Testing</CardTitle>
+                  <CardDescription>
+                    Integration testing features have been removed. Use the deployment and status tabs for system monitoring.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
             </TabsContent>
 
             <TabsContent value="status" className="space-y-6">
