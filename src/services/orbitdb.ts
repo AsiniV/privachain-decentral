@@ -93,101 +93,52 @@ const INSTANT_ANSWERS: Record<string, (query: string) => Promise<string | null>>
 export class OrbitDBHybridIndexing {
   private isInitialized = false
   private localIndex: Map<string, SearchDocument> = new Map()
-  private simulatedPeers = 3 // Simulated peer connections
-  private torEnabled = false
+  private orbitDB: any = null
+  private libp2p: any = null
 
   constructor() {
-    this.initializeSimulatedMode()
+    // Initialize immediately without simulation mode
+    this.initialize()
   }
 
   /**
-   * Initialize in simulated mode for browser compatibility
-   */
-  private async initializeSimulatedMode() {
-    try {
-      console.log('🚀 Initializing OrbitDB Hybrid Indexing (Browser Mode)...')
-
-      // Simulate initialization delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      // Initialize with mock data
-      await this.loadMockData()
-
-      // Check for Tor proxy availability
-      this.torEnabled = await this.checkTorAvailability()
-
-      this.isInitialized = true
-      console.log('✅ OrbitDB Hybrid Indexing initialized in browser mode')
-      
-    } catch (error) {
-      console.error('❌ Failed to initialize OrbitDB:', error)
-      this.isInitialized = false
-    }
-  }
-
-  /**
-   * Initialize OrbitDB with real libp2p (for production environments)
+   * Initialize OrbitDB with real libp2p
    */
   async initialize(): Promise<boolean> {
     try {
-      // Try to load OrbitDB and libp2p
-      const orbitDBAvailable = await this.checkOrbitDBAvailability()
+      console.log('🚀 Initializing OrbitDB with real P2P networking...')
+
+      // Dynamic imports to handle module availability
+      const { createLibp2p } = await import('libp2p')
+      const { webSockets } = await import('@libp2p/websockets')
+      const { noise } = await import('@libp2p/noise')
+      const { yamux } = await import('@chainsafe/libp2p-yamux')
+      const { createHelia } = await import('helia')
+      const { create } = await import('@orbitdb/core')
+
+      // Create libp2p node
+      this.libp2p = await createLibp2p({
+        addresses: {
+          listen: ['/ip4/0.0.0.0/tcp/0/ws']
+        },
+        transports: [webSockets()],
+        connectionEncryption: [noise()],
+        streamMuxers: [yamux()]
+      })
+
+      // Create Helia IPFS node
+      const helia = await createHelia({ libp2p: this.libp2p })
+
+      // Initialize OrbitDB
+      this.orbitDB = await create({ ipfs: helia })
+
+      this.isInitialized = true
+      console.log('✅ OrbitDB initialized with real P2P networking')
       
-      if (orbitDBAvailable) {
-        return await this.initializeRealOrbitDB()
-      } else {
-        // Fallback to simulated mode
-        await this.initializeSimulatedMode()
-        return this.isInitialized
-      }
-    } catch (error) {
-      console.warn('OrbitDB not available, using simulated mode:', error)
-      await this.initializeSimulatedMode()
-      return this.isInitialized
-    }
-  }
-
-  /**
-   * Check if OrbitDB is available in current environment
-   */
-  private async checkOrbitDBAvailability(): Promise<boolean> {
-    try {
-      // Dynamic import to avoid build-time errors
-      await import('@orbitdb/core')
-      await import('libp2p')
-      await import('helia')
       return true
     } catch (error) {
-      console.log('OrbitDB dependencies not available, using simulated mode')
-      return false
-    }
-  }
-
-  /**
-   * Initialize real OrbitDB (when modules are available)
-   */
-  private async initializeRealOrbitDB(): Promise<boolean> {
-    try {
-      // This would contain the real OrbitDB initialization code
-      // For now, return simulated mode
-      console.log('🔄 Real OrbitDB initialization would go here')
-      await this.initializeSimulatedMode()
-      return true
-    } catch (error) {
-      console.error('Real OrbitDB initialization failed:', error)
-      return false
-    }
-  }
-
-  /**
-   * Check Tor proxy availability
-   */
-  private async checkTorAvailability(): Promise<boolean> {
-    try {
-      // Simulate Tor check (in real implementation, would try to connect to SOCKS proxy)
-      return Math.random() > 0.5 // 50% chance for demo
-    } catch (error) {
-      return false
+      console.error('❌ Failed to initialize OrbitDB:', error)
+      throw new Error(`OrbitDB initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 

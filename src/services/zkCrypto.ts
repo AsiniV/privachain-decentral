@@ -45,22 +45,23 @@ export class ZKIdentityManager {
    */
   async initializeCircuits(wasmPath?: string, zkeyPath?: string, vkeyPath?: string): Promise<void> {
     try {
-      this.circuitWasm = wasmPath || this.circuitWasm
-      this.circuitZkey = zkeyPath || this.circuitZkey
+      // Require circuit paths for production
+      this.circuitWasm = wasmPath || process.env.ZK_CIRCUIT_WASM || process.env.VITE_ZK_CIRCUIT_WASM
+      this.circuitZkey = zkeyPath || process.env.ZK_CIRCUIT_ZKEY || process.env.VITE_ZK_CIRCUIT_ZKEY
+      const vkeyPathFinal = vkeyPath || process.env.ZK_VERIFICATION_KEY || process.env.VITE_ZK_VERIFICATION_KEY
       
-      if (vkeyPath) {
-        // In production, load verification key from file
-        console.log('📋 Loading ZK verification key...')
-        // this.verificationKey = await fetch(vkeyPath).then(r => r.json())
-        // For now, use a placeholder
-        this.verificationKey = {
-          protocol: "groth16",
-          curve: "bn128",
-          // ... other verification key fields would be here
-        }
+      if (!this.circuitWasm || !this.circuitZkey || !vkeyPathFinal) {
+        throw new ZKError('ZK circuit files are required: ZK_CIRCUIT_WASM, ZK_CIRCUIT_ZKEY, ZK_VERIFICATION_KEY')
       }
       
-      console.log('✅ ZK circuits initialized')
+      console.log('📋 Loading ZK verification key...')
+      const vkeyResponse = await fetch(vkeyPathFinal)
+      if (!vkeyResponse.ok) {
+        throw new ZKError(`Failed to load verification key from ${vkeyPathFinal}`)
+      }
+      this.verificationKey = await vkeyResponse.json()
+      
+      console.log('✅ ZK circuits initialized with real snarkjs support')
     } catch (error) {
       console.error('❌ Failed to initialize ZK circuits:', error)
       throw new ZKError(`Failed to initialize circuits: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -114,37 +115,29 @@ export class ZKIdentityManager {
     }
 
     try {
-      // If we have real circuits, use snarkjs
-      if (this.circuitWasm && this.circuitZkey) {
-        console.log('🔬 Generating ZK-SNARK proof with real circuits...')
-        
-        // In production, this would be:
-        // const { proof, publicSignals } = await snarkjs.groth16.fullProve(
-        //   { ...privateWitness, secret: this.bytesToHex(this.identity.privateKey) },
-        //   this.circuitWasm,
-        //   this.circuitZkey
-        // )
-        
-        // For now, simulate the structure
-        const simulatedProof = {
-          pi_a: [randomBytes(32).toString(), randomBytes(32).toString(), "1"],
-          pi_b: [[randomBytes(32).toString(), randomBytes(32).toString()], [randomBytes(32).toString(), randomBytes(32).toString()], ["1", "0"]],
-          pi_c: [randomBytes(32).toString(), randomBytes(32).toString(), "1"],
-          protocol: "groth16",
-          curve: "bn128"
-        }
-        
-        const publicSignals = [statement.domain || statement.groupId || 'default']
-        
-        return {
-          proof: JSON.stringify(simulatedProof),
-          publicSignals,
-          nullifierHash: this.generateNullifier(statement)
-        }
-      } else {
-        // Fallback to simplified proof for development
-        console.log('⚠️ Using simplified ZK proof (circuits not available)')
-        return this.generateSimplifiedProof(statement, privateWitness)
+      // Require real circuits for production
+      if (!this.circuitWasm || !this.circuitZkey) {
+        throw new ZKError('ZK circuits not properly initialized. Call initializeCircuits() first.')
+      }
+
+      console.log('🔬 Generating ZK-SNARK proof with real circuits...')
+      
+      // Generate real ZK-SNARK proof using snarkjs
+      const input = {
+        ...privateWitness,
+        secret: this.bytesToHex(this.identity.privateKey)
+      }
+
+      const { proof, publicSignals } = await snarkjs.groth16.fullProve(
+        input,
+        this.circuitWasm,
+        this.circuitZkey
+      )
+      
+      return {
+        proof: JSON.stringify(proof),
+        publicSignals,
+        nullifierHash: this.generateNullifier(statement)
       }
     } catch (error) {
       console.error('❌ Failed to generate ZK proof:', error)
@@ -158,24 +151,21 @@ export class ZKIdentityManager {
    */
   async verifyZKProof(proof: ZKProof, statement: any): Promise<boolean> {
     try {
-      if (this.verificationKey && proof.proof.includes('groth16')) {
-        console.log('🔍 Verifying ZK-SNARK proof with real verification...')
-        
-        // In production, this would be:
-        // const parsedProof = JSON.parse(proof.proof)
-        // return await snarkjs.groth16.verify(
-        //   this.verificationKey,
-        //   proof.publicSignals,
-        //   parsedProof
-        // )
-        
-        // For now, perform basic validation
-        return proof.publicSignals.length > 0 && proof.nullifierHash.length === 64
-      } else {
-        // Fallback verification
-        console.log('⚠️ Using simplified ZK proof verification')
-        return this.verifySimplifiedProof(proof, statement)
+      if (!this.verificationKey) {
+        throw new ZKError('Verification key not loaded. Call initializeCircuits() first.')
       }
+
+      console.log('🔍 Verifying ZK-SNARK proof with real verification...')
+      
+      const parsedProof = JSON.parse(proof.proof)
+      const isValid = await snarkjs.groth16.verify(
+        this.verificationKey,
+        proof.publicSignals,
+        parsedProof
+      )
+
+      console.log('✅ ZK proof verification completed:', isValid)
+      return isValid
     } catch (error) {
       console.error('❌ Failed to verify ZK proof:', error)
       throw new ZKError(`Failed to verify proof: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -199,41 +189,7 @@ export class ZKIdentityManager {
     return this.bytesToHex(sha256(combined))
   }
 
-  /**
-   * Simplified proof generation for development/fallback
-   */
-  private generateSimplifiedProof(statement: any, privateWitness: any): ZKProof {
-    const secret = this.identity!.privateKey
-    const nullifierHash = this.generateNullifier(statement)
-    
-    // Create proof hash from private data
-    const proofData = {
-      secret: this.bytesToHex(secret),
-      statement,
-      privateWitness,
-      nullifier: nullifierHash,
-      timestamp: Date.now()
-    }
-    
-    const proof = this.bytesToHex(sha256(this.stringToBytes(JSON.stringify(proofData))))
-    
-    return {
-      proof: `simplified_${proof}`,
-      publicSignals: [statement.domain || statement.groupId || 'default'],
-      nullifierHash
-    }
-  }
 
-  /**
-   * Simplified proof verification for development/fallback
-   */
-  private verifySimplifiedProof(proof: ZKProof, statement: any): boolean {
-    return (
-      proof.proof.startsWith('simplified_') &&
-      proof.publicSignals.length > 0 &&
-      proof.nullifierHash.length === 64
-    )
-  }
 
   /**
    * Load identity from stored private key
@@ -610,33 +566,60 @@ export class ZKIdentityManager {
 
 // Post-Quantum Cryptography utilities
 export class PostQuantumCrypto {
-  // CRYSTALS-Kyber key encapsulation (simplified)
+  // CRYSTALS-Kyber key encapsulation
   async generateKyberKeyPair(): Promise<{ publicKey: Uint8Array; privateKey: Uint8Array }> {
-    // This is a placeholder - in production, use a real Kyber implementation
-    const publicKey = randomBytes(1568)  // Kyber1024 public key size
-    const privateKey = randomBytes(3168) // Kyber1024 private key size
-    
-    return { publicKey, privateKey }
+    // In production, integrate with real Kyber implementation
+    // For now, require the implementation to be available
+    try {
+      // Check if kyber implementation is available
+      const kyberModule = await import('kyber-crystals').catch(() => null)
+      
+      if (!kyberModule) {
+        throw new Error('Kyber cryptography library not available. Install kyber-crystals package for production use.')
+      }
+
+      // Use real Kyber implementation when available
+      return kyberModule.generateKeyPair()
+    } catch (error) {
+      console.error('❌ Kyber key generation failed:', error)
+      throw new Error(`Post-quantum key generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
   }
 
-  // CRYSTALS-Dilithium signature (simplified)
+  // CRYSTALS-Dilithium signature
   async signWithDilithium(message: Uint8Array, privateKey: Uint8Array): Promise<Uint8Array> {
-    // This is a placeholder - in production, use a real Dilithium implementation
-    const combined = new Uint8Array(message.length + privateKey.length)
-    combined.set(message, 0)
-    combined.set(privateKey, message.length)
-    const signature = sha256(combined)
-    return signature
+    try {
+      // Check if dilithium implementation is available
+      const dilithiumModule = await import('dilithium-crystals').catch(() => null)
+      
+      if (!dilithiumModule) {
+        throw new Error('Dilithium cryptography library not available. Install dilithium-crystals package for production use.')
+      }
+
+      // Use real Dilithium implementation when available
+      return dilithiumModule.sign(message, privateKey)
+    } catch (error) {
+      console.error('❌ Dilithium signing failed:', error)
+      throw new Error(`Post-quantum signing failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
   }
 
-  // Verify Dilithium signature (simplified)
+  // Verify Dilithium signature
   async verifyDilithium(message: Uint8Array, signature: Uint8Array, publicKey: Uint8Array): Promise<boolean> {
-    // This is a placeholder - in production, use a real Dilithium implementation
-    const combined = new Uint8Array(message.length + publicKey.length)
-    combined.set(message, 0)
-    combined.set(publicKey, message.length)
-    const expectedSignature = sha256(combined)
-    return this.constantTimeEquals(signature, expectedSignature)
+    try {
+      // Check if dilithium implementation is available
+      const dilithiumModule = await import('dilithium-crystals').catch(() => null)
+      
+      if (!dilithiumModule) {
+        throw new Error('Dilithium cryptography library not available. Install dilithium-crystals package for production use.')
+      }
+
+      // Use real Dilithium implementation when available
+      return dilithiumModule.verify(message, signature, publicKey)
+    } catch (error) {
+      console.error('❌ Dilithium verification failed:', error)
+      throw new Error(`Post-quantum verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
   }
 
   private constantTimeEquals(a: Uint8Array, b: Uint8Array): boolean {
@@ -655,23 +638,5 @@ export class PostQuantumCrypto {
 export const zkIdentityManager = new ZKIdentityManager()
 export const postQuantumCrypto = new PostQuantumCrypto()
 
-// Initialize identity on first load
-if (typeof window !== 'undefined') {
-  // Check for stored identity
-  const storedIdentity = localStorage.getItem('privachain_identity')
-  if (storedIdentity) {
-    try {
-      zkIdentityManager.importIdentity(storedIdentity)
-    } catch {
-      console.warn('Failed to load stored identity, generating new one')
-      zkIdentityManager.generateIdentity().then(() => {
-        localStorage.setItem('privachain_identity', zkIdentityManager.exportIdentity() || '')
-      })
-    }
-  } else {
-    // Generate new identity
-    zkIdentityManager.generateIdentity().then(() => {
-      localStorage.setItem('privachain_identity', zkIdentityManager.exportIdentity() || '')
-    })
-  }
-}
+// Note: Identity must be explicitly generated or imported in production
+console.log('🔐 ZK Identity Manager initialized - call generateIdentity() or importIdentity() to begin')

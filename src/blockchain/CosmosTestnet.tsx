@@ -81,10 +81,10 @@ export const TEST_WALLET_CONFIG = {
 }
 
 const PRIVACHAIN_TESTNET_CONFIG: TestnetConfig = {
-  chainId: 'cosmoshub-4',
-  chainName: 'Cosmos Hub Testnet',
-  rpc: 'https://rpc-cosmoshub.keplr.app',
-  rest: 'https://lcd-cosmoshub.keplr.app',
+  chainId: 'privachain-testnet-1',
+  chainName: 'PrivaChain Testnet',
+  rpc: 'https://rpc-testnet.privachain.network',
+  rest: 'https://api-testnet.privachain.network',
   stakeCurrency: {
     coinDenom: 'ATOM',
     coinMinimalDenom: 'uatom',
@@ -176,17 +176,33 @@ export function CosmosTestnetProvider({ children }: { children: ReactNode }) {
 
   const validateTestnetConnection = useCallback(async (): Promise<boolean> => {
     try {
-      // Simulate testnet validation
-      await fetch(`${testnetEndpoint}/status`, {
+      // Real testnet validation
+      const response = await fetch(`${testnetEndpoint}/status`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
         }
-      }).catch(() => null)
+      })
 
-      // For demo purposes, always return true
-      // In real implementation, validate actual testnet response
-      return true
+      if (!response.ok) {
+        console.error('Testnet validation failed:', response.status)
+        return false
+      }
+
+      const status = await response.json()
+      
+      // Validate response has required fields
+      if (status.result && status.result.node_info && status.result.sync_info) {
+        console.log('✅ Testnet validation successful:', {
+          chainId: status.result.node_info.network,
+          latestHeight: status.result.sync_info.latest_block_height,
+          catchingUp: status.result.sync_info.catching_up
+        })
+        return true
+      }
+
+      console.error('Invalid testnet response format')
+      return false
     } catch (error) {
       console.error('Testnet validation error:', error)
       return false
@@ -195,16 +211,28 @@ export function CosmosTestnetProvider({ children }: { children: ReactNode }) {
 
   const getTestnetStatus = async (): Promise<TestnetStatus> => {
     try {
-      // Simulate testnet status fetch
-      // In real implementation, fetch from actual testnet API
+      // Real testnet status fetch
+      const response = await fetch(`${testnetEndpoint}/status`)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch testnet status: ${response.status}`)
+      }
+      
+      const statusData = await response.json()
+      const nodeInfo = statusData.result.node_info
+      const syncInfo = statusData.result.sync_info
+      
+      // Fetch additional network info
+      const validatorsResponse = await fetch(`${testnetEndpoint.replace('rpc', 'api')}/cosmos/staking/v1beta1/validators`)
+      const validatorsData = validatorsResponse.ok ? await validatorsResponse.json() : { validators: [] }
+      
       return {
-        chainId: config.chainId,
-        latestBlockHeight: Math.floor(Math.random() * 1000000) + 500000,
-        latestBlockTime: new Date().toISOString(),
-        catchingUp: false,
-        validatorCount: 21,
-        bondedTokens: '750000000000000',
-        totalSupply: '1000000000000000'
+        chainId: nodeInfo.network,
+        latestBlockHeight: parseInt(syncInfo.latest_block_height),
+        latestBlockTime: syncInfo.latest_block_time,
+        catchingUp: syncInfo.catching_up,
+        validatorCount: validatorsData.validators?.length || 0,
+        bondedTokens: '0', // Would need additional API call to get accurate data
+        totalSupply: '0' // Would need additional API call to get accurate data
       }
     } catch (error) {
       console.error('Failed to get testnet status:', error)
