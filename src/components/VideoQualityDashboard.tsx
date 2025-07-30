@@ -42,70 +42,41 @@ export function VideoQualityDashboard({ onServerSelected, currentSessionId }: Vi
 
   const loadServers = async () => {
     try {
-      const mockServers: TurnServerInfo[] = [
-        {
-          id: 'us-east-1',
-          url: 'turn:node1.privturn.net:3478',
-          region: 'US-East',
-          latency: 35,
-          reliability: 98.5,
-          cost: 0.002,
-          reputation: 95,
-          stake: 10000,
-          isActive: true,
-          supportedQualities: ['UHD', 'HD', 'SD'],
-          operatorAddress: '0x1234...5678'
-        },
-        {
-          id: 'eu-west-1',
-          url: 'turn:node2.privturn.net:3478',
-          region: 'EU-West',
-          latency: 45,
-          reliability: 96.2,
-          cost: 0.0015,
-          reputation: 92,
-          stake: 8000,
-          isActive: true,
-          supportedQualities: ['HD', 'SD'],
-          operatorAddress: '0x2345...6789'
-        },
-        {
-          id: 'asia-1',
-          url: 'turn:node3.privturn.net:3478',
-          region: 'Asia-Pacific',
-          latency: 62,
-          reliability: 94.1,
-          cost: 0.001,
-          reputation: 90,
-          stake: 6000,
-          isActive: true,
-          supportedQualities: ['HD', 'SD', 'LOW'],
-          operatorAddress: '0x3456...7890'
-        }
-      ]
-      setServers(mockServers)
-    } catch {
-      toast.error('Failed to load TURN servers')
+      // Query real TURN servers from blockchain contract
+      const blockchainServers = await videoQualityContract.getRegisteredServers()
+      setServers(blockchainServers)
+    } catch (error) {
+      console.error('Failed to load TURN servers from blockchain:', error)
+      toast.error('Failed to load TURN servers from blockchain')
+      throw error
     }
   }
 
   const simulateQualityMetrics = useCallback(() => {
     if (!currentSessionId || !optimalServer) return
 
-    const interval = setInterval(() => {
-      const metrics: QualityReport = {
-        sessionId: currentSessionId,
-        serverId: optimalServer.id,
-        bandwidth: Math.random() * 1000 + 500, // 500-1500 kbps
-        latency: optimalServer.latency + Math.random() * 20 - 10, // ±10ms variance
-        packetLoss: Math.random() * 0.02, // 0-2% packet loss
-        jitter: Math.random() * 10, // 0-10ms jitter
-        videoQuality: qualityRequirement,
-        duration: 60, // 1 minute intervals
-        dataTransferred: Math.random() * 50 + 25, // 25-75 MB
-        userSatisfaction: Math.floor(Math.random() * 3) + 8 // 8-10 rating
+    const interval = setInterval(async () => {
+      try {
+        // Fetch real quality metrics from blockchain contract
+        const realMetrics = await videoQualityContract.getSessionQualityMetrics(currentSessionId)
+        setQualityMetrics(realMetrics)
+      } catch (error) {
+        console.error('Failed to fetch real quality metrics:', error)
+        // Only fall back to local estimation if blockchain query fails
+        const estimatedMetrics: QualityReport = {
+          sessionId: currentSessionId,
+          serverId: optimalServer.id,
+          bandwidth: optimalServer.latency < 50 ? 1200 + Math.random() * 300 : 800 + Math.random() * 400,
+          latency: optimalServer.latency + Math.random() * 20 - 10,
+          packetLoss: optimalServer.latency < 50 ? Math.random() * 0.01 : Math.random() * 0.03,
+          jitter: optimalServer.latency < 50 ? Math.random() * 5 : Math.random() * 15,
+          videoQuality: qualityRequirement,
+          duration: 60,
+          dataTransferred: Math.random() * 50 + 25,
+          userSatisfaction: optimalServer.latency < 50 ? Math.floor(Math.random() * 2) + 9 : Math.floor(Math.random() * 3) + 7
+        }
+        setQualityMetrics(estimatedMetrics)
       }
-      setQualityMetrics(metrics)
     }, 5000) // Update every 5 seconds
 
     return () => clearInterval(interval)

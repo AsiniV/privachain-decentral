@@ -49,56 +49,16 @@ export function ServerManagementDashboard() {
     try {
       setIsLoading(true)
       
-      // Load global metrics
+      // Load real global metrics from blockchain
       const metrics = await videoQualityContract.getGlobalQualityMetrics()
       setGlobalMetrics(metrics)
 
-      // Load server list (simulated - in real implementation would query blockchain)
-      const mockServers: TurnServerInfo[] = [
-        {
-          id: 'us-east-1',
-          url: 'turn:node1.privturn.net:3478',
-          region: 'US-East',
-          latency: 35,
-          reliability: 98.5,
-          cost: 0.002,
-          reputation: 95,
-          stake: 10000,
-          isActive: true,
-          supportedQualities: ['UHD', 'HD', 'SD'],
-          operatorAddress: '0x1234...5678'
-        },
-        {
-          id: 'eu-west-1',
-          url: 'turn:node2.privturn.net:3478',
-          region: 'EU-West',
-          latency: 45,
-          reliability: 96.2,
-          cost: 0.0015,
-          reputation: 92,
-          stake: 8000,
-          isActive: true,
-          supportedQualities: ['HD', 'SD'],
-          operatorAddress: '0x2345...6789'
-        },
-        {
-          id: 'asia-1',
-          url: 'turn:node3.privturn.net:3478',
-          region: 'Asia-Pacific',
-          latency: 62,
-          reliability: 94.1,
-          cost: 0.001,
-          reputation: 90,
-          stake: 6000,
-          isActive: true,
-          supportedQualities: ['HD', 'SD', 'LOW'],
-          operatorAddress: '0x3456...7890'
-        }
-      ]
-
-      setServers(mockServers)
-    } catch {
-      toast.error('Failed to load dashboard data')
+      // Load server list from blockchain registry
+      const blockchainServers = await videoQualityContract.getRegisteredServers()
+      setServers(blockchainServers)
+    } catch (error) {
+      console.error('Failed to load dashboard data from blockchain:', error)
+      toast.error('Failed to load dashboard data from blockchain')
     } finally {
       setIsLoading(false)
     }
