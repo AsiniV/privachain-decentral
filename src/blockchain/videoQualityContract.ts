@@ -242,9 +242,7 @@ export class VideoQualityContract implements VideoQualityContract {
       const result = await this.client.queryContractSmart(this.contractAddr, query)
       
       if (!result.server) {
-        // Fallback to mock data if no servers available on chain
-        console.warn('⚠️ No servers available on chain, using fallback')
-        return this.getFallbackServer(userLocation, qualityRequirement)
+        throw new VideoQualityError('No servers available on chain for the requested criteria', 'NO_SERVERS_AVAILABLE')
       }
       
       const server: TurnServerInfo = {
@@ -264,8 +262,8 @@ export class VideoQualityContract implements VideoQualityContract {
       console.log(`🎯 Selected optimal server: ${server.id} for ${userLocation}`)
       return server
     } catch (error) {
-      console.warn('❌ Failed to query optimal server from chain, using fallback:', error)
-      return this.getFallbackServer(userLocation, qualityRequirement)
+      console.error('❌ Failed to query optimal server from chain:', error)
+      throw new VideoQualityError(`Failed to query optimal server: ${error instanceof Error ? error.message : 'Unknown error'}`, 'OPTIMAL_SERVER_QUERY_FAILED')
     }
   }
 
@@ -319,7 +317,7 @@ export class VideoQualityContract implements VideoQualityContract {
       
       // Ensure we don't return the same server
       if (alternativeServer.id === currentServerId) {
-        return this.getFallbackServer('global', 'HD')
+        throw new VideoQualityError('No alternative servers available for failover', 'NO_ALTERNATIVE_SERVERS')
       }
       
       console.log(`✅ Failover completed: switched to ${alternativeServer.id}`)
@@ -373,35 +371,40 @@ export class VideoQualityContract implements VideoQualityContract {
         slashingEvents: parseInt(result.slashing_events || '0')
       }
     } catch (error) {
-      console.warn('❌ Failed to get server stats from chain, using mock data')
-      // Return mock statistics if chain query fails
-      return {
-        totalSessions: Math.floor(Math.random() * 1000) + 100,
-        averageLatency: Math.random() * 100 + 20,
-        uptimePercentage: Math.random() * 10 + 90,
-        totalRevenueEarned: Math.random() * 100,
-        qualityRating: Math.random() * 2 + 3,
-        reportedIssues: Math.floor(Math.random() * 5),
-        slashingEvents: Math.floor(Math.random() * 2)
-      }
+      console.error('❌ Failed to get server stats from chain:', error)
+      throw new VideoQualityError(`Failed to get server stats: ${error instanceof Error ? error.message : 'Unknown error'}`, 'STATS_QUERY_FAILED')
     }
   }
 
   async getGlobalQualityMetrics(): Promise<GlobalMetrics> {
-    // Return sensible defaults - would query from blockchain in full production
-    return {
-      totalServers: 12,
-      activeServers: 8,
-      averageLatency: 45,
-      totalSessionsToday: Math.floor(Math.random() * 5000) + 1000,
-      totalBandwidthServed: Math.random() * 500 + 200,
-      averageQualityScore: 4.2
+    try {
+      const query = { get_global_metrics: {} }
+      const result = await this.client.queryContractSmart(this.contractAddr, query)
+      
+      return {
+        totalServers: parseInt(result.total_servers || '0'),
+        activeServers: parseInt(result.active_servers || '0'),
+        averageLatency: parseFloat(result.average_latency || '0'),
+        totalSessionsToday: parseInt(result.total_sessions_today || '0'),
+        totalBandwidthServed: parseFloat(result.total_bandwidth_served || '0'),
+        averageQualityScore: parseFloat(result.average_quality_score || '0')
+      }
+    } catch (error) {
+      console.error('❌ Failed to get global quality metrics from chain:', error)
+      throw new VideoQualityError(`Failed to get global metrics: ${error instanceof Error ? error.message : 'Unknown error'}`, 'GLOBAL_METRICS_QUERY_FAILED')
     }
   }
 
   async getUserOptimizationHistory(): Promise<OptimizationEvent[]> {
-    // Return empty array - would query user's optimization history from blockchain
-    return []
+    try {
+      const query = { get_user_optimization_history: { user_address: this.userAddress } }
+      const result = await this.client.queryContractSmart(this.contractAddr, query)
+      
+      return result.events || []
+    } catch (error) {
+      console.error('❌ Failed to get user optimization history from chain:', error)
+      throw new VideoQualityError(`Failed to get optimization history: ${error instanceof Error ? error.message : 'Unknown error'}`, 'OPTIMIZATION_HISTORY_QUERY_FAILED')
+    }
   }
 
   /**
@@ -428,51 +431,11 @@ export class VideoQualityContract implements VideoQualityContract {
     }
   }
 
-  /**
-   * Get fallback server when blockchain query fails
-   */
-  private getFallbackServer(userLocation: string, qualityRequirement: string): TurnServerInfo {
-    const fallbackServers: TurnServerInfo[] = [
-      {
-        id: 'fallback-us-east',
-        url: 'turn:stun.l.google.com:19302',
-        region: 'US-East',
-        latency: 35,
-        reliability: 98.5,
-        cost: 0.002,
-        reputation: 95,
-        stake: 10000,
-        isActive: true,
-        supportedQualities: ['UHD', 'HD', 'SD'],
-        operatorAddress: 'cosmos1fallback'
-      },
-      {
-        id: 'fallback-eu-west',
-        url: 'turn:stun1.l.google.com:19302',
-        region: 'EU-West',
-        latency: 45,
-        reliability: 96.2,
-        cost: 0.0015,
-        reputation: 92,
-        stake: 8000,
-        isActive: true,
-        supportedQualities: ['HD', 'SD'],
-        operatorAddress: 'cosmos1fallback2'
-      }
-    ]
-
-    // Simple selection based on location
-    if (userLocation.includes('EU') || userLocation.includes('Europe')) {
-      return fallbackServers[1]
-    }
-    
-    return fallbackServers[0]
-  }
 }
 
 /**
  * Mock implementation of the video quality smart contract
- * Used as fallback when blockchain is not available
+ * FOR TESTING PURPOSES ONLY - NOT USED IN PRODUCTION
  */
 export class MockVideoQualityContract implements VideoQualityContract {
   private servers: Map<string, TurnServerInfo> = new Map()
@@ -802,8 +765,5 @@ export class MockVideoQualityContract implements VideoQualityContract {
   }
 }
 
-// Export singleton instance - use production implementation
+// Export singleton instance - production implementation only
 export const videoQualityContract = new VideoQualityContract()
-
-// Export mock for testing purposes
-export const mockVideoQualityContract = new MockVideoQualityContract()

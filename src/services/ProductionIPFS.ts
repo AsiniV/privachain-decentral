@@ -40,12 +40,19 @@ export class ProductionIPFS {
   async initialize(): Promise<boolean> {
     try {
       // Initialize IPFS client with production endpoints
+      const projectId = process.env.INFURA_PROJECT_ID || process.env.VITE_INFURA_PROJECT_ID
+      const projectSecret = process.env.INFURA_SECRET || process.env.VITE_INFURA_SECRET
+      
+      if (!projectId || !projectSecret) {
+        throw new Error('INFURA_PROJECT_ID and INFURA_SECRET environment variables are required')
+      }
+
       this.client = create({
         host: 'ipfs.infura.io',
         port: 5001,
         protocol: 'https',
         headers: {
-          authorization: `Basic ${btoa(process.env.INFURA_PROJECT_ID + ':' + process.env.INFURA_SECRET)}`
+          authorization: `Basic ${btoa(projectId + ':' + projectSecret)}`
         }
       })
 
@@ -57,7 +64,7 @@ export class ProductionIPFS {
       return true
     } catch (error) {
       console.error('❌ Failed to initialize IPFS:', error)
-      return false
+      throw error
     }
   }
 
@@ -178,27 +185,54 @@ export class ProductionIPFS {
     }
   ): Promise<FilecoinDeal[]> {
     try {
-      // In production, integrate with Filecoin storage providers
-      // This is a simplified implementation
+      // Integrate with real Filecoin storage providers via Lotus API
+      const lotusEndpoint = process.env.LOTUS_API_ENDPOINT || process.env.VITE_LOTUS_API_ENDPOINT
+      const powergateEndpoint = process.env.POWERGATE_API_ENDPOINT || process.env.VITE_POWERGATE_API_ENDPOINT
+      
+      if (!lotusEndpoint && !powergateEndpoint) {
+        throw new Error('Either LOTUS_API_ENDPOINT or POWERGATE_API_ENDPOINT must be configured')
+      }
+
       const deals: FilecoinDeal[] = []
       
-      const storageProviders = [
-        { miner: 'f01234', price: '0.000001', reputation: 95 },
-        { miner: 'f05678', price: '0.000002', reputation: 92 },
-        { miner: 'f09012', price: '0.000001', reputation: 89 }
-      ]
+      // Query available storage providers
+      const providersResponse = await fetch(`${lotusEndpoint || powergateEndpoint}/api/v1/storage/providers`)
+      if (!providersResponse.ok) {
+        throw new Error('Failed to fetch storage providers')
+      }
+      
+      const providers = await providersResponse.json()
+      const selectedProviders = providers.slice(0, options.minReplication || 2)
 
-      for (const provider of storageProviders.slice(0, options.minReplication || 2)) {
-        const deal: FilecoinDeal = {
-          dealId: `deal_${Date.now()}_${provider.miner}`,
-          miner: provider.miner,
-          price: provider.price,
-          duration: options.duration,
-          verified: options.verified || false
+      for (const provider of selectedProviders) {
+        // Create storage deal proposal
+        const dealProposal = {
+          cid,
+          duration: options.duration * 24 * 60 * 60, // Convert days to seconds
+          verified: options.verified || false,
+          maxPrice: options.maxPrice || '0.000001',
+          provider: provider.id
         }
-        
-        // Create deal (simplified - in production use real Filecoin API)
-        deals.push(deal)
+
+        const dealResponse = await fetch(`${lotusEndpoint || powergateEndpoint}/api/v1/storage/deals`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.FILECOIN_API_TOKEN || process.env.VITE_FILECOIN_API_TOKEN}`
+          },
+          body: JSON.stringify(dealProposal)
+        })
+
+        if (dealResponse.ok) {
+          const dealResult = await dealResponse.json()
+          deals.push({
+            dealId: dealResult.dealId,
+            miner: provider.id,
+            price: dealProposal.maxPrice,
+            duration: options.duration,
+            verified: options.verified || false
+          })
+        }
       }
 
       console.log(`💾 Created ${deals.length} Filecoin deals for CID: ${cid}`)
@@ -395,7 +429,13 @@ export class ProductionIPFS {
 // Singleton instance
 export const productionIPFS = new ProductionIPFS()
 
-// Auto-initialize in production environment
-if (process.env.NODE_ENV === 'production') {
-  productionIPFS.initialize()
+// Auto-initialize in production environment only with proper configuration
+if (process.env.NODE_ENV === 'production' && 
+    process.env.INFURA_PROJECT_ID && 
+    process.env.INFURA_SECRET) {
+  productionIPFS.initialize().catch(error => {
+    console.error('❌ Failed to auto-initialize ProductionIPFS in production:', error)
+  })
+} else {
+  console.log('⚠️ ProductionIPFS not auto-initialized - missing required environment variables')
 }

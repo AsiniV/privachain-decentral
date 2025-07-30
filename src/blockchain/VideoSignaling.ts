@@ -11,13 +11,13 @@ import { useState, useEffect } from 'react'
 
 // Cosmos blockchain configuration
 const COSMOS_CONFIG = {
-  chainId: 'osmo-test-5',
-  rpcEndpoint: 'https://rpc.osmotest5.osmosis.zone',
-  addressPrefix: 'osmo',
-  gasPrice: GasPrice.fromString('0.025uosmo'),
-  denom: 'uosmo',
-  // VideoCamera signaling contract (would be deployed)
-  videoSignalingContract: 'osmo1v9deo5s3y4k7z8w2q3r4t5u6v7w8x9y0z1a2b3c4d5e6f7g8h9'
+  chainId: 'privachain-testnet-1',
+  rpcEndpoint: 'https://rpc-testnet.privachain.network',
+  addressPrefix: 'cosmos',
+  gasPrice: GasPrice.fromString('0.025uatom'),
+  denom: 'uatom',
+  // Video signaling contract (deployed on testnet)
+  videoSignalingContract: process.env.VIDEO_SIGNALING_CONTRACT || process.env.VITE_VIDEO_SIGNALING_CONTRACT
 }
 
 export interface VideoSession {
@@ -90,10 +90,14 @@ export class VideoSignalingContract {
       // Initialize read-only client for queries
       this.client = await CosmWasmClient.connect(COSMOS_CONFIG.rpcEndpoint)
       
-      // For testnet, use a demo mnemonic (in production, this would be user-provided)
-      const demoMnemonic = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
+      // Check for environment variables for wallet
+      const mnemonic = process.env.DEVELOPER_MNEMONIC || process.env.VITE_DEVELOPER_MNEMONIC
       
-      this.wallet = await DirectSecp256k1HdWallet.fromMnemonic(demoMnemonic, {
+      if (!mnemonic) {
+        throw new Error('DEVELOPER_MNEMONIC environment variable is required for video signaling')
+      }
+      
+      this.wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
         prefix: COSMOS_CONFIG.addressPrefix
       })
       
@@ -108,16 +112,20 @@ export class VideoSignalingContract {
       const [firstAccount] = await this.wallet.getAccounts()
       this.testWallet = firstAccount.address
       
+      if (!COSMOS_CONFIG.videoSignalingContract) {
+        throw new Error('VIDEO_SIGNALING_CONTRACT environment variable is required')
+      }
+      
       console.log('🔗 VideoSignaling connected to Cosmos blockchain:', {
         chainId: COSMOS_CONFIG.chainId,
         address: this.testWallet,
-        rpc: COSMOS_CONFIG.rpcEndpoint
+        rpc: COSMOS_CONFIG.rpcEndpoint,
+        contract: COSMOS_CONFIG.videoSignalingContract
       })
       
     } catch (error) {
       console.error('Failed to initialize blockchain connection:', error)
-      // Fallback to simulation mode
-      console.warn('Falling back to simulation mode for video signaling')
+      throw error
     }
   }
 
@@ -255,9 +263,8 @@ export class VideoSignalingContract {
     data: Record<string, unknown>
   ): Promise<string> {
     try {
-      if (!this.signingClient || !this.wallet) {
-        // Fallback to simulation if blockchain not available
-        return await this.simulateBlockchainTransaction(action, data)
+      if (!this.signingClient || !this.wallet || !COSMOS_CONFIG.videoSignalingContract) {
+        throw new Error('Blockchain client not properly initialized')
       }
 
       const msg = {
@@ -282,10 +289,10 @@ export class VideoSignalingContract {
         COSMOS_CONFIG.videoSignalingContract,
         msg,
         fee,
-        `VideoCamera signaling: ${action}`
+        `Video signaling: ${action}`
       )
 
-      console.log(`🔗 VideoCamera Signaling Blockchain Transaction:`, {
+      console.log(`🔗 Video Signaling Blockchain Transaction:`, {
         action,
         txHash: result.transactionHash,
         gasUsed: result.gasUsed,
@@ -297,35 +304,11 @@ export class VideoSignalingContract {
       return result.transactionHash
       
     } catch (error) {
-      console.error('Blockchain transaction failed, falling back to simulation:', error)
-      // Fallback to simulation on error
-      return await this.simulateBlockchainTransaction(action, data)
+      console.error('Blockchain transaction failed:', error)
+      throw error
     }
   }
 
-  /**
-   * Simulate blockchain transaction (fallback)
-   */
-  private async simulateBlockchainTransaction(
-    action: string, 
-    data: Record<string, unknown>
-  ): Promise<string> {
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 300))
-    
-    const txHash = `cosmos_tx_${Math.random().toString(36).substring(2, 15)}`
-    
-    console.log(`🔗 Simulated Blockchain Transaction:`, {
-      action,
-      data,
-      txHash,
-      wallet: this.testWallet,
-      timestamp: Date.now(),
-      note: 'Simulation mode - contract not deployed'
-    })
-    
-    return txHash
-  }
 
   /**
    * Pay TURN relay node for services
@@ -336,12 +319,11 @@ export class VideoSignalingContract {
     dataAmount: number
   ): Promise<void> {
     try {
-      if (!this.signingClient || !this.wallet) {
-        // Fallback to simulation if blockchain not available
-        return await this.simulateRelayPayment(nodeId, reward, dataAmount)
+      if (!this.signingClient || !this.wallet || !COSMOS_CONFIG.videoSignalingContract) {
+        throw new Error('Blockchain client not properly initialized for TURN relay payments')
       }
 
-      // Convert reward to micro tokens (assuming PRIV token has 6 decimals)
+      // Convert reward to micro tokens (assuming ATOM token has 6 decimals)
       const microReward = Math.floor(reward * 1_000_000)
       
       const paymentMsg = {
@@ -369,7 +351,7 @@ export class VideoSignalingContract {
 
       console.log(`💰 TURN Relay Payment Transaction:`, {
         nodeId,
-        reward: `${reward} PRIV`,
+        reward: `${reward} ATOM`,
         dataTransferred: `${dataAmount}MB`,
         txHash: result.transactionHash,
         gasUsed: result.gasUsed,
@@ -377,29 +359,12 @@ export class VideoSignalingContract {
       })
 
     } catch (error) {
-      console.error('TURN relay payment failed, falling back to simulation:', error)
-      await this.simulateRelayPayment(nodeId, reward, dataAmount)
+      console.error('TURN relay payment failed:', error)
+      throw error
     }
   }
 
-  /**
-   * Simulate TURN relay payment (fallback)
-   */
-  private async simulateRelayPayment(
-    nodeId: string, 
-    reward: number, 
-    dataAmount: number
-  ): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, 100))
-    
-    console.log(`💰 Simulated TURN Relay Payment:`, {
-      nodeId,
-      reward: `${reward.toFixed(6)} PRIV`,
-      dataTransferred: `${dataAmount}MB`,
-      wallet: this.testWallet,
-      note: 'Simulation mode - real payments require deployed contract'
-    })
-  }
+
 
   /**
    * Get available TURN relays
@@ -425,58 +390,48 @@ export class VideoSignalingContract {
         location
       }
 
-      if (this.signingClient && this.wallet) {
-        // Real blockchain staking transaction
-        const stakeAmount = Math.floor(amount * 1_000_000) // Convert to micro tokens
-        
-        const stakeMsg = {
-          stake_turn_relay: {
-            relay_id: relayId,
-            stake_amount: stakeAmount.toString(),
-            location,
-            relay_address: newRelay.address,
-            operator: this.testWallet
-          }
-        }
-
-        const gasEstimate = 300_000
-        const fee = {
-          amount: [coin(gasEstimate * 0.025, COSMOS_CONFIG.denom)],
-          gas: gasEstimate.toString()
-        }
-
-        const result = await this.signingClient.execute(
-          this.testWallet,
-          COSMOS_CONFIG.videoSignalingContract,
-          stakeMsg,
-          fee,
-          `Stake TURN relay ${relayId}`
-        )
-
-        console.log(`🏗️ TURN Relay Staking Transaction:`, {
-          relayId,
-          stake: `${amount} PRIV`,
-          location,
-          txHash: result.transactionHash,
-          gasUsed: result.gasUsed,
-          operator: this.testWallet
-        })
-
-        this.turnRelays.push(newRelay)
-        toast.success(`TURN relay ${relayId} staked with ${amount} PRIV on blockchain`)
-        
-      } else {
-        // Fallback to simulation
-        await this.simulateBlockchainTransaction('stakeTurnRelay', {
-          relayId,
-          stake: amount,
-          location,
-          operator: this.testWallet
-        })
-
-        this.turnRelays.push(newRelay)
-        toast.success(`TURN relay ${relayId} staked with ${amount} PRIV (simulated)`)
+      if (!this.signingClient || !this.wallet || !COSMOS_CONFIG.videoSignalingContract) {
+        throw new Error('Blockchain client not properly initialized for TURN relay staking')
       }
+
+      // Real blockchain staking transaction
+      const stakeAmount = Math.floor(amount * 1_000_000) // Convert to micro tokens
+      
+      const stakeMsg = {
+        stake_turn_relay: {
+          relay_id: relayId,
+          stake_amount: stakeAmount.toString(),
+          location,
+          relay_address: newRelay.address,
+          operator: this.testWallet
+        }
+      }
+
+      const gasEstimate = 300_000
+      const fee = {
+        amount: [coin(gasEstimate * 0.025, COSMOS_CONFIG.denom)],
+        gas: gasEstimate.toString()
+      }
+
+      const result = await this.signingClient.execute(
+        this.testWallet,
+        COSMOS_CONFIG.videoSignalingContract,
+        stakeMsg,
+        fee,
+        `Stake TURN relay ${relayId}`
+      )
+
+      console.log(`🏗️ TURN Relay Staking Transaction:`, {
+        relayId,
+        stake: `${amount} ATOM`,
+        location,
+        txHash: result.transactionHash,
+        gasUsed: result.gasUsed,
+        operator: this.testWallet
+      })
+
+      this.turnRelays.push(newRelay)
+      toast.success(`TURN relay ${relayId} staked with ${amount} ATOM on blockchain`)
 
       return relayId
       

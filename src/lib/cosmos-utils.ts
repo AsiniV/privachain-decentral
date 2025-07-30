@@ -51,13 +51,13 @@ export const COSMOS_TESTNET_CONFIGS: Record<string, CosmosConfig> = {
 export const DEFAULT_TURN_SERVERS: TurnServer[] = [
   {
     url: 'turn:turn1.privachain.network:3478',
-    username: 'testuser',
-    credential: 'testpass'
+    username: process.env.TURN_SERVER_1_USERNAME || process.env.VITE_TURN_SERVER_1_USERNAME || '',
+    credential: process.env.TURN_SERVER_1_CREDENTIAL || process.env.VITE_TURN_SERVER_1_CREDENTIAL || ''
   },
   {
     url: 'turn:turn2.privachain.network:3478',
-    username: 'testuser',
-    credential: 'testpass'
+    username: process.env.TURN_SERVER_2_USERNAME || process.env.VITE_TURN_SERVER_2_USERNAME || '',
+    credential: process.env.TURN_SERVER_2_CREDENTIAL || process.env.VITE_TURN_SERVER_2_CREDENTIAL || ''
   },
   {
     url: 'stun:stun.privachain.network:3478'
