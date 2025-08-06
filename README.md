@@ -23,9 +23,6 @@ Visit `http://localhost:5173` to see the application.
 ## 📖 Documentation
 
 - **[LOCAL_TESTING.md](./LOCAL_TESTING.md)** - Comprehensive guide for local development and testing
-- **[TESTNET_SETUP_GUIDE.md](./TESTNET_SETUP_GUIDE.md)** - Complete Cosmos testnet deployment guide
-- **[USER_WORKFLOW_GUIDE.md](./USER_WORKFLOW_GUIDE.md)** - User interaction workflows
-- **[IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md)** - Development progress
 
 ## 🧪 Testing Commands
 
@@ -63,7 +60,7 @@ This project uses:
 - **Fully Functional Search**: 1000+ documents indexed with OrbitDB hybrid search
 - **Bang Commands**: DuckDuckGo-style search (!prv, !mail, !video, etc.)
 - **16 Verified Features**: All core features from technical specification verified
-- **Testnet Ready**: Complete Cosmos testnet deployment guide available
+- **Testnet Ready**: Deployable to Cosmos testnet
 
 For detailed setup instructions, testing procedures, and troubleshooting, see [LOCAL_TESTING.md](./LOCAL_TESTING.md).
 
