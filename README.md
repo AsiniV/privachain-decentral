@@ -41,6 +41,10 @@ npm run populate-search:testnet # Testnet-specific population
 npm run verify-features        # Verify all 16 core features
 npm run verify-features:json   # JSON output for CI/CD
 npm run verify-features:verbose # Detailed verification report
+
+# Cosmos Hub Testnet Examples (NEW)
+npm run example:cosmos-connection    # TypeScript example
+npm run example:cosmos-connection:js # JavaScript example
 ```
 
 ## 🛠️ Development
@@ -55,6 +59,8 @@ This project uses:
 ### 🚀 Key Features:
 - **Zero Crypto Friction**: Users can start immediately without wallets or tokens
 - **Developer-Sponsored Gas**: All ATOM gas fees paid automatically by developer wallet
+- **Cosmos Hub Testnet**: Connect to theta-testnet-001 without running your own node
+- **Public RPC Access**: Use `https://rpc.theta-testnet.polypore.xyz` for network access
 - **Generous Quotas**: 200 messages, 50 emails, 2h video daily for free users
 - **Instant Access**: No barriers - install and use immediately
 - **Fully Functional Search**: 1000+ documents indexed with OrbitDB hybrid search

@@ -37,7 +37,10 @@
         "populate-search:testnet": "tsx scripts/populate-search-data.ts --num=1000 --chain-id=privachain-testnet --verbose",
         "verify-features": "tsx scripts/verify-features.ts",
         "verify-features:json": "tsx scripts/verify-features.ts --json",
-        "verify-features:verbose": "tsx scripts/verify-features.ts --verbose"
+        "verify-features:verbose": "tsx scripts/verify-features.ts --verbose",
+        "example:cosmos-connection": "tsx examples/cosmos-hub-connection.ts",
+        "example:cosmos-connection:js": "node examples/cosmos-hub-connection.js",
+        "validate:cosmos-config": "tsx examples/validate-config.ts"
     },
     "dependencies": {
         "@chainsafe/libp2p-gossipsub": "^14.1.1",
