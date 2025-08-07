@@ -41,8 +41,8 @@ export const COSMOS_TESTNET_CONFIGS: Record<string, CosmosConfig> = {
   },
   'cosmos-testnet': {
     chainId: 'theta-testnet-001',
-    rpc: 'https://rpc.testnet.cosmos.network',
-    rest: 'https://rest.testnet.cosmos.network',
+    rpc: 'https://rpc.theta-testnet.polypore.xyz',
+    rest: 'https://rest.theta-testnet.polypore.xyz:1317',
     gasPrice: '0.025uatom',
     addressPrefix: 'cosmos'
   }

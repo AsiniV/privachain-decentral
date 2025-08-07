@@ -10,23 +10,24 @@ import { coins, GasPrice } from '@cosmjs/stargate'
 import { MsgExecuteContract } from 'cosmjs-types/cosmwasm/wasm/v1/tx'
 import { toUtf8 } from '@cosmjs/encoding'
 
-// Osmosis testnet configuration
+// Cosmos Hub testnet configuration for PrivaChain
 export const COSMOS_CONFIG = {
-  rpcEndpoint: 'https://rpc.osmotest5.osmosis.zone',
-  chainId: 'osmo-test-5',
-  prefix: 'osmo',
-  gasPrice: GasPrice.fromString('0.025uosmo'),
-  denom: 'uosmo',
-  faucetUrl: 'https://faucet.osmosis.zone'
+  rpcEndpoint: 'https://rpc.theta-testnet.polypore.xyz',
+  chainId: 'theta-testnet-001',
+  prefix: 'cosmos',
+  gasPrice: GasPrice.fromString('0.025uatom'),
+  denom: 'uatom',
+  faucetUrl: 'https://faucet.cosmos.network',
+  testTokenAddress: 'cosmos1hcgd3hg6kpvsfuklsgkzjratda53vwsymrp24k' // Test address with ATOM tokens
 }
 
-// Smart contract addresses for PrivaChain services
+// Smart contract addresses for PrivaChain services on Cosmos Hub testnet
 export const CONTRACT_ADDRESSES = {
-  // These would be deployed contracts on testnet
-  zkAuth: 'osmo1qg5ega6dykkxc307y25pecuufrjkxkaggkkxh7nad0vhyhtuhw3sqpywnr',  // ZK authentication contract
-  mailService: 'osmo1d4uw7wme3dvkl6v6p3w5rpzquhfhk2s0z8vwfrvk3wvcz5v3q3xq3fh3l4',  // Anonymous mail contract
-  domainRegistry: 'osmo1e8jre2l3yacqgx6jd7w30jqwxqrqz8c2z2fkz2v4v8w6q4s5r5jq4z9x8f',  // .prv domain registry
-  videoSignaling: 'osmo1f9kre3m4zacrgv7kw8w42lrwyqsrz9d3a3glv3x5x9v7r5t6s6kr5a0y9g'  // VideoCamera call signaling
+  // These would be deployed contracts on Cosmos Hub testnet
+  zkAuth: 'cosmos1qg5ega6dykkxc307y25pecuufrjkxkaggkkxh7nad0vhyhtuhw3sqpywnr',  // ZK authentication contract
+  mailService: 'cosmos1d4uw7wme3dvkl6v6p3w5rpzquhfhk2s0z8vwfrvk3wvcz5v3q3xq3fh3l4',  // Anonymous mail contract
+  domainRegistry: 'cosmos1e8jre2l3yacqgx6jd7w30jqwxqrqz8c2z2fkz2v4v8w6q4s5r5jq4z9x8f',  // .prv domain registry
+  videoSignaling: 'cosmos1f9kre3m4zacrgv7kw8w42lrwyqsrz9d3a3glv3x5x9v7r5t6s6kr5a0y9g'  // Video call signaling
 }
 
 export interface CosmosAccount {
