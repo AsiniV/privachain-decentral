@@ -1,0 +1,42 @@
+{
+  "specVersion": "1.0.0",
+  "name": "privachain-cosmos-indexer",
+  "version": "0.0.1",
+  "runner": {
+    "node": {
+      "name": "@subql/node-cosmos",
+      "version": ">=3.0.1"
+    },
+    "query": {
+      "name": "@subql/query",
+      "version": "*"
+    }
+  },
+  "description": "Cosmos SubQuery project indexing Osmosis swaps for PrivaChain",
+  "repository": "https://github.com/AsiniV/privachain-decentral",
+  "schema": {
+    "file": "./schema.graphql"
+  },
+  "network": {
+    "chainId": "osmosis-1",
+    "endpoint": ["https://rpc.osmosis.zone/"]
+  },
+  "dataSources": [
+    {
+      "kind": "cosmos/Runtime",
+      "startBlock": 11253914,
+      "mapping": {
+        "file": "./dist/index.js",
+        "handlers": [
+          {
+            "handler": "handleMessage",
+            "kind": "cosmos/MessageHandler",
+            "filter": {
+              "type": "/osmosis.gamm.v1beta1.MsgSwapExactAmountIn"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

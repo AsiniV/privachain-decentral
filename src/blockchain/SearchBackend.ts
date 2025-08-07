@@ -9,9 +9,9 @@ import { GraphQLClient } from 'graphql-request'
 import { useState, useEffect } from 'react'
 import { orbitDBIndexing, SearchDocument, SearchQuery, SearchResult } from '../services/orbitdb'
 
-// SubQuery Cosmos configuration
+// SubQuery Cosmos configuration for Osmosis swap indexing
 const SUBQUERY_CONFIG = {
-  endpoint: 'https://api.subquery.network/sq/your-project/privachain-cosmos-indexer',
+  endpoint: 'https://api.subquery.network/sq/privachain/privachain-cosmos-indexer',
   apiKey: process.env.SUBQUERY_API_KEY || 'demo-key'
 }
 
@@ -1043,6 +1043,118 @@ export class DecentralizedSearchBackend {
     toast.info(`Searched IPFS network: ${ipfsResults.length} results`)
     return ipfsResults
   }
+
+  /**
+   * Search for Osmosis swaps using SubQuery
+   */
+  async searchOsmosisSwaps(
+    filters: {
+      sender?: string
+      tokenInDenom?: string
+      tokenOutDenom?: string
+      minAmount?: string
+      blockRange?: { start: number, end: number }
+    } = {}
+  ): Promise<any[]> {
+    try {
+      if (!this.subqueryClient) {
+        throw new Error('SubQuery client not initialized')
+      }
+
+      const swapQuery = `
+        query SearchSwaps(
+          $sender: String
+          $tokenInDenom: String
+          $blockStart: BigInt
+          $blockEnd: BigInt
+        ) {
+          swaps(
+            filter: {
+              sender: { equalTo: $sender }
+              tokenInDenom: { equalTo: $tokenInDenom }
+              blockHeight: { greaterThanOrEqualTo: $blockStart, lessThanOrEqualTo: $blockEnd }
+            }
+            orderBy: BLOCK_HEIGHT_DESC
+            first: 100
+          ) {
+            nodes {
+              id
+              sender
+              txHash
+              blockHeight
+              tokenInDenom
+              tokenInAmount
+              tokenOutMin
+              swapRoutes {
+                nodes {
+                  id
+                  tokenInDenom
+                  tokenOutDenom
+                  pool {
+                    id
+                  }
+                }
+              }
+            }
+          }
+        }
+      `
+
+      const variables = {
+        sender: filters.sender || null,
+        tokenInDenom: filters.tokenInDenom || null,
+        blockStart: filters.blockRange?.start ? BigInt(filters.blockRange.start) : null,
+        blockEnd: filters.blockRange?.end ? BigInt(filters.blockRange.end) : null,
+      }
+
+      const result = await this.subqueryClient.request(swapQuery, variables)
+      
+      console.log(`🔄 Found ${result.swaps.nodes.length} Osmosis swaps`)
+      return result.swaps.nodes
+      
+    } catch (error) {
+      console.error('Osmosis swap search failed:', error)
+      return []
+    }
+  }
+
+  /**
+   * Get swap statistics from SubQuery
+   */
+  async getSwapStatistics(): Promise<any> {
+    try {
+      if (!this.subqueryClient) {
+        throw new Error('SubQuery client not initialized')
+      }
+
+      const statsQuery = `
+        query SwapStatistics {
+          swaps(first: 1) {
+            totalCount
+          }
+          pools(first: 1) {
+            totalCount
+          }
+        }
+      `
+
+      const result = await this.subqueryClient.request(statsQuery)
+      
+      return {
+        totalSwaps: result.swaps.totalCount,
+        totalPools: result.pools.totalCount,
+        lastUpdated: Date.now()
+      }
+      
+    } catch (error) {
+      console.error('Failed to get swap statistics:', error)
+      return {
+        totalSwaps: 0,
+        totalPools: 0,
+        lastUpdated: Date.now()
+      }
+    }
+  }
 }
 
 // Singleton instance
@@ -1099,10 +1211,20 @@ export function useDecentralizedSearch() {
     return await searchBackend.searchIPFS(query)
   }
 
+  const searchOsmosisSwaps = async (filters: any = {}): Promise<any[]> => {
+    return await searchBackend.searchOsmosisSwaps(filters)
+  }
+
+  const getSwapStatistics = async (): Promise<any> => {
+    return await searchBackend.getSwapStatistics()
+  }
+
   return {
     zkSearch,
     indexContent,
     searchIPFS,
+    searchOsmosisSwaps,
+    getSwapStatistics,
     searchHistory,
     indexStats
   }
