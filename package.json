@@ -10,6 +10,8 @@
         "lint": "eslint .",
         "optimize": "vite optimize",
         "preview": "vite preview",
+        "codegen": "subql codegen",
+        "subql:build": "subql build",
         "test": "npm run test:contracts && npm run test:lint && npm run test:build",
         "test:contracts": "cd contracts && ./scripts/test.sh",
         "test:lint": "bash scripts/ensure-deps.sh && eslint . --max-warnings 500 || echo '⚠️  Linting issues found in existing code - acceptable for development'",
@@ -43,6 +45,11 @@
         "validate:cosmos-config": "tsx examples/validate-config.ts"
     },
     "dependencies": {
+        "@subql/cli": "^4.0.0",
+        "@subql/common-cosmos": "^4.0.0",
+        "@subql/node-cosmos": "^4.0.0",
+        "@subql/query": "^2.0.0",
+        "@subql/types-cosmos": "^3.0.0",
         "@chainsafe/libp2p-gossipsub": "^14.1.1",
         "@chainsafe/libp2p-yamux": "^7.0.4",
         "@cosmjs/cosmwasm-stargate": "^0.34.0",

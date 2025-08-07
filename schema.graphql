@@ -1,0 +1,23 @@
+type Swap @entity {
+  id: ID!
+  sender: String!
+  txHash: String!
+  blockHeight: BigInt!
+  tokenInDenom: String
+  tokenInAmount: BigInt
+  tokenOutMin: BigInt!
+  swapRoutes: [SwapRoute] @derivedFrom(field: "swap") #This is virtual field
+}
+
+type SwapRoute @entity {
+  id: ID!
+  pool: Pool!
+  swap: Swap!
+  tokenInDenom: String
+  tokenOutDenom: String!
+}
+
+type Pool @entity {
+  id: ID!
+  swapRoutes: [SwapRoute] @derivedFrom(field: "pool") #This is virtual field
+}
