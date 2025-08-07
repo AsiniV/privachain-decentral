@@ -107,7 +107,7 @@
         "embla-carousel-react": "^8.5.2",
         "framer-motion": "^12.23.12",
         "graphql-request": "^7.2.0",
-        "helia": "^5.5.0",
+        "helia": "^5.5.1",
         "input-otp": "^1.4.2",
         "ipfs-http-client": "^60.0.1",
         "libp2p": "^2.9.0",
