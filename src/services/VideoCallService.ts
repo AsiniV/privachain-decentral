@@ -5,7 +5,7 @@
 
 import { gasFeeManager } from './GasFeeManager'
 import { ipfsService } from './ipfs'
-import { fetchMeteredTurnServers } from '../lib/cosmos-utils'
+import { fetchIceConfiguration } from '../lib/cosmos-utils'
 
 interface VideoSession {
   sessionId: string
@@ -133,7 +133,7 @@ export class VideoCallService {
       this.localStream = await navigator.mediaDevices.getUserMedia(constraints)
 
       // Set up WebRTC peer connection
-      const rtcConfig = this.getWebRTCConfig(selectedTurnServers)
+      const rtcConfig = await this.getWebRTCConfig(selectedTurnServers)
       this.peerConnection = new RTCPeerConnection(rtcConfig)
 
       // Set up peer connection event handlers
@@ -239,7 +239,7 @@ export class VideoCallService {
 
       // Set up WebRTC with the same TURN servers
       const turnServers = await this.getTurnServersByAddress(session.turnServers)
-      const rtcConfig = this.getWebRTCConfig(turnServers)
+      const rtcConfig = await this.getWebRTCConfig(turnServers)
       this.peerConnection = new RTCPeerConnection(rtcConfig)
 
       // Set up event handlers
@@ -433,28 +433,28 @@ export class VideoCallService {
    */
   private async loadTurnServerNodes(): Promise<void> {
     try {
-      // Fetch dynamic TURN servers from metered.ca API
-      const meteredServers = await fetchMeteredTurnServers()
+      // Fetch dynamic TURN servers from secure server endpoint
+      const iceServers = await fetchIceConfiguration()
       
-      // Convert metered servers to TurnServerNode format
-      this.turnNodes = meteredServers.map((server, index) => ({
+      // Convert ICE servers to TurnServerNode format
+      this.turnNodes = iceServers.map((server, index) => ({
         address: server.url,
-        region: `metered-${index + 1}`,
+        region: `ice-${index + 1}`,
         stake: 100000, // Mock stake for compatibility
         reputation: 0.99,
         latency: 30 + (index * 10), // Simulate different latencies
         cost: 0.001
       }))
       
-      console.log('🌐 Loaded metered.ca TURN servers:', this.turnNodes.length)
+      console.log('🌐 Loaded ICE servers from secure endpoint:', this.turnNodes.length)
     } catch (error) {
-      console.warn('Failed to load metered.ca servers, using fallback:', error)
+      console.warn('Failed to load ICE servers from server, using fallback:', error)
       
-      // Fallback to mock servers if API fails
+      // Fallback to basic servers if server endpoint fails
       this.turnNodes = [
         {
           address: 'stun:stun.relay.metered.ca:80',
-          region: 'metered-stun',
+          region: 'fallback-stun',
           stake: 100000,
           reputation: 0.99,
           latency: 30,
@@ -462,7 +462,7 @@ export class VideoCallService {
         },
         {
           address: 'turn:global.relay.metered.ca:80',
-          region: 'metered-turn-80',
+          region: 'fallback-turn-80',
           stake: 150000,
           reputation: 0.98,
           latency: 35,
@@ -470,7 +470,7 @@ export class VideoCallService {
         },
         {
           address: 'turn:global.relay.metered.ca:443',
-          region: 'metered-turn-443',
+          region: 'fallback-turn-443',
           stake: 120000,
           reputation: 0.97,
           latency: 40,
@@ -497,36 +497,39 @@ export class VideoCallService {
   }
 
   /**
-   * Get WebRTC configuration with TURN servers
+   * Get WebRTC configuration with dynamic ICE servers
    */
-  private getWebRTCConfig(turnServers: TurnServerNode[]): RTCConfiguration {
-    const iceServers: RTCIceServer[] = [
-      // Metered.ca STUN server
-      { urls: 'stun:stun.relay.metered.ca:80' },
+  private async getWebRTCConfig(turnServers: TurnServerNode[]): Promise<RTCConfiguration> {
+    try {
+      // Fetch fresh ICE configuration from server
+      const iceServers = await fetchIceConfiguration()
       
-      // Metered.ca TURN servers with credentials
-      ...turnServers.map(server => {
-        // Check if this is a metered.ca server that needs credentials
-        if (server.address.includes('global.relay.metered.ca')) {
-          return {
+      return {
+        iceServers: iceServers.map(server => ({
+          urls: server.url,
+          username: server.username,
+          credential: server.credential,
+          credentialType: server.credentialType
+        })),
+        iceCandidatePoolSize: 10,
+        iceTransportPolicy: 'all'
+      }
+    } catch (error) {
+      console.warn('Failed to get dynamic ICE config, using fallback servers:', error)
+      
+      // Fallback configuration
+      return {
+        iceServers: [
+          { urls: 'stun:stun.relay.metered.ca:80' },
+          ...turnServers.map(server => ({
             urls: server.address,
-            username: 'cb4e537c8daa78b39585ef06',
-            credential: 'OTzH3vBKW7iEnYxb'
-          }
-        }
-        // For other servers, use the original credentials
-        return {
-          urls: server.address,
-          username: 'privchain_user',
-          credential: 'privchain_network_auth'
-        }
-      })
-    ]
-
-    return {
-      iceServers,
-      iceCandidatePoolSize: 10,
-      iceTransportPolicy: 'all'
+            username: 'fallback_user',
+            credential: 'fallback_credential'
+          }))
+        ],
+        iceCandidatePoolSize: 10,
+        iceTransportPolicy: 'all'
+      }
     }
   }
 

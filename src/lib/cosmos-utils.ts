@@ -54,23 +54,23 @@ export const DEFAULT_TURN_SERVERS: TurnServer[] = [
   },
   {
     url: 'turn:global.relay.metered.ca:80',
-    username: 'cb4e537c8daa78b39585ef06',
-    credential: 'OTzH3vBKW7iEnYxb'
+    username: 'fallback_user',
+    credential: 'fallback_credential'
   },
   {
     url: 'turn:global.relay.metered.ca:80?transport=tcp',
-    username: 'cb4e537c8daa78b39585ef06',
-    credential: 'OTzH3vBKW7iEnYxb'
+    username: 'fallback_user',
+    credential: 'fallback_credential'
   },
   {
     url: 'turn:global.relay.metered.ca:443',
-    username: 'cb4e537c8daa78b39585ef06',
-    credential: 'OTzH3vBKW7iEnYxb'
+    username: 'fallback_user',
+    credential: 'fallback_credential'
   },
   {
     url: 'turns:global.relay.metered.ca:443?transport=tcp',
-    username: 'cb4e537c8daa78b39585ef06',
-    credential: 'OTzH3vBKW7iEnYxb'
+    username: 'fallback_user',
+    credential: 'fallback_credential'
   }
 ]
 
@@ -151,30 +151,32 @@ export function createPeerConnection(turnServers: TurnServer[]): RTCPeerConnecti
   return new RTCPeerConnection(configuration)
 }
 
-// Fetch dynamic TURN credentials from metered.ca API
-export async function fetchMeteredTurnServers(): Promise<TurnServer[]> {
+// Fetch ICE server configuration from secure server endpoint
+export async function fetchIceConfiguration(): Promise<TurnServer[]> {
   try {
-    const apiKey = process.env.METERED_API_KEY || process.env.VITE_METERED_API_KEY || 'b15ef1e4a92aa5421bffbd4d41822942362d'
-    const domain = process.env.METERED_DOMAIN || process.env.VITE_METERED_DOMAIN || 'privachain.metered.live'
-    
-    const response = await fetch(`https://${domain}/api/v1/turn/credentials?apiKey=${apiKey}`)
+    const response = await fetch('/api/ice', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
     
     if (!response.ok) {
-      throw new Error(`Failed to fetch TURN credentials: ${response.status}`)
+      throw new Error(`Failed to fetch ICE configuration: ${response.status}`)
     }
     
-    const iceServers = await response.json()
+    const data = await response.json()
     
-    // Convert the response to our TurnServer format
-    return iceServers.map((server: any) => ({
+    // Convert to our TurnServer format for compatibility
+    return data.iceServers.map((server: any) => ({
       url: server.urls || server.url,
       username: server.username,
       credential: server.credential,
       credentialType: server.credentialType || 'password'
     }))
   } catch (error) {
-    console.warn('Failed to fetch dynamic TURN credentials, falling back to static servers:', error)
-    // Return default static servers as fallback
+    console.warn('Failed to fetch ICE configuration from server, falling back to static servers:', error)
+    // Return fallback static servers
     return DEFAULT_TURN_SERVERS
   }
 }
