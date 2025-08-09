@@ -45,7 +45,7 @@
         "validate:cosmos-config": "tsx examples/validate-config.ts"
     },
     "dependencies": {
-        "@subql/cli": "^4.0.0",
+        "@subql/cli": "^6.1.3",
         "@subql/common-cosmos": "^5.4.5",
         "@subql/node-cosmos": "^4.0.0",
         "@subql/query": "^2.0.0",
