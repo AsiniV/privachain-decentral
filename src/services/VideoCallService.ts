@@ -5,6 +5,7 @@
 
 import { gasFeeManager } from './GasFeeManager'
 import { ipfsService } from './ipfs'
+import { fetchMeteredTurnServers } from '../lib/cosmos-utils'
 
 interface VideoSession {
   sessionId: string
@@ -94,20 +95,15 @@ export class VideoCallService {
   }> {
     try {
       // Check quota and gas fees
-      const gasResult = await gasFeeManager.executeSponsoredOperation(
+      const gasResult = await gasFeeManager.processGasFee(
         callerDomain,
-        'video_call_setup',
-        {
-          operation: 'initiateCall',
-          callee: calleeDomain,
-          options
-        }
+        'video'
       )
 
       if (!gasResult.success) {
         return {
           success: false,
-          error: gasResult.error || 'Gas fee payment failed'
+          error: gasResult.errorReason || 'Gas fee payment failed'
         }
       }
 
@@ -167,8 +163,7 @@ export class VideoCallService {
 
       const ipfsResult = await ipfsService.uploadEncrypted(
         JSON.stringify(signalingData),
-        await this.getSessionEncryptionKey(sessionId),
-        { type: 'video_signaling', sessionId }
+        `video_signaling_${sessionId}.json`
       )
 
       // Update session status
@@ -237,8 +232,7 @@ export class VideoCallService {
       const constraints = this.getMediaConstraints({
         video: true,
         audio: true,
-        quality: session.quality,
-        encryption: session.encrypted
+        quality: session.quality
       })
       
       this.localStream = await navigator.mediaDevices.getUserMedia(constraints)
@@ -281,8 +275,7 @@ export class VideoCallService {
 
         await ipfsService.uploadEncrypted(
           JSON.stringify(answerData),
-          await this.getSessionEncryptionKey(sessionId),
-          { type: 'video_answer', sessionId }
+          `video_answer_${sessionId}.json`
         )
 
         // Update session status
@@ -439,34 +432,52 @@ export class VideoCallService {
    * Load available TURN server nodes from network
    */
   private async loadTurnServerNodes(): Promise<void> {
-    // In production, this would query the blockchain for registered TURN nodes
-    // For now, simulate decentralized TURN servers
-    this.turnNodes = [
-      {
-        address: 'turn:us-east-1.privchain.network:3478',
-        region: 'us-east-1',
-        stake: 100000,
-        reputation: 0.98,
-        latency: 45,
-        cost: 0.001
-      },
-      {
-        address: 'turn:eu-west-1.privchain.network:3478',
-        region: 'eu-west-1',
-        stake: 150000,
-        reputation: 0.97,
-        latency: 30,
-        cost: 0.0008
-      },
-      {
-        address: 'turn:asia-pacific.privchain.network:3478',
-        region: 'asia-pacific',
-        stake: 120000,
+    try {
+      // Fetch dynamic TURN servers from metered.ca API
+      const meteredServers = await fetchMeteredTurnServers()
+      
+      // Convert metered servers to TurnServerNode format
+      this.turnNodes = meteredServers.map((server, index) => ({
+        address: server.url,
+        region: `metered-${index + 1}`,
+        stake: 100000, // Mock stake for compatibility
         reputation: 0.99,
-        latency: 60,
-        cost: 0.0012
-      }
-    ]
+        latency: 30 + (index * 10), // Simulate different latencies
+        cost: 0.001
+      }))
+      
+      console.log('🌐 Loaded metered.ca TURN servers:', this.turnNodes.length)
+    } catch (error) {
+      console.warn('Failed to load metered.ca servers, using fallback:', error)
+      
+      // Fallback to mock servers if API fails
+      this.turnNodes = [
+        {
+          address: 'stun:stun.relay.metered.ca:80',
+          region: 'metered-stun',
+          stake: 100000,
+          reputation: 0.99,
+          latency: 30,
+          cost: 0
+        },
+        {
+          address: 'turn:global.relay.metered.ca:80',
+          region: 'metered-turn-80',
+          stake: 150000,
+          reputation: 0.98,
+          latency: 35,
+          cost: 0.001
+        },
+        {
+          address: 'turn:global.relay.metered.ca:443',
+          region: 'metered-turn-443',
+          stake: 120000,
+          reputation: 0.97,
+          latency: 40,
+          cost: 0.001
+        }
+      ]
+    }
   }
 
   /**
@@ -490,16 +501,26 @@ export class VideoCallService {
    */
   private getWebRTCConfig(turnServers: TurnServerNode[]): RTCConfiguration {
     const iceServers: RTCIceServer[] = [
-      // Public STUN servers for initial connectivity
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' },
+      // Metered.ca STUN server
+      { urls: 'stun:stun.relay.metered.ca:80' },
       
-      // Decentralized TURN servers
-      ...turnServers.map(server => ({
-        urls: server.address,
-        username: 'privchain_user',
-        credential: 'privchain_network_auth'
-      }))
+      // Metered.ca TURN servers with credentials
+      ...turnServers.map(server => {
+        // Check if this is a metered.ca server that needs credentials
+        if (server.address.includes('global.relay.metered.ca')) {
+          return {
+            urls: server.address,
+            username: 'cb4e537c8daa78b39585ef06',
+            credential: 'OTzH3vBKW7iEnYxb'
+          }
+        }
+        // For other servers, use the original credentials
+        return {
+          urls: server.address,
+          username: 'privchain_user',
+          credential: 'privchain_network_auth'
+        }
+      })
     ]
 
     return {

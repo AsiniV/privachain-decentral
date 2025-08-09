@@ -50,17 +50,27 @@ export const COSMOS_TESTNET_CONFIGS: Record<string, CosmosConfig> = {
 
 export const DEFAULT_TURN_SERVERS: TurnServer[] = [
   {
-    url: 'turn:turn1.privachain.network:3478',
-    username: process.env.TURN_SERVER_1_USERNAME || process.env.VITE_TURN_SERVER_1_USERNAME || '',
-    credential: process.env.TURN_SERVER_1_CREDENTIAL || process.env.VITE_TURN_SERVER_1_CREDENTIAL || ''
+    url: 'stun:stun.relay.metered.ca:80'
   },
   {
-    url: 'turn:turn2.privachain.network:3478',
-    username: process.env.TURN_SERVER_2_USERNAME || process.env.VITE_TURN_SERVER_2_USERNAME || '',
-    credential: process.env.TURN_SERVER_2_CREDENTIAL || process.env.VITE_TURN_SERVER_2_CREDENTIAL || ''
+    url: 'turn:global.relay.metered.ca:80',
+    username: 'cb4e537c8daa78b39585ef06',
+    credential: 'OTzH3vBKW7iEnYxb'
   },
   {
-    url: 'stun:stun.privachain.network:3478'
+    url: 'turn:global.relay.metered.ca:80?transport=tcp',
+    username: 'cb4e537c8daa78b39585ef06',
+    credential: 'OTzH3vBKW7iEnYxb'
+  },
+  {
+    url: 'turn:global.relay.metered.ca:443',
+    username: 'cb4e537c8daa78b39585ef06',
+    credential: 'OTzH3vBKW7iEnYxb'
+  },
+  {
+    url: 'turns:global.relay.metered.ca:443?transport=tcp',
+    username: 'cb4e537c8daa78b39585ef06',
+    credential: 'OTzH3vBKW7iEnYxb'
   }
 ]
 
@@ -139,6 +149,34 @@ export function createPeerConnection(turnServers: TurnServer[]): RTCPeerConnecti
   }
   
   return new RTCPeerConnection(configuration)
+}
+
+// Fetch dynamic TURN credentials from metered.ca API
+export async function fetchMeteredTurnServers(): Promise<TurnServer[]> {
+  try {
+    const apiKey = process.env.METERED_API_KEY || process.env.VITE_METERED_API_KEY || 'b15ef1e4a92aa5421bffbd4d41822942362d'
+    const domain = process.env.METERED_DOMAIN || process.env.VITE_METERED_DOMAIN || 'privachain.metered.live'
+    
+    const response = await fetch(`https://${domain}/api/v1/turn/credentials?apiKey=${apiKey}`)
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch TURN credentials: ${response.status}`)
+    }
+    
+    const iceServers = await response.json()
+    
+    // Convert the response to our TurnServer format
+    return iceServers.map((server: any) => ({
+      url: server.urls || server.url,
+      username: server.username,
+      credential: server.credential,
+      credentialType: server.credentialType || 'password'
+    }))
+  } catch (error) {
+    console.warn('Failed to fetch dynamic TURN credentials, falling back to static servers:', error)
+    // Return default static servers as fallback
+    return DEFAULT_TURN_SERVERS
+  }
 }
 
 // Adaptive bitrate calculation based on network conditions
