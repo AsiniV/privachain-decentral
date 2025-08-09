@@ -46,7 +46,7 @@
     },
     "dependencies": {
         "@subql/cli": "^4.0.0",
-        "@subql/common-cosmos": "^4.0.0",
+        "@subql/common-cosmos": "^5.4.5",
         "@subql/node-cosmos": "^4.0.0",
         "@subql/query": "^2.0.0",
         "@subql/types-cosmos": "^3.0.0",
