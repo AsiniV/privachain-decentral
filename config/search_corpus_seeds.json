@@ -1,0 +1,52 @@
+{
+  "corpus_seeds": [
+    {
+      "name": "PrivaChain Documentation",
+      "url": "https://docs.privachain.network",
+      "crawl_depth": 3,
+      "content_types": ["text/html", "text/plain", "application/pdf"],
+      "update_frequency_hours": 24
+    },
+    {
+      "name": "Privacy Technology Papers",
+      "url": "https://eprint.iacr.org/search?q=privacy",
+      "crawl_depth": 2,
+      "content_types": ["application/pdf"],
+      "update_frequency_hours": 168
+    },
+    {
+      "name": "Cosmos Ecosystem",
+      "url": "https://cosmos.network/ecosystem",
+      "crawl_depth": 2,
+      "content_types": ["text/html"],
+      "update_frequency_hours": 72
+    },
+    {
+      "name": "Decentralized Technology Blog",
+      "url": "https://blog.ethereum.org",
+      "crawl_depth": 1,
+      "content_types": ["text/html"],
+      "update_frequency_hours": 48
+    }
+  ],
+  "indexing_settings": {
+    "max_document_size_mb": 10,
+    "max_documents_per_seed": 1000,
+    "text_extraction_timeout_seconds": 30,
+    "enable_content_deduplication": true,
+    "privacy_mode": {
+      "anonymize_urls": true,
+      "strip_tracking_parameters": true,
+      "hash_sensitive_content": true
+    }
+  },
+  "search_quality": {
+    "min_content_length": 100,
+    "max_content_length": 100000,
+    "language_filter": ["en", "auto"],
+    "exclude_patterns": ["*.exe", "*.zip", "*.bin"]
+  },
+  "_schema_version": "1.0",
+  "_description": "Search corpus seeding configuration",
+  "_last_updated": "2025-08-11T00:00:00Z"
+}
