@@ -336,8 +336,14 @@ export class PrivaChainIPFSService {
         )
       }
 
-      const mnemonic = process.env.DEVELOPER_MNEMONIC || 
-        'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
+      const mnemonic = process.env.DEVELOPER_MNEMONIC
+      
+      if (!mnemonic) {
+        throw new IPFSError(
+          'DEVELOPER_MNEMONIC environment variable is required for quota contract operations'
+        )
+      }
+      
       const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, { prefix: 'cosmos' })
       const [account] = await wallet.getAccounts()
 
@@ -369,8 +375,13 @@ export class PrivaChainIPFSService {
         return
       }
 
-      const mnemonic = process.env.DEVELOPER_MNEMONIC || 
-        'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
+      const mnemonic = process.env.DEVELOPER_MNEMONIC
+      
+      if (!mnemonic) {
+        console.warn('⚠️ DEVELOPER_MNEMONIC not set - cannot update quota usage')
+        return
+      }
+      
       const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, { prefix: 'cosmos' })
       const [account] = await wallet.getAccounts()
       

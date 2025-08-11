@@ -30,7 +30,7 @@ export const mainnetConfig: DeploymentConfig = {
 export const localConfig: DeploymentConfig = {
   rpcEndpoint: 'http://localhost:26657',
   chainId: 'privachain-local',
-  mnemonic: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',
+  mnemonic: process.env.DEPLOYER_MNEMONIC || process.env.DEVELOPER_MNEMONIC || '',
   gasPrice: '0.025upriv',
   codeUploadFee: '0.01upriv',
   deployerAddress: 'cosmos1njr8d9xrsqz5dr3xavj3mdzd8p8dvsql0q8cyx'
