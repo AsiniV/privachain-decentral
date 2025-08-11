@@ -528,13 +528,17 @@ export class ProductionEmailService {
     return domainRegex.test(domain) && domain.length >= 3 && domain.length <= 63
   }
 
+  /**
+   * Verify ZK-SNARK proof for domain ownership
+   * @placeholder @insecure DO NOT USE IN PRODUCTION – replaced in Phase 3
+   */
   private async verifyDomainProof(
     domain: string,
     zkProof: Uint8Array,
     publicKey: Uint8Array
   ): Promise<boolean> {
-    // In production, this would verify actual ZK-SNARK proof
-    return zkProof.length >= 32 && publicKey.length >= 32
+    // In production, this would verify actual ZK-SNARK proof using snarkjs
+    return zkProof.length >= 32 && publicKey.length >= 32 // Placeholder verification
   }
 
   private async generateOwnerHash(zkProof: Uint8Array): Promise<string> {
@@ -591,14 +595,22 @@ export class ProductionEmailService {
     return 0 // Placeholder
   }
 
+  /**
+   * Post-quantum encryption implementation
+   * @placeholder @insecure DO NOT USE IN PRODUCTION – replaced in Phase 2/3
+   */
   private async pqEncrypt(data: Uint8Array, _publicKey: Uint8Array): Promise<Uint8Array> {
     // Post-quantum encryption implementation
-    return data // Placeholder
+    return data // Placeholder - no real encryption
   }
 
+  /**
+   * Post-quantum decryption implementation
+   * @placeholder @insecure DO NOT USE IN PRODUCTION – replaced in Phase 2/3
+   */
   private async pqDecrypt(data: Uint8Array, _privateKey: Uint8Array): Promise<Uint8Array> {
     // Post-quantum decryption implementation
-    return data // Placeholder
+    return data // Placeholder - no real decryption
   }
 
   private selectRandomRelays(relays: RelayNode[], count: number): RelayNode[] {
