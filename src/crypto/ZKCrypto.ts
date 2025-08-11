@@ -114,6 +114,7 @@ export class ZKCryptography {
 
   /**
    * Verify ZK proof
+   * @placeholder @insecure DO NOT USE IN PRODUCTION – replaced in Phase 3
    */
   async verifyZKProof(
     proof: ZKProof,
@@ -213,9 +214,10 @@ export class ZKCryptography {
 
   /**
    * Post-Quantum encryption using CRYSTALS-Kyber
+   * @placeholder @insecure DO NOT USE IN PRODUCTION – replaced in Phase 2/3
    */
   pqEncrypt(message: Uint8Array, publicKey: Uint8Array): PQCiphertext {
-    // Simplified Kyber encryption
+    // Simplified Kyber encryption - NOT QUANTUM RESISTANT
     const encapsulatedKey = this.generateSecureRandom(32);
     const ciphertext = this.kyberEncrypt(message, publicKey, encapsulatedKey);
 
@@ -227,9 +229,10 @@ export class ZKCryptography {
 
   /**
    * Post-Quantum decryption using CRYSTALS-Kyber
+   * @placeholder @insecure DO NOT USE IN PRODUCTION – replaced in Phase 2/3
    */
   pqDecrypt(ciphertext: PQCiphertext, privateKey: Uint8Array): Uint8Array {
-    // Simplified Kyber decryption
+    // Simplified Kyber decryption - NOT QUANTUM RESISTANT
     return this.kyberDecrypt(ciphertext.ciphertext, privateKey, ciphertext.encapsulatedKey);
   }
 

@@ -25,6 +25,12 @@ dist-ssr
 *.sw?
 
 .env
+.env.local
+.env.production
+.env.staging
+*.env
+!.env.template
+!.env.example
 **/agent-eval-report*
 packages
 .file-manifest

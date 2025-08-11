@@ -246,13 +246,14 @@ export class PrivaChain {
 
   /**
    * Generate ZK proof for transaction batch
+   * @placeholder @insecure DO NOT USE IN PRODUCTION – replaced in Phase 3
    */
   private async generateBatchProof(transactions: Transaction[]): Promise<{
     proof: string;
     publicInputs: string[];
   }> {
-    // Simplified ZK proof generation
-    // In production, this would use libraries like snarkjs
+    // Simplified ZK proof generation - NOT REAL ZK PROOF
+    // In production, this would use libraries like snarkjs with real circuits
     const inputs = transactions.map(tx => tx.id);
     const proof = this.generateHash(inputs.join(''));
     
@@ -264,9 +265,11 @@ export class PrivaChain {
 
   /**
    * Verify ZK proof
+   * @placeholder @insecure DO NOT USE IN PRODUCTION – replaced in Phase 3
    */
   private async verifyZKProof(proof: string, address: string): Promise<boolean> {
-    // Simplified verification - in production would use actual ZK libraries
+    // Simplified verification - NOT REAL ZK VERIFICATION
+    // In production would use actual ZK libraries with verification keys
     return proof.length === 64 && address.length === 42;
   }
 

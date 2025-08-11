@@ -233,58 +233,31 @@ export class BlockchainUtils {
   private static readonly CHAIN_ID = 'theta-testnet-001'
 
   /**
-   * Get or create a developer wallet for gas sponsorship
+   * Runtime guard - frontend should never access developer wallet directly
+   * @throws {PrivaChainError} Always throws error with remediation instructions
    */
   private static async getDeveloperWallet(): Promise<DirectSecp256k1HdWallet> {
-    // Use environment variable or generate a mnemonic for development
-    const mnemonic = process.env.DEVELOPER_MNEMONIC || 
-      'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
-    
-    return DirectSecp256k1HdWallet.fromMnemonic(mnemonic, { prefix: 'cosmos' })
+    throw new PrivaChainError(
+      'SECURITY: Frontend code cannot access developer wallet. ' +
+      'Use the relayer service API instead: /api/tx/sponsor. ' +
+      'This prevents mnemonic exposure in client bundles. ' +
+      'See server/scripts/relayer_stub.ts for backend implementation.',
+      'FRONTEND_MNEMONIC_ACCESS_DENIED'
+    )
   }
 
   /**
    * Real smart contract call for domain registration
    * @throws {PrivaChainError} If contract execution fails
+   * @deprecated Use relayer service API instead: POST /api/tx/sponsor
    */
   static async registerDomain(domain: string): Promise<{ success: boolean, txHash: string }> {
-    try {
-      const wallet = await this.getDeveloperWallet()
-      const [account] = await wallet.getAccounts()
-      
-      const client = await SigningCosmWasmClient.connectWithSigner(this.TESTNET_RPC, wallet)
-      
-      // Use environment variable for contract address or fallback to placeholder
-      const contractAddr = process.env.DOMAIN_CONTRACT_ADDR || 'cosmos1example...domain'
-      
-      const msg = { 
-        register_domain: { 
-          domain: domain,
-          zk_proof: "placeholder_proof", // Would be real ZK proof in production
-          public_key: account.address,
-          mx_records: []
-        } 
-      }
-      
-      // Execute with developer-sponsored gas
-      const result = await client.execute(
-        account.address,
-        contractAddr,
-        msg,
-        'auto', // Auto gas estimation
-        'Register domain for PrivaChain'
-      )
-      
-      console.log(`✅ Domain ${domain} registered successfully: ${result.transactionHash}`)
-      
-      return {
-        success: true,
-        txHash: result.transactionHash
-      }
-    } catch (error) {
-      console.error('Domain registration failed:', error)
-      throw new PrivaChainError(`Failed to register domain: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    }
+    throw new PrivaChainError(
+      'SECURITY: Direct domain registration from frontend is prohibited. ' +
+      'Use relayer service API: POST /api/tx/sponsor with operation="register_domain". ' +
+      'This ensures gas sponsorship happens securely on the backend.',
+      'USE_RELAYER_API'
+    )
   }
 
   /**

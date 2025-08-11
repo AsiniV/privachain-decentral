@@ -406,7 +406,19 @@ export const cosmosService = new CosmosBlockchainService()
 
 // Initialize with test wallet for development
 if (process.env.NODE_ENV === 'development') {
-  // Use a development mnemonic (this should be from environment variables in production)
-  const DEV_MNEMONIC = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
-  cosmosService.initialize(DEV_MNEMONIC)
+  // Runtime guard: frontend should never initialize with developer mnemonic
+  if (typeof window !== 'undefined') {
+    console.error(
+      'SECURITY: Frontend cannot initialize cosmos service with developer mnemonic. ' +
+      'Use relayer service API instead: POST /api/tx/sponsor'
+    )
+  } else {
+    // Server-side initialization only
+    const DEV_MNEMONIC = process.env.DEVELOPER_MNEMONIC
+    if (DEV_MNEMONIC) {
+      cosmosService.initialize(DEV_MNEMONIC)
+    } else {
+      console.warn('⚠️ DEVELOPER_MNEMONIC not set - cosmos service not initialized')
+    }
+  }
 }

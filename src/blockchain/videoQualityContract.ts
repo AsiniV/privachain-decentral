@@ -115,9 +115,23 @@ export class VideoQualityContract implements VideoQualityContract {
 
   private async initializeClient(): Promise<void> {
     try {
-      // Use environment variable or fallback mnemonic for development
-      const mnemonic = process.env.DEVELOPER_MNEMONIC || 
-        'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
+      // Runtime guard: frontend cannot access developer mnemonic
+      if (typeof window !== 'undefined') {
+        throw new VideoQualityError(
+          'SECURITY: Frontend cannot initialize video contract with developer mnemonic. ' +
+          'Use relayer service API instead: POST /api/tx/sponsor',
+          'FRONTEND_MNEMONIC_ACCESS_DENIED'
+        )
+      }
+
+      // Server-side only: Use environment variable for mnemonic
+      const mnemonic = process.env.DEVELOPER_MNEMONIC
+      
+      if (!mnemonic) {
+        throw new VideoQualityError(
+          'DEVELOPER_MNEMONIC environment variable is required for video contract initialization'
+        )
+      }
       
       this.wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, { prefix: 'cosmos' })
       this.client = await SigningCosmWasmClient.connectWithSigner(this.rpcEndpoint, this.wallet)
@@ -125,6 +139,7 @@ export class VideoQualityContract implements VideoQualityContract {
       console.log('✅ Video quality contract client initialized')
     } catch (error) {
       console.error('❌ Failed to initialize video quality contract client:', error)
+      throw error
     }
   }
 

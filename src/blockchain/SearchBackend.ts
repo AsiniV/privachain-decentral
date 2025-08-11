@@ -640,18 +640,20 @@ export class DecentralizedSearchBackend {
 
   /**
    * Verify individual ZK proof
+   * @placeholder @insecure DO NOT USE IN PRODUCTION – replaced in Phase 3
    */
   private verifyZKProof(zkProof: string, queryHash: string): boolean {
-    // Simulate ZK proof verification
+    // Simulate ZK proof verification - NOT REAL VERIFICATION
     // In real implementation, this would use a ZK library like snarkjs
     return zkProof.length > 10 && queryHash.length > 10
   }
 
   /**
    * Generate zero-knowledge query proof
+   * @placeholder @insecure DO NOT USE IN PRODUCTION – replaced in Phase 3
    */
   private async generateZKQuery(query: string): Promise<ZKQuery> {
-    // Simulate ZK proof generation
+    // Simulate ZK proof generation - NOT REAL ZK PROOF
     await new Promise(resolve => setTimeout(resolve, 100))
     
     const queryHash = btoa(query + Date.now()).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32)
