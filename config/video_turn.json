@@ -1,0 +1,38 @@
+{
+  "turn_servers": {
+    "primary": {
+      "provider": "metered.ca",
+      "domain": "${METERED_DOMAIN}",
+      "api_endpoint": "https://privachain.metered.live/api/v1/turn/credentials",
+      "secret_key": "${METERED_TURN_SECRET}",
+      "credential_ttl_seconds": 86400
+    },
+    "fallback": [
+      {
+        "urls": ["stun:stun.relay.metered.ca:80"],
+        "static": true
+      },
+      {
+        "urls": ["turn:global.relay.metered.ca:80"],
+        "username": "fallback_user",
+        "credential": "fallback_credential",
+        "static": true
+      }
+    ]
+  },
+  "video_constraints": {
+    "force_turn_only": true,
+    "max_resolution": "1280x720",
+    "max_framerate": 30,
+    "enable_ice_trickling": false,
+    "dtls_fingerprint_required": true
+  },
+  "privacy_settings": {
+    "disable_webrtc_leak_protection": false,
+    "require_end_to_end_encryption": true,
+    "log_level": "minimal"
+  },
+  "_schema_version": "1.0",
+  "_description": "Video call TURN server configuration",
+  "_last_updated": "2025-08-11T00:00:00Z"
+}

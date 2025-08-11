@@ -1,0 +1,18 @@
+{
+  "batch_interval_ms": { "mean": 1500, "jitter_ms": 400 },
+  "poll_interval_ms": 3000,
+  "dummy_message_probability": 0.25,
+  "size_buckets": [1024, 4096, 16384, 65536],
+  "onchain_commit_interval_sec": { "base": 45, "jitter_sec": 12 },
+  "relayer_wallet_pool": 3,
+  "relay_hops": 3,
+  "relay_hop_rotation_msgs": 10,
+  "dummy_batch_min": 5,
+  "session_reset_messages": 200,
+  "video_force_turn": true,
+  "search_result_padding": "roundUpTo5",
+  "high_privacy_cover_ratio_target": 0.30,
+  "_schema_version": "1.0",
+  "_description": "Privacy and anonymity layer configuration for PrivaChain Spark",
+  "_last_updated": "2025-08-11T00:00:00Z"
+}

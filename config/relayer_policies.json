@@ -1,0 +1,32 @@
+{
+  "relayer_policies": {
+    "per_user_daily_limit": 200,
+    "per_ip_hourly_limit": 50,
+    "per_operation_limits": {
+      "send_message": 100,
+      "send_email": 50,
+      "register_domain": 5,
+      "video_call_session": 20,
+      "search_query": 500
+    },
+    "gas_limits": {
+      "max_gas_per_tx": 500000,
+      "max_daily_gas_per_user": 10000000
+    },
+    "abuse_prevention": {
+      "enable_pow_challenge": true,
+      "pow_difficulty_base": 4,
+      "pow_difficulty_max": 8,
+      "rate_limit_backoff_seconds": 300
+    }
+  },
+  "wallet_rotation": {
+    "enabled": true,
+    "pool_size": 3,
+    "rotation_strategy": "weighted_round_robin",
+    "health_check_interval_seconds": 60
+  },
+  "_schema_version": "1.0",
+  "_description": "Gas relayer policies and configuration",
+  "_last_updated": "2025-08-11T00:00:00Z"
+}
