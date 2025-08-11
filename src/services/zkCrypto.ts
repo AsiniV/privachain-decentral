@@ -515,19 +515,7 @@ export class ZKIdentityManager {
     return this.identity
   }
 
-  // Export identity for backup (private key should be encrypted)
-  exportIdentity(): string | null {
-    if (!this.identity) {
-      return null
-    }
 
-    // In production, this should be encrypted with a user password
-    return JSON.stringify({
-      privateKey: this.bytesToHex(this.identity.privateKey),
-      publicHash: this.identity.publicHash,
-      commitment: this.identity.commitment
-    })
-  }
 
   // Import identity from backup
   async importIdentity(exportedData: string): Promise<ZKIdentity> {
