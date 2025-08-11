@@ -106,6 +106,9 @@ jobs:
       - name: TypeScript type check
         run: npm run test:build
 
+      - name: Build client
+        run: npm run build
+
       - name: Check bundle for secrets
         run: npm run test:secrets
         if: success()
