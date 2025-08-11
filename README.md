@@ -2,6 +2,24 @@
 
 A decentralized blockchain platform for private communication and digital identity management.
 
+## Current Prototype Limitations ⚠️
+
+**THIS IS AN ACTIVE DEVELOPMENT PROTOTYPE**
+
+Currently implemented features are in various stages of completion as part of the [Delivery Runbook execution](docs/TASK_INDEX.md):
+
+- ✅ **Gas Sponsorship**: Developer-sponsored transactions (no user wallets required)
+- ✅ **Frontend Security**: Hardcoded mnemonics removed, backend relayer service implemented
+- 🚧 **ZK Proofs**: Placeholder implementations - **DO NOT USE IN PRODUCTION**
+- 🚧 **Messaging**: Basic structure present, full E2E encryption pending
+- 🚧 **Search**: Index structure present, ZK inclusion proofs pending
+- 🚧 **Video**: WebRTC signaling present, E2E encryption layer pending
+- ❌ **Onion Routing**: Not yet implemented
+- ❌ **Mixnet Integration**: Configuration present, Nym integration pending
+- ❌ **Post-Quantum Crypto**: Placeholder implementations only
+
+See [docs/status.md](docs/status.md) for detailed feature matrix and [docs/claims_and_limitations.md](docs/claims_and_limitations.md) for security disclaimers.
+
 ## 🚀 Quick Start
 
 ### Prerequisites
