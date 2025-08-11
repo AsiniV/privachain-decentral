@@ -70,6 +70,28 @@ This project uses:
 
 For detailed setup instructions, testing procedures, and troubleshooting, see [LOCAL_TESTING.md](./LOCAL_TESTING.md).
 
+## 🔒 Privacy & Security Compliance
+
+**Compliance Statement**: "Spark does not simulate privacy layers. If a critical privacy dependency (mixnet, Tor, ZK prover, key infrastructure) is unavailable, the application degrades explicitly and warns users; it never silently emulates cryptographic or network protections."
+
+### ✅ NO STUB / NO SIMULATION POLICY
+
+PrivaChain adheres to strict "NO STUB / NO SIMULATION" rules:
+
+- **Real Cryptography Only**: All ZK proofs, signatures, and encryption use genuine cryptographic libraries
+- **Explicit Failures**: Missing dependencies cause clear error messages, never silent fallbacks
+- **Dependency Validation**: Boot-time validation ensures all required services are available
+- **Structured Errors**: When services are unavailable, users receive specific remediation guidance
+- **Health Status Degradation**: System shows 'degraded' status when privacy components are unavailable
+
+### 🛡️ Privacy Guarantees
+
+- **Metadata Mitigation**: Configurable padding, batching, and dummy traffic
+- **Anonymity Layers**: Real Tor/Nym integration (no simulation)
+- **End-to-End Encryption**: Mandatory encryption with no plaintext fallbacks
+- **ZK Domain Registry**: Real zero-knowledge proofs for .prv domain ownership
+- **Gas Sponsorship Isolation**: Developer keys secured in KMS/TEE, never in memory dumps
+
 ## 📄 License
 
 The Spark Template files and resources from GitHub are licensed under the terms of the MIT license, Copyright GitHub, Inc.
