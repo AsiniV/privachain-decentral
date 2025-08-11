@@ -17,6 +17,8 @@
         "test:lint": "bash scripts/ensure-deps.sh && eslint . --max-warnings 500 || echo '⚠️  Linting issues found in existing code - acceptable for development'",
         "test:build": "bash scripts/ensure-deps.sh && tsc -b --noCheck",
         "test:secrets": "bash scripts/check-secrets.sh",
+        "scan:secrets": "node scripts/precommit/secret-scan.cjs",
+        "scan:secrets:install-hook": "node scripts/precommit/secret-scan.cjs --install-hook",
         "test:all": "npm run test:contracts && npm run test:lint && npm run test:build && npm run test:dev-server && npm run log-errors",
         "test:dev-server": "bash scripts/test-dev-server.sh",
         "test:features": "ts-node scripts/test-features.ts",
