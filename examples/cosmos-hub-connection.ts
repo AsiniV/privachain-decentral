@@ -16,8 +16,8 @@ import { Coin } from "@cosmjs/stargate";
 const rpcEndpoint = "https://rpc.theta-testnet.polypore.xyz"; // Public RPC node
 const restEndpoint = "https://rest.theta-testnet.polypore.xyz:1317"; // REST endpoint
 
-// Insert your mnemonic here!
-const mnemonic = "your mnemonic here";
+// Demo mnemonic for testing (DO NOT use for real funds)
+const demoMnemonic = process.env.DEMO_MNEMONIC || "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
 
 // Test address with ATOM tokens on testnet
 const testAddress = "cosmos1hcgd3hg6kpvsfuklsgkzjratda53vwsymrp24k";
@@ -66,7 +66,7 @@ async function main(): Promise<void> {
     console.log("");
 
     // Create wallet from mnemonic
-    const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, { prefix: "cosmos" });
+    const wallet = await DirectSecp256k1HdWallet.fromMnemonic(demoMnemonic, { prefix: "cosmos" });
     const [account] = await wallet.getAccounts();
 
     console.log("📋 Wallet Information:");
