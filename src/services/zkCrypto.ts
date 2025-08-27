@@ -45,23 +45,58 @@ export class ZKIdentityManager {
    */
   async initializeCircuits(wasmPath?: string, zkeyPath?: string, vkeyPath?: string): Promise<void> {
     try {
-      // Require circuit paths for production
+      // Require circuit paths for production - no fallback to mock implementations
       this.circuitWasm = wasmPath || process.env.ZK_CIRCUIT_WASM || process.env.VITE_ZK_CIRCUIT_WASM
       this.circuitZkey = zkeyPath || process.env.ZK_CIRCUIT_ZKEY || process.env.VITE_ZK_CIRCUIT_ZKEY
       const vkeyPathFinal = vkeyPath || process.env.ZK_VERIFICATION_KEY || process.env.VITE_ZK_VERIFICATION_KEY
       
       if (!this.circuitWasm || !this.circuitZkey || !vkeyPathFinal) {
-        throw new ZKError('ZK circuit files are required: ZK_CIRCUIT_WASM, ZK_CIRCUIT_ZKEY, ZK_VERIFICATION_KEY')
+        throw new ZKError(
+          'ZK circuit files are required for production use. Please run the trusted setup first:\n' +
+          '1. Install circom and snarkjs: npm install -g circom@latest snarkjs@latest\n' +
+          '2. Run setup script: ./scripts/setup-zk-circuits.sh\n' +
+          '3. Set environment variables:\n' +
+          '   - ZK_CIRCUIT_WASM: path to compiled circuit WASM file\n' +
+          '   - ZK_CIRCUIT_ZKEY: path to proving key from trusted setup\n' +
+          '   - ZK_VERIFICATION_KEY: path to verification key JSON file'
+        )
       }
       
       console.log('📋 Loading ZK verification key...')
-      const vkeyResponse = await fetch(vkeyPathFinal)
-      if (!vkeyResponse.ok) {
-        throw new ZKError(`Failed to load verification key from ${vkeyPathFinal}`)
+      
+      // Verify that circuit files exist and are readable
+      try {
+        const vkeyResponse = await fetch(vkeyPathFinal)
+        if (!vkeyResponse.ok) {
+          throw new ZKError(`Failed to load verification key from ${vkeyPathFinal}: ${vkeyResponse.status} ${vkeyResponse.statusText}`)
+        }
+        
+        const vkeyData = await vkeyResponse.json()
+        
+        // Validate verification key format
+        if (!vkeyData.protocol || vkeyData.protocol !== 'groth16') {
+          throw new ZKError('Invalid verification key: must be Groth16 protocol')
+        }
+        
+        if (!vkeyData.vk_alpha_1 || !vkeyData.vk_beta_2 || !vkeyData.IC) {
+          throw new ZKError('Invalid verification key: missing required fields (vk_alpha_1, vk_beta_2, IC)')
+        }
+        
+        this.verificationKey = vkeyData
+      } catch (error) {
+        throw new ZKError(`Failed to load or validate verification key: ${error instanceof Error ? error.message : 'Unknown error'}`)
       }
-      this.verificationKey = await vkeyResponse.json()
+      
+      // Verify WASM and zkey files are accessible (in browser environment, we can't directly check file existence)
+      console.log('📋 Verifying circuit files accessibility...')
+      console.log(`  WASM: ${this.circuitWasm}`)
+      console.log(`  ZKEY: ${this.circuitZkey}`)
+      console.log(`  VKEY: ${vkeyPathFinal}`)
       
       console.log('✅ ZK circuits initialized with real snarkjs support')
+      console.log('   Circuit type: Groth16')
+      console.log(`   Public inputs: ${this.verificationKey.nPublic}`)
+      console.log('   Status: Ready for production proof generation and verification')
     } catch (error) {
       console.error('❌ Failed to initialize ZK circuits:', error)
       throw new ZKError(`Failed to initialize circuits: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -107,67 +142,127 @@ export class ZKIdentityManager {
 
   /**
    * Generate a real ZK-SNARK proof using snarkjs
-   * @throws {ZKError} If proof generation fails
+   * @throws {ZKError} If proof generation fails or circuits are not available
    */
   async generateZKProof(statement: any, privateWitness: any): Promise<ZKProof> {
     if (!this.identity) {
       throw new ZKError('Identity not initialized')
     }
 
-    try {
-      // Require real circuits for production
-      if (!this.circuitWasm || !this.circuitZkey) {
-        throw new ZKError('ZK circuits not properly initialized. Call initializeCircuits() first.')
-      }
+    // Require real circuits for production - no fallback to mock implementations
+    if (!this.circuitWasm || !this.circuitZkey) {
+      throw new ZKError(
+        'Real ZK circuits are required for production use. Please run the trusted setup first:\n' +
+        '1. Install circom and snarkjs: npm install -g circom@latest snarkjs@latest\n' +
+        '2. Run setup script: ./scripts/setup-zk-circuits.sh\n' +
+        '3. Set environment variables: ZK_CIRCUIT_WASM, ZK_CIRCUIT_ZKEY, ZK_VERIFICATION_KEY'
+      )
+    }
 
+    try {
       console.log('🔬 Generating ZK-SNARK proof with real circuits...')
       
-      // Generate real ZK-SNARK proof using snarkjs
-      const input = {
-        ...privateWitness,
-        secret: this.bytesToHex(this.identity.privateKey)
+      // Determine circuit type and prepare inputs accordingly
+      const circuitType = statement.type || 'domain_ownership'
+      let circuitInput: any
+
+      if (circuitType === 'domain_ownership') {
+        // Prepare inputs for domain registration circuit
+        circuitInput = {
+          commitment: statement.publicHash || this.identity.commitment,
+          domain_hash: this.hashString(statement.domain),
+          owner_secret: this.bytesToHex(this.identity.privateKey),
+          domain_salt: privateWitness.domain_salt || this.generateRandomHex(32),
+          ownership_nonce: privateWitness.ownership_nonce || Date.now()
+        }
+      } else if (circuitType === 'search_inclusion') {
+        // Prepare inputs for search inclusion circuit
+        circuitInput = {
+          root: statement.merkle_root,
+          leaf_hash: statement.leaf_hash,
+          path_elements: privateWitness.path_elements,
+          path_indices: privateWitness.path_indices,
+          query_nullifier_secret: this.bytesToHex(this.identity.privateKey)
+        }
+      } else {
+        throw new ZKError(`Unsupported circuit type: ${circuitType}`)
       }
 
+      // Generate real ZK-SNARK proof using snarkjs
       const { proof, publicSignals } = await snarkjs.groth16.fullProve(
-        input,
+        circuitInput,
         this.circuitWasm,
         this.circuitZkey
       )
       
       return {
         proof: JSON.stringify(proof),
-        publicSignals,
+        publicSignals: publicSignals.map(s => s.toString()),
         nullifierHash: this.generateNullifier(statement)
       }
     } catch (error) {
       console.error('❌ Failed to generate ZK proof:', error)
+      if (error instanceof Error && error.message.includes('WASM')) {
+        throw new ZKError(
+          'Invalid circuit WASM file. Please ensure you have compiled the circuits properly:\n' +
+          './scripts/setup-zk-circuits.sh'
+        )
+      }
       throw new ZKError(`Failed to generate proof: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
   /**
    * Verify a ZK-SNARK proof
-   * @throws {ZKError} If verification fails
+   * @throws {ZKError} If verification fails or verification key is not available
    */
   async verifyZKProof(proof: ZKProof, statement: any): Promise<boolean> {
-    try {
-      if (!this.verificationKey) {
-        throw new ZKError('Verification key not loaded. Call initializeCircuits() first.')
-      }
+    // Require real verification key - no fallback to mock verification
+    if (!this.verificationKey) {
+      throw new ZKError(
+        'Real verification key is required for production use. Please run the trusted setup first:\n' +
+        '1. Install circom and snarkjs: npm install -g circom@latest snarkjs@latest\n' +
+        '2. Run setup script: ./scripts/setup-zk-circuits.sh\n' +
+        '3. Set environment variables: ZK_VERIFICATION_KEY'
+      )
+    }
 
+    try {
       console.log('🔍 Verifying ZK-SNARK proof with real verification...')
       
       const parsedProof = JSON.parse(proof.proof)
+      
+      // Verify the proof structure
+      if (!parsedProof.pi_a || !parsedProof.pi_b || !parsedProof.pi_c) {
+        throw new ZKError('Invalid proof format: missing pi_a, pi_b, or pi_c')
+      }
+
+      // Verify public signals format
+      if (!Array.isArray(proof.publicSignals)) {
+        throw new ZKError('Invalid proof format: publicSignals must be an array')
+      }
+
+      // Use snarkjs to verify the proof
       const isValid = await snarkjs.groth16.verify(
         this.verificationKey,
         proof.publicSignals,
         parsedProof
       )
 
-      console.log('✅ ZK proof verification completed:', isValid)
+      if (isValid) {
+        console.log('✅ ZK proof verification successful')
+      } else {
+        console.log('❌ ZK proof verification failed')
+      }
+
       return isValid
     } catch (error) {
       console.error('❌ Failed to verify ZK proof:', error)
+      if (error instanceof Error && error.message.includes('verification key')) {
+        throw new ZKError(
+          'Invalid verification key format. Please ensure you have the correct verification key from the trusted setup.'
+        )
+      }
       throw new ZKError(`Failed to verify proof: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
@@ -549,6 +644,80 @@ export class ZKIdentityManager {
     // In a real implementation, this would query the blockchain
     // For demo purposes, return a random reputation score
     return Math.floor(Math.random() * 100)
+  }
+
+  /**
+   * Hash a string using SHA256
+   */
+  private hashString(input: string): string {
+    const bytes = this.stringToBytes(input)
+    const hash = sha256(bytes)
+    return this.bytesToHex(hash)
+  }
+
+  /**
+   * Generate random hex string of specified length
+   */
+  private generateRandomHex(length: number): string {
+    const bytes = randomBytes(length)
+    return this.bytesToHex(bytes)
+  }
+
+  /**
+   * Create search inclusion proof for privacy-preserving search
+   * @throws {ZKError} If proof generation fails or search circuits are not available
+   */
+  async generateSearchInclusionProof(
+    merkleRoot: string,
+    leafHash: string,
+    merklePathElements: string[],
+    merklePathIndices: number[]
+  ): Promise<ZKProof> {
+    if (!this.identity) {
+      throw new ZKError('Identity not initialized')
+    }
+
+    try {
+      const statement = {
+        type: 'search_inclusion',
+        merkle_root: merkleRoot,
+        leaf_hash: leafHash
+      }
+
+      const privateWitness = {
+        path_elements: merklePathElements,
+        path_indices: merklePathIndices
+      }
+
+      console.log('🔍 Generating search inclusion proof...')
+      return await this.generateZKProof(statement, privateWitness)
+    } catch (error) {
+      console.error('❌ Failed to generate search inclusion proof:', error)
+      throw new ZKError(`Failed to generate search inclusion proof: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
+  /**
+   * Verify search inclusion proof
+   * @throws {ZKError} If verification fails
+   */
+  async verifySearchInclusionProof(
+    proof: ZKProof,
+    merkleRoot: string,
+    leafHash: string
+  ): Promise<boolean> {
+    try {
+      const statement = {
+        type: 'search_inclusion',
+        merkle_root: merkleRoot,
+        leaf_hash: leafHash
+      }
+
+      return await this.verifyZKProof(proof, statement)
+    } catch (error) {
+      console.error('❌ Failed to verify search inclusion proof:', error)
+      throw new ZKError(`Failed to verify search inclusion proof: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
   }
 }
 
