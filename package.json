@@ -51,7 +51,7 @@
         "@chainsafe/libp2p-gossipsub": "^14.1.1",
         "@chainsafe/libp2p-yamux": "^7.0.4",
         "@cosmjs/cosmwasm-stargate": "^0.34.0",
-        "@cosmjs/proto-signing": "^0.34.0",
+        "@cosmjs/proto-signing": "^0.36.0",
         "@cosmjs/stargate": "^0.34.0",
         "@helia/unixfs": "^5.1.0",
         "@heroicons/react": "^2.2.0",
