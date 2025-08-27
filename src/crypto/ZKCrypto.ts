@@ -113,35 +113,32 @@ export class ZKCryptography {
   }
 
   /**
-   * Verify ZK proof
-   * @placeholder @insecure DO NOT USE IN PRODUCTION – replaced in Phase 3
+   * Verify ZK proof using real snarkjs verification
    */
   async verifyZKProof(
     proof: ZKProof,
     expectedPublicSignals: string[]
   ): Promise<boolean> {
     try {
-      // Verify proof format
-      if (!proof.proof || proof.publicSignals.length === 0) {
-        return false;
-      }
-
-      // Check public signals match expected
-      if (proof.publicSignals.length !== expectedPublicSignals.length) {
-        return false;
-      }
-
-      for (let i = 0; i < expectedPublicSignals.length; i++) {
-        if (proof.publicSignals[i] !== expectedPublicSignals[i]) {
-          return false;
-        }
-      }
-
-      // Verify cryptographic proof (simplified)
-      return await this.verifyCircuitProof(proof);
+      // Import real ZK verification from production service
+      const { zkIdentityManager } = await import('../services/zkCrypto')
+      
+      // Use the production ZK verification implementation
+      return await zkIdentityManager.verifyZKProof(proof, { expectedPublicSignals })
     } catch (error) {
-      console.error('ZK proof verification failed:', error);
-      return false;
+      console.error('❌ ZK proof verification failed:', error)
+      
+      // Provide helpful error message for missing circuits
+      if (error instanceof Error && error.message.includes('circuits')) {
+        throw new Error(
+          'ZK verification failed - circuits not properly set up:\n' +
+          '1. Run: ./scripts/setup-zk-circuits.sh\n' +
+          '2. Set environment variables for circuit files\n' +
+          `Original error: ${error.message}`
+        )
+      }
+      
+      return false
     }
   }
 
