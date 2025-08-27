@@ -40,7 +40,16 @@ Visit `http://localhost:5173` to see the application.
 
 ## 📖 Documentation
 
+### Development and Testing
 - **[LOCAL_TESTING.md](./LOCAL_TESTING.md)** - Comprehensive guide for local development and testing
+
+### Cosmos Testnet Deployment
+- **[COSMOS_TESTNET_DEPLOYMENT.md](./docs/COSMOS_TESTNET_DEPLOYMENT.md)** - Complete deployment guide for Cosmos testnet
+- **[COSMOS_TESTNET_TESTING.md](./docs/COSMOS_TESTNET_TESTING.md)** - Detailed testing procedures for testnet environment
+- **[NETWORK_CONFIGURATION.md](./docs/NETWORK_CONFIGURATION.md)** - Network endpoints and connectivity troubleshooting
+
+### Production Readiness
+- **[PRODUCTION_READINESS_ISSUES.md](./docs/PRODUCTION_READINESS_ISSUES.md)** - Critical issues and limitations for production deployment
 
 ## 🧪 Testing Commands
 
