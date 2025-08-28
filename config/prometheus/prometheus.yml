@@ -1,0 +1,108 @@
+# Prometheus Configuration for PrivaChain Monitoring
+# This configuration sets up scraping of PrivaChain metrics and alerting
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'privachain'
+    environment: '${ENVIRONMENT:-development}'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+# Rules configuration
+rule_files:
+  - "alerts.yml"
+
+# Scrape configurations
+scrape_configs:
+  # PrivaChain main application
+  - job_name: 'privachain'
+    static_configs:
+      - targets: ['localhost:3001']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    honor_labels: true
+    params:
+      format: ['prometheus']
+
+  # PrivaChain health checks (for uptime monitoring)
+  - job_name: 'privachain-health'
+    static_configs:
+      - targets: ['localhost:3001']
+    metrics_path: '/health'
+    scrape_interval: 30s
+    scrape_timeout: 5s
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'up'
+        target_label: 'health_check'
+        replacement: 'true'
+
+  # Node.js process metrics (if using prom-client defaults)
+  - job_name: 'privachain-process'
+    static_configs:
+      - targets: ['localhost:3001']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'process_.*|nodejs_.*'
+        action: keep
+
+  # Custom privacy metrics scraping
+  - job_name: 'privachain-privacy'
+    static_configs:
+      - targets: ['localhost:3001']
+    metrics_path: '/metrics'
+    scrape_interval: 60s
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'privachain_(dummy_real_ratio|proof_generation_time|batch_fill_ratio).*'
+        action: keep
+
+  # IPFS metrics (if available)
+  - job_name: 'privachain-ipfs'
+    static_configs:
+      - targets: ['localhost:3001']
+    metrics_path: '/metrics'
+    scrape_interval: 45s
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'privachain_ipfs.*'
+        action: keep
+
+# Additional scrape configurations for external dependencies
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Node Exporter (system metrics)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['localhost:9100']
+    scrape_interval: 30s
+
+# Remote write configuration (optional - for long-term storage)
+# remote_write:
+#   - url: "https://your-remote-storage-endpoint/api/v1/write"
+#     queue_config:
+#       max_samples_per_send: 1000
+#       batch_send_deadline: 5s
+#       min_shards: 1
+#       max_shards: 200
+#     write_relabel_configs:
+#       - source_labels: [__name__]
+#         regex: 'privachain_.*'
+#         action: keep
+
+# Recording rules for performance optimization
+# rule_files:
+#   - "recording_rules.yml"

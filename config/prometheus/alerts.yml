@@ -1,0 +1,221 @@
+# Prometheus Alerting Rules for PrivaChain
+# Place this file in your Prometheus rules directory and reference it in prometheus.yml
+
+groups:
+  - name: privachain.critical
+    interval: 30s
+    rules:
+      # System Health Status
+      - alert: SystemUnhealthy
+        expr: privachain_health_status == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: system
+        annotations:
+          summary: "PrivaChain system is unhealthy"
+          description: "System health status has been unhealthy for more than 2 minutes"
+          runbook_url: "https://docs.privachain.org/runbooks/system-unhealthy"
+
+      - alert: SystemDegraded
+        expr: privachain_health_status == 1
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "PrivaChain system is degraded"
+          description: "System health status has been degraded for more than 5 minutes"
+          runbook_url: "https://docs.privachain.org/runbooks/system-degraded"
+
+      # High Error Rates
+      - alert: HighErrorRate
+        expr: rate(privachain_errors_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          component: "{{ $labels.component }}"
+        annotations:
+          summary: "High error rate detected in {{ $labels.component }}"
+          description: "Error rate is {{ $value }} errors/sec in {{ $labels.component }}"
+          runbook_url: "https://docs.privachain.org/runbooks/high-error-rate"
+
+      # Service Down
+      - alert: ServiceDown
+        expr: up{job="privachain"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: service
+        annotations:
+          summary: "PrivaChain service is down"
+          description: "Service {{ $labels.instance }} has been down for more than 1 minute"
+          runbook_url: "https://docs.privachain.org/runbooks/service-down"
+
+      # High Memory Usage
+      - alert: HighMemoryUsage
+        expr: (nodejs_heap_size_used_bytes / nodejs_heap_size_total_bytes) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          component: memory
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is {{ $value }}% of heap limit"
+          runbook_url: "https://docs.privachain.org/runbooks/high-memory-usage"
+
+      # Critical Memory Usage
+      - alert: CriticalMemoryUsage
+        expr: (nodejs_heap_size_used_bytes / nodejs_heap_size_total_bytes) * 100 > 95
+        for: 1m
+        labels:
+          severity: critical
+          component: memory
+        annotations:
+          summary: "Critical memory usage detected"
+          description: "Memory usage is {{ $value }}% of heap limit - imminent OOM risk"
+          runbook_url: "https://docs.privachain.org/runbooks/critical-memory-usage"
+
+  - name: privachain.performance
+    interval: 30s
+    rules:
+      # High Latency
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, rate(privachain_http_request_duration_seconds_bucket[5m])) > 5
+        for: 3m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "High API latency detected"
+          description: "95th percentile latency is {{ $value }}s"
+          runbook_url: "https://docs.privachain.org/runbooks/high-latency"
+
+      # Network Latency
+      - alert: HighNetworkLatency
+        expr: histogram_quantile(0.95, rate(privachain_network_latency_seconds_bucket[5m])) > 1
+        for: 3m
+        labels:
+          severity: warning
+          component: network
+        annotations:
+          summary: "High network latency to {{ $labels.target }}"
+          description: "95th percentile network latency is {{ $value }}s"
+          runbook_url: "https://docs.privachain.org/runbooks/high-network-latency"
+
+      # Low Request Rate (possible DDoS or service issue)
+      - alert: UnusuallyLowTraffic
+        expr: rate(privachain_http_requests_total[10m]) < 0.01
+        for: 10m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "Unusually low traffic detected"
+          description: "Request rate is {{ $value }} requests/sec - possible service issue"
+          runbook_url: "https://docs.privachain.org/runbooks/low-traffic"
+
+  - name: privachain.privacy
+    interval: 30s
+    rules:
+      # Privacy Degradation
+      - alert: PrivacyDegradation
+        expr: privachain_dummy_real_ratio < 0.7
+        for: 2m
+        labels:
+          severity: critical
+          component: privacy
+        annotations:
+          summary: "Privacy degradation detected in {{ $labels.component }}"
+          description: "Dummy/real ratio is {{ $value }} (threshold: 0.7)"
+          runbook_url: "https://docs.privachain.org/runbooks/privacy-degradation"
+
+      # Batch Fill Ratio Low
+      - alert: LowBatchFillRatio
+        expr: privachain_batch_fill_ratio < 0.5
+        for: 5m
+        labels:
+          severity: warning
+          component: privacy
+        annotations:
+          summary: "Low batch fill ratio in {{ $labels.batch_type }}"
+          description: "Batch fill ratio is {{ $value }} (threshold: 0.5)"
+          runbook_url: "https://docs.privachain.org/runbooks/low-batch-fill"
+
+      # Slow Proof Generation
+      - alert: SlowProofGeneration
+        expr: histogram_quantile(0.95, rate(privachain_proof_generation_time_seconds_bucket[5m])) > 30
+        for: 3m
+        labels:
+          severity: warning
+          component: zk
+        annotations:
+          summary: "Slow proof generation for {{ $labels.proof_type }}"
+          description: "95th percentile proof generation time is {{ $value }}s"
+          runbook_url: "https://docs.privachain.org/runbooks/slow-proof-generation"
+
+  - name: privachain.storage
+    interval: 30s
+    rules:
+      # IPFS Operation Failures
+      - alert: HighIPFSFailureRate
+        expr: rate(privachain_ipfs_operations_total{status="error"}[5m]) / rate(privachain_ipfs_operations_total[5m]) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+          component: ipfs
+        annotations:
+          summary: "High IPFS operation failure rate"
+          description: "IPFS failure rate is {{ $value }} for {{ $labels.operation }}"
+          runbook_url: "https://docs.privachain.org/runbooks/ipfs-failures"
+
+      # No IPFS Operations
+      - alert: NoIPFSOperations
+        expr: rate(privachain_ipfs_operations_total[10m]) == 0
+        for: 10m
+        labels:
+          severity: warning
+          component: ipfs
+        annotations:
+          summary: "No IPFS operations detected"
+          description: "No IPFS operations have been recorded for 10 minutes"
+          runbook_url: "https://docs.privachain.org/runbooks/no-ipfs-operations"
+
+  - name: privachain.dependencies
+    interval: 30s
+    rules:
+      # Database Connection Issues
+      - alert: DatabaseConnectionIssues
+        expr: privachain_db_connection_pool{state="active"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "No active database connections"
+          description: "Database connection pool has no active connections"
+          runbook_url: "https://docs.privachain.org/runbooks/database-connection-issues"
+
+      # No Connected Peers
+      - alert: NoConnectedPeers
+        expr: privachain_connected_peers == 0
+        for: 5m
+        labels:
+          severity: warning
+          component: networking
+        annotations:
+          summary: "No connected peers in {{ $labels.network }}"
+          description: "No peers are connected to the {{ $labels.network }} network"
+          runbook_url: "https://docs.privachain.org/runbooks/no-connected-peers"
+
+      # Queue Backlog
+      - alert: HighQueueBacklog
+        expr: privachain_queue_size > 1000
+        for: 3m
+        labels:
+          severity: warning
+          component: queue
+        annotations:
+          summary: "High queue backlog in {{ $labels.queue_name }}"
+          description: "Queue size is {{ $value }} items"
+          runbook_url: "https://docs.privachain.org/runbooks/high-queue-backlog"

@@ -1,0 +1,246 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "PrivaChain System Health Dashboard",
+    "description": "Comprehensive monitoring dashboard for PrivaChain system health, performance, and privacy metrics",
+    "tags": ["privachain", "monitoring", "health", "privacy"],
+    "style": "dark",
+    "timezone": "browser",
+    "refresh": "30s",
+    "schemaVersion": 30,
+    "version": 1,
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "System Health Overview",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "privachain_health_status",
+            "legendFormat": "Health Status"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "yellow", "value": 1},
+                {"color": "green", "value": 2}
+              ]
+            },
+            "mappings": [
+              {"options": {"0": {"text": "Unhealthy", "color": "red"}}},
+              {"options": {"1": {"text": "Degraded", "color": "yellow"}}},
+              {"options": {"2": {"text": "Healthy", "color": "green"}}}
+            ]
+          }
+        },
+        "gridPos": {"h": 6, "w": 6, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "System Uptime",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "time() - process_start_time_seconds",
+            "legendFormat": "Uptime"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "color": {"mode": "continuous-GrYlRd"}
+          }
+        },
+        "gridPos": {"h": 6, "w": 6, "x": 6, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Active Connections",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "privachain_active_connections",
+            "legendFormat": "{{type}}"
+          }
+        ],
+        "gridPos": {"h": 6, "w": 6, "x": 12, "y": 0}
+      },
+      {
+        "id": 4,
+        "title": "Connected Peers",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "privachain_connected_peers",
+            "legendFormat": "{{network}}"
+          }
+        ],
+        "gridPos": {"h": 6, "w": 6, "x": 18, "y": 0}
+      },
+      {
+        "id": 5,
+        "title": "HTTP Request Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(privachain_http_requests_total[5m])",
+            "legendFormat": "{{method}} {{endpoint}} - {{status_code}}"
+          }
+        ],
+        "yAxes": [
+          {"label": "Requests/sec", "min": 0}
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6}
+      },
+      {
+        "id": 6,
+        "title": "HTTP Request Duration",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(privachain_http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(privachain_http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "50th percentile"
+          }
+        ],
+        "yAxes": [
+          {"label": "Duration (s)", "min": 0}
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6}
+      },
+      {
+        "id": 7,
+        "title": "Error Rate by Component",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(privachain_errors_by_component_total[5m])",
+            "legendFormat": "{{component}} - {{error_type}}"
+          }
+        ],
+        "yAxes": [
+          {"label": "Errors/sec", "min": 0}
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 14}
+      },
+      {
+        "id": 8,
+        "title": "Memory Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "process_resident_memory_bytes",
+            "legendFormat": "Resident Memory"
+          },
+          {
+            "expr": "nodejs_heap_size_used_bytes",
+            "legendFormat": "Heap Used"
+          },
+          {
+            "expr": "nodejs_heap_size_total_bytes",
+            "legendFormat": "Heap Total"
+          }
+        ],
+        "yAxes": [
+          {"label": "Bytes", "min": 0}
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 14}
+      },
+      {
+        "id": 9,
+        "title": "Privacy Metrics - Dummy/Real Ratio",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "privachain_dummy_real_ratio",
+            "legendFormat": "{{component}}"
+          }
+        ],
+        "yAxes": [
+          {"label": "Ratio", "min": 0, "max": 1}
+        ],
+        "thresholds": [
+          {"value": 0.7, "colorMode": "critical", "op": "lt"}
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 22}
+      },
+      {
+        "id": 10,
+        "title": "Proof Generation Time",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(privachain_proof_generation_time_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile - {{proof_type}}"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(privachain_proof_generation_time_seconds_bucket[5m]))",
+            "legendFormat": "50th percentile - {{proof_type}}"
+          }
+        ],
+        "yAxes": [
+          {"label": "Duration (s)", "min": 0}
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 22}
+      },
+      {
+        "id": 11,
+        "title": "Network Latency",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(privachain_network_latency_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile - {{target}}"
+          }
+        ],
+        "yAxes": [
+          {"label": "Latency (s)", "min": 0}
+        ],
+        "thresholds": [
+          {"value": 1, "colorMode": "critical", "op": "gt"}
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 30}
+      },
+      {
+        "id": 12,
+        "title": "IPFS Operations",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(privachain_ipfs_operations_total[5m])",
+            "legendFormat": "{{operation}} - {{status}}"
+          }
+        ],
+        "yAxes": [
+          {"label": "Operations/sec", "min": 0}
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 30}
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "environment",
+          "type": "query",
+          "query": "label_values(environment)",
+          "refresh": 1,
+          "includeAll": false,
+          "multi": false
+        }
+      ]
+    }
+  }
+}
