@@ -12,7 +12,40 @@
   "video_force_turn": true,
   "search_result_padding": "roundUpTo5",
   "high_privacy_cover_ratio_target": 0.30,
-  "_schema_version": "1.0",
-  "_description": "Privacy and anonymity layer configuration for PrivaChain Spark",
-  "_last_updated": "2025-08-11T00:00:00Z"
+  "onion_routing": {
+    "min_hops": 3,
+    "max_hops": 5,
+    "circuit_rotation_interval": 600,
+    "circuit_rebuild_after_messages": 50,
+    "ephemeral_key_algorithm": "X25519",
+    "post_quantum_kem": "CRYSTALS-Kyber",
+    "padding_size_bytes": 1024,
+    "dummy_message_ratio": 0.3,
+    "circuit_timeout_seconds": 300,
+    "max_concurrent_circuits": 10,
+    "relay_selection_policy": {
+      "min_reputation_score": 80,
+      "geographic_diversity": true,
+      "avoid_same_asn": true,
+      "bandwidth_threshold_mbps": 100
+    }
+  },
+  "tor_integration": {
+    "enabled": true,
+    "socks5_proxy": {
+      "host": "127.0.0.1",
+      "port": 9050
+    },
+    "fallback_to_custom_routing": true,
+    "tor_bridge_support": true
+  },
+  "monitoring": {
+    "circuit_health_check_interval": 60,
+    "failure_rate_threshold": 0.1,
+    "latency_threshold_ms": 5000,
+    "bandwidth_monitoring": true
+  },
+  "_schema_version": "2.0",
+  "_description": "Privacy and anonymity layer configuration for PrivaChain Spark with full onion routing",
+  "_last_updated": "2025-01-15T00:00:00Z"
 }
