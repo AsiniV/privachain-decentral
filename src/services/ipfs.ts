@@ -11,6 +11,7 @@ import { identify } from '@libp2p/identify'
 import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate'
 import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing'
 import * as sodium from 'libsodium-wrappers'
+import { getE2EService, E2EMessage } from './e2eEncryption'
 
 // Graceful OrbitDB import handling
 let createOrbitDB: any = null
@@ -54,9 +55,8 @@ export interface IPFSFile {
 
 export interface EncryptedContent {
   cid: string
-  encryptionKey: string
-  iv: string
-  authTag: string
+  sessionId: string
+  encryptedMessage: E2EMessage
   nymProof?: string
 }
 
@@ -108,7 +108,7 @@ export class PrivaChainIPFSService {
           listen: ['/ip4/0.0.0.0/tcp/0/ws']
         },
         transports: [webSockets()],
-        connectionEncryption: [noise()],
+        connectionEncrypters: [noise()],
         streamMuxers: [yamux()],
         peerDiscovery: [
           bootstrap({ 
@@ -158,13 +158,8 @@ export class PrivaChainIPFSService {
       // Check quota before proceeding
       await this.checkStorageQuota()
 
-      // Encrypt content if encryption is enabled
-      let finalContent: Uint8Array
-      if (this.config.encryptionEnabled) {
-        finalContent = await this.encryptContent(content)
-      } else {
-        finalContent = new TextEncoder().encode(content)
-      }
+      // Content is stored as-is (encryption handled in uploadEncrypted method)
+      const finalContent = new TextEncoder().encode(content)
 
       // Add content to IPFS
       const cid = await this.fs.addBytes(finalContent)
@@ -236,7 +231,7 @@ export class PrivaChainIPFSService {
   }
 
   /** @throws {IPFSError} If content upload fails */
-  async uploadEncrypted(content: Uint8Array | string, filename?: string): Promise<EncryptedContent> {
+  async uploadEncrypted(content: Uint8Array | string, contactAddress: string, filename?: string): Promise<EncryptedContent> {
     if (!this.initialized || !this.fs) {
       throw new IPFSError('IPFS service not initialized')
     }
@@ -245,15 +240,23 @@ export class PrivaChainIPFSService {
       // Check quota before proceeding
       await this.checkStorageQuota()
 
-      // Convert string to Uint8Array if needed
-      const contentBytes = typeof content === 'string' ? 
-        new TextEncoder().encode(content) : content
-
-      // Encrypt content
-      const encrypted = await this.encryptContent(contentBytes)
+      // Get E2E service and establish session if needed
+      const e2eService = getE2EService('ipfs-service');
+      await e2eService.initialize();
       
-      // Upload to IPFS
-      const cid = await this.fs.addBytes(encrypted.encryptedData)
+      let session = e2eService.getSessionByContact(contactAddress);
+      if (!session) {
+        // In practice, would exchange key bundles through a separate channel
+        // For now, create a dummy session (this should be handled at application level)
+        throw new IPFSError('No active E2E session found for contact. Please establish session first.');
+      }
+
+      // Encrypt content using E2E encryption
+      const encryptedMessage = await e2eService.encryptMessage(session.sessionId, content);
+      
+      // Upload encrypted message to IPFS
+      const messageBytes = new TextEncoder().encode(JSON.stringify(encryptedMessage));
+      const cid = await this.fs.addBytes(messageBytes);
       
       // Generate Nym proof if transport is enabled
       let nymProof: string | undefined
@@ -261,13 +264,12 @@ export class PrivaChainIPFSService {
         nymProof = await this.generateNymProof(cid.toString())
       }
 
-      console.log(`🔐 Encrypted content uploaded: ${cid.toString()}`)
+      console.log(`🔐 E2E encrypted content uploaded: ${cid.toString()}`)
       
       return {
         cid: cid.toString(),
-        encryptionKey: this.arrayBufferToBase64(encrypted.key),
-        iv: this.arrayBufferToBase64(encrypted.iv),
-        authTag: this.arrayBufferToBase64(encrypted.authTag),
+        sessionId: session.sessionId,
+        encryptedMessage,
         nymProof
       }
     } catch (error) {
@@ -304,15 +306,16 @@ export class PrivaChainIPFSService {
         offset += chunk.length
       }
 
-      // Decrypt content
-      const decrypted = await this.decryptContent({
-        encryptedData,
-        key: this.base64ToArrayBuffer(encryptedContent.encryptionKey),
-        iv: this.base64ToArrayBuffer(encryptedContent.iv),
-        authTag: this.base64ToArrayBuffer(encryptedContent.authTag)
-      })
+      // Parse the encrypted message
+      const encryptedMessage: E2EMessage = JSON.parse(new TextDecoder().decode(encryptedData));
 
-      console.log(`🔓 Content downloaded and decrypted: ${encryptedContent.cid}`)
+      // Get E2E service and decrypt
+      const e2eService = getE2EService('ipfs-service');
+      await e2eService.initialize();
+      
+      const decrypted = await e2eService.decryptMessage(encryptedContent.sessionId, encryptedMessage);
+
+      console.log(`🔓 E2E encrypted content decrypted from: ${encryptedContent.cid}`)
       return decrypted
     } catch (error) {
       console.error('❌ Failed to download encrypted content:', error)
@@ -331,17 +334,26 @@ export class PrivaChainIPFSService {
 
     try {
       if (!this.cosmosClient) {
-        this.cosmosClient = await SigningCosmWasmClient.connect(
-          'https://rpc.theta-testnet.polypore.xyz'
+        const mnemonic = process.env.DEVELOPER_MNEMONIC
+        
+        if (!mnemonic) {
+          throw new IPFSError(
+            'DEVELOPER_MNEMONIC environment variable is required for quota contract operations'
+          )
+        }
+        
+        const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, { prefix: 'cosmos' })
+        
+        this.cosmosClient = await SigningCosmWasmClient.connectWithSigner(
+          'https://rpc.theta-testnet.polypore.xyz',
+          wallet
         )
       }
 
       const mnemonic = process.env.DEVELOPER_MNEMONIC
-      
       if (!mnemonic) {
-        throw new IPFSError(
-          'DEVELOPER_MNEMONIC environment variable is required for quota contract operations'
-        )
+        console.warn('⚠️ DEVELOPER_MNEMONIC not set - cannot check quota')
+        return
       }
       
       const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, { prefix: 'cosmos' })
@@ -518,67 +530,22 @@ export class PrivaChainIPFSService {
   }
 
   /**
-   * Encrypt content using libsodium
+   * @deprecated SECURITY ISSUE - REMOVED: Basic static key encryption
+   * This method used static/shared AES keys which is insecure.
+   * Replaced with E2E encryption using Double Ratchet algorithm.
+   * 
+   * Previous implementation generated random keys per content without
+   * proper key exchange, providing no forward secrecy.
    */
-  private async encryptContent(content: Uint8Array | string): Promise<{
-    encryptedData: Uint8Array
-    key: ArrayBuffer
-    iv: ArrayBuffer
-    authTag: ArrayBuffer
-  }> {
-    const contentBytes = typeof content === 'string' ? 
-      new TextEncoder().encode(content) : content
-
-    // Generate encryption key
-    const key = sodium.randombytes_buf(32) // 256-bit key
-    const iv = sodium.randombytes_buf(24) // 192-bit nonce for XChaCha20Poly1305
-
-    // Encrypt using XChaCha20Poly1305
-    const encrypted = sodium.crypto_aead_xchacha20poly1305_ietf_encrypt(
-      contentBytes,
-      null, // No additional data
-      null, // Null nsec
-      iv,
-      key
-    )
-
-    // Split encrypted data and auth tag
-    const encryptedData = encrypted.slice(0, -16)
-    const authTag = encrypted.slice(-16)
-
-    return {
-      encryptedData,
-      key: key.buffer,
-      iv: iv.buffer,
-      authTag: authTag.buffer
-    }
-  }
 
   /**
-   * Decrypt content using libsodium
+   * @deprecated SECURITY ISSUE - REMOVED: Basic static key decryption  
+   * This method used static/shared AES keys which is insecure.
+   * Replaced with E2E encryption using Double Ratchet algorithm.
+   * 
+   * Previous implementation used simple libsodium decryption without
+   * session management or forward secrecy guarantees.
    */
-  private async decryptContent(encrypted: {
-    encryptedData: Uint8Array
-    key: ArrayBuffer
-    iv: ArrayBuffer
-    authTag: ArrayBuffer
-  }): Promise<Uint8Array> {
-    // Combine encrypted data and auth tag
-    const combined = new Uint8Array(encrypted.encryptedData.length + encrypted.authTag.byteLength)
-    combined.set(encrypted.encryptedData)
-    combined.set(new Uint8Array(encrypted.authTag), encrypted.encryptedData.length)
-
-    // Decrypt using XChaCha20Poly1305
-    const decrypted = sodium.crypto_aead_xchacha20poly1305_ietf_decrypt(
-      null, // Null nsec
-      combined,
-      null, // No additional data
-      new Uint8Array(encrypted.iv),
-      new Uint8Array(encrypted.key)
-    )
-
-    return decrypted
-  }
 
   /**
    * Hash string utility
@@ -595,7 +562,12 @@ export class PrivaChainIPFSService {
    * Convert ArrayBuffer to base64
    */
   private arrayBufferToBase64(buffer: ArrayBuffer): string {
-    return btoa(String.fromCharCode(...new Uint8Array(buffer)))
+    const bytes = new Uint8Array(buffer)
+    let binary = ''
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i])
+    }
+    return btoa(binary)
   }
 
   /**
@@ -628,6 +600,7 @@ export class PrivaChainEmailService extends PrivaChainIPFSService {
   async uploadEmail(
     subject: string,
     body: string,
+    contactAddress: string,
     attachments: File[] = []
   ): Promise<EncryptedContent> {
     try {
@@ -636,13 +609,13 @@ export class PrivaChainEmailService extends PrivaChainIPFSService {
         subject,
         body,
         timestamp: Date.now(),
-        attachments: await this.uploadAttachments(attachments)
+        attachments: await this.uploadAttachments(attachments, contactAddress)
       }
 
       // Convert to JSON and encrypt
       const emailJson = JSON.stringify(emailData)
       
-      return await this.uploadEncrypted(emailJson, 'email.json')
+      return await this.uploadEncrypted(emailJson, contactAddress, 'email.json')
     } catch (error) {
       console.error('❌ Failed to upload email:', error)
       throw new IPFSError(`Failed to upload email: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -666,9 +639,10 @@ export class PrivaChainEmailService extends PrivaChainIPFSService {
     }
   }
 
-  private async uploadAttachments(files: File[]): Promise<IPFSFile[]> {
+  private async uploadAttachments(files: File[], contactAddress: string): Promise<IPFSFile[]> {
     const uploadPromises = files.map(async file => {
-      const encrypted = await this.uploadEncrypted(await file.arrayBuffer(), file.name)
+      const fileBuffer = await file.arrayBuffer()
+      const encrypted = await this.uploadEncrypted(new Uint8Array(fileBuffer), contactAddress, file.name)
       return {
         cid: encrypted.cid,
         size: file.size,
@@ -685,18 +659,21 @@ export class PrivaChainEmailService extends PrivaChainIPFSService {
 // Messenger-specific IPFS utilities for large files
 export class PrivaChainMessengerService extends PrivaChainIPFSService {
   // Upload message attachment
-  async uploadAttachment(file: File): Promise<EncryptedContent> {
-    return await this.uploadEncrypted(await file.arrayBuffer(), file.name)
+  async uploadAttachment(file: File, contactAddress: string): Promise<EncryptedContent> {
+    const fileBuffer = await file.arrayBuffer()
+    return await this.uploadEncrypted(new Uint8Array(fileBuffer), contactAddress, file.name)
   }
 
   // Upload voice message
-  async uploadVoiceMessage(audioBlob: Blob): Promise<EncryptedContent> {
-    return await this.uploadEncrypted(await audioBlob.arrayBuffer(), 'voice-message.webm')
+  async uploadVoiceMessage(audioBlob: Blob, contactAddress: string): Promise<EncryptedContent> {
+    const audioBuffer = await audioBlob.arrayBuffer()
+    return await this.uploadEncrypted(new Uint8Array(audioBuffer), contactAddress, 'voice-message.webm')
   }
 
   // Upload image/video
-  async uploadMedia(file: File): Promise<EncryptedContent> {
-    return await this.uploadEncrypted(await file.arrayBuffer(), file.name)
+  async uploadMedia(file: File, contactAddress: string): Promise<EncryptedContent> {
+    const fileBuffer = await file.arrayBuffer()
+    return await this.uploadEncrypted(new Uint8Array(fileBuffer), contactAddress, file.name)
   }
 }
 

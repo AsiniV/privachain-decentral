@@ -63,6 +63,8 @@
         "@libp2p/ping": "^2.0.37",
         "@libp2p/webrtc": "^5.2.24",
         "@libp2p/websockets": "^9.2.18",
+        "@noble/ciphers": "^2.0.0",
+        "@noble/curves": "^2.0.0",
         "@noble/hashes": "^1.8.0",
         "@octokit/core": "^7.0.3",
         "@orbitdb/core": "^3.0.2",
