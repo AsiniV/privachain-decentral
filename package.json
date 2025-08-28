@@ -118,7 +118,7 @@
         "input-otp": "^1.4.2",
         "ipfs-http-client": "^60.0.1",
         "kyber-crystals": "^1.0.7",
-        "libp2p": "^2.9.0",
+        "libp2p": "^2.10.0",
         "libsodium-wrappers": "^0.7.15",
         "lucide-react": "^0.542.0",
         "marked": "^16.2.1",
