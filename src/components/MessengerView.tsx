@@ -8,13 +8,16 @@ import { Avatar, AvatarFallback } from './ui/avatar'
 import { ScrollArea } from './ui/scroll-area'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip'
 import { useVideoCall } from './VideoCallProvider'
+import { getE2EService } from '../services/e2eEncryption'
 import { 
   PaperPlaneTilt, 
   Lock, 
   VideoCamera, 
   PhoneCall,
   DotsThree,
-  User
+  User,
+  ShieldCheck,
+  ShieldWarning
 } from '@phosphor-icons/react'
 import { cn } from '../lib/utils'
 import { toast } from 'sonner'
@@ -25,6 +28,7 @@ interface Message {
   content: string
   timestamp: number
   encrypted: boolean
+  sessionSecure: boolean
   type: 'text' | 'system'
 }
 
@@ -65,12 +69,63 @@ export function MessengerView() {
   
   const [selectedContact, setSelectedContact] = useKV<string | null>('selected-contact', null)
   const [newMessage, setNewMessage] = useState('')
+  const [sessionStatus, setSessionStatus] = useState<Record<string, boolean>>({})
   const messagesEndRef = useRef<HTMLDivElement>(null)
   
   const selectedContactData = contacts.find(c => c.id === selectedContact)
   
   // Use video call hook
   const { initiateCall, isInCall } = useVideoCall()
+
+  // Initialize E2E service and check sessions
+  useEffect(() => {
+    const initializeE2E = async () => {
+      try {
+        const e2eService = getE2EService('messenger-user')
+        await e2eService.initialize()
+        
+        // Check session status for all contacts
+        const status: Record<string, boolean> = {}
+        for (const contact of contacts) {
+          const session = e2eService.getSessionByContact(contact.address)
+          status[contact.id] = session !== null && session.isActive
+        }
+        setSessionStatus(status)
+      } catch (error) {
+        console.error('❌ Failed to initialize E2E service:', error)
+        toast.error('Failed to initialize secure messaging')
+      }
+    }
+    
+    initializeE2E()
+  }, [contacts])
+
+  // Establish session for new contact
+  const establishSession = async (contactAddress: string) => {
+    try {
+      const e2eService = getE2EService('messenger-user')
+      
+      // Generate key bundle for session establishment
+      const keyBundle = await e2eService.generateKeyBundle()
+      
+      // In a real implementation, this would be exchanged through a secure channel
+      // For demo purposes, we'll create a mock session
+      const sessionId = await e2eService.establishSession(contactAddress, keyBundle)
+      
+      // Update session status
+      const contactId = contacts.find(c => c.address === contactAddress)?.id
+      if (contactId) {
+        setSessionStatus(prev => ({ ...prev, [contactId]: true }))
+        toast.success(`Secure session established with ${contactAddress}`)
+      }
+      
+      return sessionId
+    } catch (error) {
+      console.error('❌ Failed to establish session:', error)
+      toast.error('Failed to establish secure session')
+      return null
+    }
+  }
 
   const initiateVideoCall = () => {
     if (selectedContactData) {
@@ -84,34 +139,63 @@ export function MessengerView() {
     }
   }
 
-  const sendMessage = () => {
-    if (!newMessage.trim() || !selectedContact) return
+  const sendMessage = async () => {
+    if (!newMessage.trim() || !selectedContact || !selectedContactData) return
 
-    const message: Message = {
-      id: Date.now().toString(),
-      sender: 'me',
-      content: newMessage,
-      timestamp: Date.now(),
-      encrypted: true,
-      type: 'text'
-    }
+    try {
+      const e2eService = getE2EService('messenger-user')
+      let session = e2eService.getSessionByContact(selectedContactData.address)
+      
+      // Establish session if it doesn't exist
+      if (!session) {
+        const sessionId = await establishSession(selectedContactData.address)
+        if (!sessionId) {
+          toast.error('Cannot send message: No secure session')
+          return
+        }
+        session = e2eService.getSessionByContact(selectedContactData.address)
+      }
 
-    setMessages(current => [...current, message])
-    setNewMessage('')
-    
-    toast.success('Message sent with E2E encryption')
+      if (!session) {
+        toast.error('Failed to establish secure session')
+        return
+      }
 
-    setTimeout(() => {
-      const response: Message = {
-        id: (Date.now() + 1).toString(),
-        sender: selectedContactData?.name || 'User',
-        content: `Thanks for your message! This is a demo response.`,
+      // Encrypt message using E2E encryption
+      const encryptedMessage = await e2eService.encryptMessage(session.sessionId, newMessage)
+
+      const message: Message = {
+        id: Date.now().toString(),
+        sender: 'me',
+        content: newMessage,
         timestamp: Date.now(),
         encrypted: true,
+        sessionSecure: true,
         type: 'text'
       }
-      setMessages(current => [...current, response])
-    }, 1000)
+
+      setMessages(current => [...current, message])
+      setNewMessage('')
+      
+      toast.success('Message sent with E2E encryption')
+
+      // Simulate encrypted response
+      setTimeout(() => {
+        const response: Message = {
+          id: (Date.now() + 1).toString(),
+          sender: selectedContactData.name,
+          content: `Thanks for your secure message! Session ID: ${session!.sessionId.slice(-8)}`,
+          timestamp: Date.now(),
+          encrypted: true,
+          sessionSecure: true,
+          type: 'text'
+        }
+        setMessages(current => [...current, response])
+      }, 1000)
+    } catch (error) {
+      console.error('❌ Failed to send encrypted message:', error)
+      toast.error('Failed to send encrypted message')
+    }
   }
 
   const contactMessages = messages.filter(m => 
@@ -175,9 +259,30 @@ export function MessengerView() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <p className="font-medium truncate">{contact.name}</p>
-                      <Badge variant="outline" className="font-mono text-xs">
-                        {contact.address}
-                      </Badge>
+                      <div className="flex items-center gap-1">
+                        {sessionStatus[contact.id] ? (
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <ShieldCheck className="w-4 h-4 text-green-600" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Secure E2E session active</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <ShieldWarning className="w-4 h-4 text-yellow-600" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>No secure session - will establish on first message</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                        <Badge variant="outline" className="font-mono text-xs">
+                          {contact.address}
+                        </Badge>
+                      </div>
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {contact.online ? 'Online' : `Last seen ${new Date(contact.lastSeen).toLocaleDateString()}`}
@@ -204,8 +309,17 @@ export function MessengerView() {
                   <div>
                     <h3 className="font-semibold">{selectedContactData.name}</h3>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Lock className="w-3 h-3" />
-                      <span>End-to-end encrypted</span>
+                      {sessionStatus[selectedContact] ? (
+                        <>
+                          <ShieldCheck className="w-3 h-3 text-green-600" />
+                          <span>End-to-end encrypted • Session active</span>
+                        </>
+                      ) : (
+                        <>
+                          <ShieldWarning className="w-3 h-3 text-yellow-600" />
+                          <span>End-to-end encrypted • Session establishing...</span>
+                        </>
+                      )}
                       {isInCall && (
                         <>
                           <span>•</span>
@@ -282,7 +396,15 @@ export function MessengerView() {
                     )}>
                       <p>{message.content}</p>
                       <div className="flex items-center gap-1 mt-1 text-xs opacity-70">
-                        {message.encrypted && <Lock className="w-3 h-3" />}
+                        {message.encrypted && (
+                          <>
+                            {message.sessionSecure ? (
+                              <ShieldCheck className="w-3 h-3 text-green-600" />
+                            ) : (
+                              <Lock className="w-3 h-3" />
+                            )}
+                          </>
+                        )}
                         <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
                       </div>
                     </div>
