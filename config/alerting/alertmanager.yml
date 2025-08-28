@@ -1,0 +1,178 @@
+# Alertmanager Configuration for PrivaChain
+# Configure notification channels and routing for alerts
+
+global:
+  # Global SMTP settings for email notifications
+  smtp_smarthost: '${SMTP_HOST:-localhost:587}'
+  smtp_from: '${ALERT_FROM_EMAIL:-alerts@privachain.org}'
+  smtp_auth_username: '${SMTP_USERNAME}'
+  smtp_auth_password: '${SMTP_PASSWORD}'
+  smtp_require_tls: true
+
+  # Global Slack webhook (if using Slack)
+  slack_api_url: '${SLACK_WEBHOOK_URL}'
+
+# Template files for custom notification formatting
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Routing configuration
+route:
+  group_by: ['alertname', 'cluster', 'environment']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+  receiver: 'default'
+  
+  routes:
+    # Critical alerts go to on-call immediately
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 0s
+      repeat_interval: 5m
+      continue: true
+
+    # Privacy-related alerts get special handling
+    - match:
+        component: privacy
+      receiver: 'privacy-team'
+      group_interval: 5m
+      repeat_interval: 30m
+      continue: true
+
+    # System health alerts
+    - match_re:
+        alertname: 'System.*'
+      receiver: 'ops-team'
+      repeat_interval: 15m
+
+    # Performance alerts (less urgent)
+    - match:
+        severity: warning
+      receiver: 'monitoring-team'
+      group_interval: 30m
+      repeat_interval: 2h
+
+# Inhibition rules to reduce noise
+inhibit_rules:
+  # Don't alert on individual service issues if the whole system is down
+  - source_match:
+      alertname: 'SystemUnhealthy'
+    target_match_re:
+      alertname: '(HighErrorRate|HighLatency|DatabaseConnectionIssues)'
+    equal: ['cluster', 'environment']
+
+  # Don't alert on memory warnings if we already have critical memory alerts
+  - source_match:
+      alertname: 'CriticalMemoryUsage'
+    target_match:
+      alertname: 'HighMemoryUsage'
+    equal: ['instance']
+
+# Notification receivers
+receivers:
+  - name: 'default'
+    email_configs:
+      - to: '${DEFAULT_EMAIL:-ops@privachain.org}'
+        subject: 'PrivaChain Alert: {{ .GroupLabels.alertname }}'
+        body: |
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Severity: {{ .Labels.severity }}
+          Component: {{ .Labels.component }}
+          Environment: {{ .Labels.environment }}
+          Runbook: {{ .Annotations.runbook_url }}
+          {{ end }}
+
+  - name: 'critical-alerts'
+    email_configs:
+      - to: '${ONCALL_EMAIL:-oncall@privachain.org}'
+        subject: '🚨 CRITICAL: PrivaChain {{ .GroupLabels.alertname }}'
+        body: |
+          CRITICAL ALERT REQUIRES IMMEDIATE ATTENTION
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Component: {{ .Labels.component }}
+          Environment: {{ .Labels.environment }}
+          Time: {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
+          Runbook: {{ .Annotations.runbook_url }}
+          {{ end }}
+        headers:
+          X-Priority: '1'
+          Importance: 'high'
+    
+    slack_configs:
+      - channel: '#alerts-critical'
+        title: '🚨 Critical PrivaChain Alert'
+        text: |
+          *{{ .GroupLabels.alertname }}*
+          {{ range .Alerts }}
+          • {{ .Annotations.summary }}
+          • Severity: {{ .Labels.severity }}
+          • Component: {{ .Labels.component }}
+          • <{{ .Annotations.runbook_url }}|Runbook>
+          {{ end }}
+        color: 'danger'
+        send_resolved: true
+
+    # PagerDuty integration (uncomment if using PagerDuty)
+    # pagerduty_configs:
+    #   - service_key: '${PAGERDUTY_SERVICE_KEY}'
+    #     description: 'PrivaChain Critical Alert: {{ .GroupLabels.alertname }}'
+    #     severity: 'critical'
+
+  - name: 'privacy-team'
+    email_configs:
+      - to: '${PRIVACY_TEAM_EMAIL:-privacy@privachain.org}'
+        subject: '🔒 Privacy Alert: {{ .GroupLabels.alertname }}'
+        body: |
+          Privacy-related alert detected:
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Component: {{ .Labels.component }}
+          Current Value: {{ .Labels.value }}
+          {{ end }}
+
+    slack_configs:
+      - channel: '#privacy-alerts'
+        title: '🔒 Privacy Alert'
+        text: |
+          {{ range .Alerts }}
+          *{{ .Annotations.summary }}*
+          Component: {{ .Labels.component }}
+          {{ .Annotations.description }}
+          {{ end }}
+        color: 'warning'
+
+  - name: 'ops-team'
+    email_configs:
+      - to: '${OPS_TEAM_EMAIL:-ops@privachain.org}'
+        subject: 'PrivaChain Ops Alert: {{ .GroupLabels.alertname }}'
+        
+    slack_configs:
+      - channel: '#ops-alerts'
+        title: 'PrivaChain System Alert'
+        text: |
+          {{ range .Alerts }}
+          *{{ .Annotations.summary }}*
+          {{ .Annotations.description }}
+          {{ end }}
+
+  - name: 'monitoring-team'
+    email_configs:
+      - to: '${MONITORING_TEAM_EMAIL:-monitoring@privachain.org}'
+        subject: 'PrivaChain Monitoring: {{ .GroupLabels.alertname }}'
+        
+    slack_configs:
+      - channel: '#monitoring'
+        title: 'Performance Alert'
+        text: |
+          {{ range .Alerts }}
+          {{ .Annotations.summary }}
+          {{ end }}
