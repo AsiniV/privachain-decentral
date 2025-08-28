@@ -18,7 +18,10 @@ let createOrbitDB: any = null
 try {
   // Try to import OrbitDB dynamically
   import('@orbitdb/core').then(module => {
-    createOrbitDB = module.create || module.default?.create || module.default
+    createOrbitDB = module.createOrbitDB
+    if (!createOrbitDB) {
+      console.warn('⚠️ OrbitDB createOrbitDB function not found in module')
+    }
   }).catch(() => {
     console.warn('⚠️ OrbitDB not available, indexing features will be limited')
   })

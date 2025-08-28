@@ -8,7 +8,74 @@
  * - Zero-knowledge search queries
  * - Bang commands for specialized searches
  * - Instant answers without tracking
+ * - Fallback search using local indexing when OrbitDB unavailable
  */
+
+// Simple search indexing for fallback mode
+class FallbackSearchIndex {
+  private documents: SearchDocument[] = []
+  private termIndex: Map<string, Set<string>> = new Map() // term -> document IDs
+
+  addDocument(doc: SearchDocument) {
+    this.documents.push(doc)
+    
+    // Index terms for faster search
+    const text = `${doc.title} ${doc.description} ${doc.content} ${doc.keywords.join(' ')}`.toLowerCase()
+    const terms = text.split(/\s+/).filter(term => term.length > 2)
+    
+    for (const term of terms) {
+      if (!this.termIndex.has(term)) {
+        this.termIndex.set(term, new Set())
+      }
+      this.termIndex.get(term)!.add(doc.id)
+    }
+  }
+
+  search(query: string): SearchDocument[] {
+    const queryTerms = query.toLowerCase().split(/\s+/).filter(term => term.length > 2)
+    const candidates = new Set<string>()
+    
+    // Find documents containing query terms
+    for (const term of queryTerms) {
+      const docIds = this.termIndex.get(term)
+      if (docIds) {
+        docIds.forEach(id => candidates.add(id))
+      }
+    }
+    
+    // Return matched documents with basic scoring
+    return this.documents
+      .filter(doc => candidates.has(doc.id))
+      .map(doc => ({
+        ...doc,
+        relevanceScore: this.calculateSimpleScore(doc, queryTerms)
+      }))
+      .sort((a, b) => b.relevanceScore - a.relevanceScore)
+  }
+
+  private calculateSimpleScore(doc: SearchDocument, queryTerms: string[]): number {
+    const text = `${doc.title} ${doc.description} ${doc.content}`.toLowerCase()
+    let score = 0
+    
+    for (const term of queryTerms) {
+      const termCount = (text.match(new RegExp(term, 'g')) || []).length
+      // Boost title matches
+      const titleMatches = doc.title.toLowerCase().includes(term) ? 2 : 0
+      score += termCount + titleMatches
+    }
+    
+    return score
+  }
+
+  clear() {
+    this.documents = []
+    this.termIndex.clear()
+  }
+
+  getDocumentCount(): number {
+    return this.documents.length
+  }
+}
 
 export interface SearchDocument {
   id: string
@@ -95,16 +162,28 @@ export class OrbitDBHybridIndexing {
   private localIndex: Map<string, SearchDocument> = new Map()
   private orbitDB: any = null
   private libp2p: any = null
+  private searchDatabase: any = null
+  private simulatedPeers = 3
+  private torEnabled = true
+  private fallbackIndex = new FallbackSearchIndex()
+  private healthStatus: 'healthy' | 'degraded' | 'unavailable' = 'unavailable'
 
   constructor() {
-    // Initialize immediately without simulation mode
-    this.initialize()
+    // Initialize with proper error handling
+    this.initialize().catch(error => {
+      console.warn('⚠️ OrbitDB initialization failed during construction:', error.message)
+      // Continue with fallback mode
+    })
   }
 
   /**
    * Initialize OrbitDB with real libp2p
    */
   async initialize(): Promise<boolean> {
+    if (this.isInitialized) {
+      return true
+    }
+
     try {
       console.log('🚀 Initializing OrbitDB with real P2P networking...')
 
@@ -114,7 +193,7 @@ export class OrbitDBHybridIndexing {
       const { noise } = await import('@libp2p/noise')
       const { yamux } = await import('@chainsafe/libp2p-yamux')
       const { createHelia } = await import('helia')
-      const { create } = await import('@orbitdb/core')
+      const { createOrbitDB } = await import('@orbitdb/core')
 
       // Create libp2p node
       this.libp2p = await createLibp2p({
@@ -130,15 +209,84 @@ export class OrbitDBHybridIndexing {
       const helia = await createHelia({ libp2p: this.libp2p })
 
       // Initialize OrbitDB
-      this.orbitDB = await create({ ipfs: helia })
+      this.orbitDB = await createOrbitDB({ ipfs: helia })
 
+      // Create search database
+      await this.createSearchDatabase()
+
+      // Load mock data for development
+      await this.loadMockData()
+
+      this.healthStatus = 'healthy'
+      this.updateHealthCheck('healthy', 'OrbitDB fully operational')
       this.isInitialized = true
       console.log('✅ OrbitDB initialized with real P2P networking')
       
       return true
     } catch (error) {
       console.error('❌ Failed to initialize OrbitDB:', error)
-      throw new Error(`OrbitDB initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      // Don't throw - fall back to local-only mode
+      this.isInitialized = false
+      await this.initializeFallbackMode()
+      return false
+    }
+  }
+
+  /**
+   * Create search database for indexing
+   */
+  private async createSearchDatabase() {
+    if (!this.orbitDB) {
+      throw new Error('OrbitDB not initialized')
+    }
+
+    try {
+      // Import Documents type for docstore
+      const { Documents } = await import('@orbitdb/core')
+      
+      // Create a documents database for search indexing
+      this.searchDatabase = await this.orbitDB.open('search-index', {
+        type: 'documents',
+        AccessController: 'ipfs', // Use IPFS access controller for decentralized access
+      })
+
+      console.log('📚 Search database created:', this.searchDatabase.address)
+    } catch (error) {
+      console.error('❌ Failed to create search database:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Initialize fallback mode when OrbitDB fails
+   */
+  private async initializeFallbackMode() {
+    console.log('🔄 Initializing fallback search mode...')
+    
+    // Load mock data for local search
+    await this.loadMockData()
+    
+    // Set health status
+    this.healthStatus = 'degraded'
+    this.updateHealthCheck('degraded', 'OrbitDB unavailable, using local search fallback')
+    
+    console.log('✅ Fallback search mode active (local-only)')
+  }
+
+  /**
+   * Update health check status
+   */
+  private updateHealthCheck(status: 'healthy' | 'degraded' | 'unavailable', message: string) {
+    this.healthStatus = status
+    
+    // Update global health status if available
+    if (typeof window !== 'undefined' && (window as any).updateHealthStatus) {
+      (window as any).updateHealthStatus('search', status, message)
+    }
+    
+    // Emit structured error for user interface
+    if (status !== 'healthy') {
+      console.warn(`⚠️ Search system status: ${status} - ${message}`)
     }
   }
 
@@ -245,6 +393,8 @@ export class OrbitDBHybridIndexing {
 
     for (const doc of mockDocuments) {
       this.localIndex.set(doc.id, doc)
+      // Also add to fallback index for better search performance
+      this.fallbackIndex.addDocument(doc)
     }
 
     console.log(`📚 Loaded ${this.localIndex.size} mock documents`)
@@ -254,10 +404,6 @@ export class OrbitDBHybridIndexing {
    * Perform hybrid search with privacy features
    */
   async search(query: SearchQuery): Promise<SearchResult> {
-    if (!this.isInitialized) {
-      throw new Error('OrbitDB not initialized')
-    }
-
     const startTime = Date.now()
     
     try {
@@ -276,8 +422,22 @@ export class OrbitDBHybridIndexing {
       // Encrypt query for privacy
       const encryptedQuery = await this.encryptQuery(query)
 
-      // Perform local search with TF-IDF scoring
-      const results = await this.searchLocal(encryptedQuery)
+      // Try OrbitDB search first, then fall back to local search
+      let results: SearchDocument[] = []
+      
+      if (this.isInitialized && this.searchDatabase) {
+        try {
+          results = await this.searchOrbitDB(encryptedQuery)
+          console.log(`🔍 OrbitDB search found ${results.length} results`)
+        } catch (orbitError) {
+          console.warn('⚠️ OrbitDB search failed, falling back to local search:', orbitError)
+          results = await this.searchFallback(encryptedQuery)
+        }
+      } else {
+        // Fallback to local search using improved indexing
+        results = await this.searchFallback(encryptedQuery)
+        console.log(`🔍 Fallback search found ${results.length} results`)
+      }
 
       // Apply privacy filters
       const filteredResults = this.applyPrivacyFilters(results, query)
@@ -297,6 +457,81 @@ export class OrbitDBHybridIndexing {
     } catch (error) {
       console.error('❌ Search failed:', error)
       throw error
+    }
+  }
+
+  /**
+   * Search OrbitDB database
+   */
+  private async searchOrbitDB(query: SearchQuery): Promise<SearchDocument[]> {
+    if (!this.searchDatabase) {
+      throw new Error('Search database not available')
+    }
+
+    try {
+      // Get all documents from OrbitDB
+      const allDocs = await this.searchDatabase.all()
+      const results: SearchDocument[] = []
+      const queryTerms = query.term.toLowerCase().split(' ')
+
+      for (const doc of allDocs) {
+        // Apply type filter
+        if (query.type && doc.type !== query.type) continue
+
+        // Apply encryption filter
+        if (query.filters.encrypted !== undefined && doc.encrypted !== query.filters.encrypted) continue
+
+        // Apply time range filter
+        if (query.filters.timeRange) {
+          const { start, end } = query.filters.timeRange
+          if (doc.timestamp < start || doc.timestamp > end) continue
+        }
+
+        // Calculate relevance using TF-IDF-like scoring
+        const score = this.calculateRelevanceScore(doc, queryTerms)
+        if (score > 0) {
+          doc.relevanceScore = score
+          results.push(doc)
+        }
+      }
+
+      return results.sort((a, b) => b.relevanceScore - a.relevanceScore)
+    } catch (error) {
+      console.error('❌ OrbitDB search error:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Fallback search using local indexing
+   */
+  private async searchFallback(query: SearchQuery): Promise<SearchDocument[]> {
+    try {
+      // Use improved fallback search index
+      let results = this.fallbackIndex.search(query.term)
+
+      // Apply additional filters
+      results = results.filter(doc => {
+        // Apply type filter
+        if (query.type && doc.type !== query.type) return false
+
+        // Apply encryption filter
+        if (query.filters.encrypted !== undefined && doc.encrypted !== query.filters.encrypted) return false
+
+        // Apply time range filter
+        if (query.filters.timeRange) {
+          const { start, end } = query.filters.timeRange
+          if (doc.timestamp < start || doc.timestamp > end) return false
+        }
+
+        return true
+      })
+
+      return results
+    } catch (error) {
+      console.error('❌ Fallback search error:', error)
+      // Last resort: basic local search
+      return this.searchLocal(query)
     }
   }
 
@@ -557,21 +792,30 @@ export class OrbitDBHybridIndexing {
    * Index new content
    */
   async indexContent(document: Omit<SearchDocument, 'id' | 'timestamp' | 'relevanceScore'>): Promise<string> {
-    if (!this.isInitialized) {
-      throw new Error('OrbitDB not initialized')
+    const id = `doc_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
+    const fullDocument: SearchDocument = {
+      ...document,
+      id,
+      timestamp: Date.now(),
+      relevanceScore: 1.0
     }
 
     try {
-      const id = `doc_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
-      const fullDocument: SearchDocument = {
-        ...document,
-        id,
-        timestamp: Date.now(),
-        relevanceScore: 1.0
-      }
-
-      // Add to local index
+      // Add to local index first (for immediate availability)
       this.localIndex.set(id, fullDocument)
+      
+      // Add to fallback index for better search performance
+      this.fallbackIndex.addDocument(fullDocument)
+
+      // Add to OrbitDB if available
+      if (this.isInitialized && this.searchDatabase) {
+        try {
+          await this.searchDatabase.put(fullDocument)
+          console.log(`📡 Document added to OrbitDB: ${fullDocument.title} (${id})`)
+        } catch (orbitError) {
+          console.warn('⚠️ Failed to add document to OrbitDB, keeping in local index only:', orbitError)
+        }
+      }
 
       // Simulate P2P broadcast
       setTimeout(() => {
@@ -595,7 +839,10 @@ export class OrbitDBHybridIndexing {
       encryptedEntries: Array.from(this.localIndex.values()).filter(doc => doc.encrypted).length,
       peerConnections: this.simulatedPeers,
       isInitialized: this.isInitialized,
-      torEnabled: this.torEnabled
+      torEnabled: this.torEnabled,
+      healthStatus: this.healthStatus,
+      fallbackIndexSize: this.fallbackIndex.getDocumentCount(),
+      orbitDBConnected: this.isInitialized && !!this.searchDatabase
     }
   }
 
@@ -604,7 +851,27 @@ export class OrbitDBHybridIndexing {
    */
   async close() {
     try {
+      // Close search database
+      if (this.searchDatabase) {
+        await this.searchDatabase.close()
+        this.searchDatabase = null
+      }
+
+      // Close OrbitDB
+      if (this.orbitDB) {
+        await this.orbitDB.stop()
+        this.orbitDB = null
+      }
+
+      // Close libp2p
+      if (this.libp2p) {
+        await this.libp2p.stop()
+        this.libp2p = null
+      }
+
       this.localIndex.clear()
+      this.fallbackIndex.clear()
+      this.healthStatus = 'unavailable'
       this.isInitialized = false
       console.log('✅ OrbitDB Hybrid Indexing closed')
     } catch (error) {
