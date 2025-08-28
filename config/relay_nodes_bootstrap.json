@@ -4,34 +4,121 @@
       "id": "relay-001",
       "endpoint": "wss://relay1.privachain.network",
       "public_key": "ed25519:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "x25519_key": "x25519:1111111111111111111111111111111111111111111=",
+      "kyber_public_key": "kyber:AAAA1111BBBB2222CCCC3333DDDD4444EEEE5555FFFF=",
       "reputation_score": 95,
       "geographic_region": "US-EAST",
-      "capabilities": ["messaging", "email", "video_signaling"]
+      "asn": "AS13335",
+      "bandwidth_mbps": 1000,
+      "latency_ms": 15,
+      "capabilities": ["messaging", "email", "video_signaling", "onion_routing"],
+      "onion_routing": {
+        "layer": 1,
+        "supports_entry": true,
+        "supports_exit": false,
+        "max_circuit_duration": 3600,
+        "padding_support": true
+      }
     },
     {
       "id": "relay-002", 
       "endpoint": "wss://relay2.privachain.network",
       "public_key": "ed25519:BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
+      "x25519_key": "x25519:2222222222222222222222222222222222222222222=",
+      "kyber_public_key": "kyber:BBBB2222CCCC3333DDDD4444EEEE5555FFFF6666AAAA=",
       "reputation_score": 92,
       "geographic_region": "EU-CENTRAL",
-      "capabilities": ["messaging", "email", "search"]
+      "asn": "AS16509",
+      "bandwidth_mbps": 800,
+      "latency_ms": 25,
+      "capabilities": ["messaging", "email", "search", "onion_routing"],
+      "onion_routing": {
+        "layer": 2,
+        "supports_entry": false,
+        "supports_exit": false,
+        "max_circuit_duration": 3600,
+        "padding_support": true
+      }
     },
     {
       "id": "relay-003",
       "endpoint": "wss://relay3.privachain.network", 
       "public_key": "ed25519:CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC=",
+      "x25519_key": "x25519:3333333333333333333333333333333333333333333=",
+      "kyber_public_key": "kyber:CCCC3333DDDD4444EEEE5555FFFF6666AAAA7777BBBB=",
       "reputation_score": 88,
       "geographic_region": "ASIA-PACIFIC",
-      "capabilities": ["messaging", "video_signaling", "search"]
+      "asn": "AS20940",
+      "bandwidth_mbps": 600,
+      "latency_ms": 35,
+      "capabilities": ["messaging", "video_signaling", "search", "onion_routing"],
+      "onion_routing": {
+        "layer": 3,
+        "supports_entry": false,
+        "supports_exit": true,
+        "max_circuit_duration": 3600,
+        "padding_support": true
+      }
+    },
+    {
+      "id": "relay-004",
+      "endpoint": "wss://relay4.privachain.network",
+      "public_key": "ed25519:DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD=",
+      "x25519_key": "x25519:4444444444444444444444444444444444444444444=",
+      "kyber_public_key": "kyber:DDDD4444EEEE5555FFFF6666AAAA7777BBBB8888CCCC=",
+      "reputation_score": 90,
+      "geographic_region": "US-WEST",
+      "asn": "AS15169",
+      "bandwidth_mbps": 1200,
+      "latency_ms": 20,
+      "capabilities": ["messaging", "email", "onion_routing"],
+      "onion_routing": {
+        "layer": 1,
+        "supports_entry": true,
+        "supports_exit": false,
+        "max_circuit_duration": 3600,
+        "padding_support": true
+      }
+    },
+    {
+      "id": "relay-005",
+      "endpoint": "wss://relay5.privachain.network",
+      "public_key": "ed25519:EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE=",
+      "x25519_key": "x25519:5555555555555555555555555555555555555555555=",
+      "kyber_public_key": "kyber:EEEE5555FFFF6666AAAA7777BBBB8888CCCC9999DDDD=",
+      "reputation_score": 85,
+      "geographic_region": "SA-EAST",
+      "asn": "AS8075",
+      "bandwidth_mbps": 500,
+      "latency_ms": 45,
+      "capabilities": ["messaging", "search", "onion_routing"],
+      "onion_routing": {
+        "layer": 3,
+        "supports_entry": false,
+        "supports_exit": true,
+        "max_circuit_duration": 3600,
+        "padding_support": true
+      }
     }
   ],
   "selection_criteria": {
     "min_reputation_score": 80,
-    "max_hops": 3,
+    "max_hops": 5,
+    "min_hops": 3,
     "geographic_diversity": true,
-    "avoid_same_asn": true
+    "avoid_same_asn": true,
+    "bandwidth_threshold_mbps": 100,
+    "latency_threshold_ms": 100,
+    "require_padding_support": true
   },
-  "_schema_version": "1.0",
-  "_description": "Bootstrap relay nodes for anonymity network",
-  "_last_updated": "2025-08-11T00:00:00Z"
+  "circuit_policies": {
+    "entry_guard_rotation_hours": 24,
+    "middle_relay_rotation_minutes": 10,
+    "exit_relay_rotation_minutes": 10,
+    "max_same_relay_reuse": 3,
+    "circuit_build_timeout_seconds": 30
+  },
+  "_schema_version": "2.0",
+  "_description": "Bootstrap relay nodes for onion routing anonymity network",
+  "_last_updated": "2025-01-15T00:00:00Z"
 }
