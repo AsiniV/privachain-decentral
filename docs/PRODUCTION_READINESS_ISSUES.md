@@ -419,6 +419,7 @@ If you discover additional production readiness issues:
 3. **Performance Issues**: Include profiling data and environment details
 
 ### Getting Help
+- **Critical Fixes**: [Critical Additions](./CRITICAL_ADDITIONS.md) and [Critical Additions2](./CRITICAL_ADDITIONS2.md) - Essential fixes before working on critical errors
 - **Documentation**: [Deployment Guide](./COSMOS_TESTNET_DEPLOYMENT.md)
 - **Testing Guide**: [Testing Guide](./COSMOS_TESTNET_TESTING.md)
 - **Repository**: [GitHub Issues](https://github.com/AsiniV/privachain-decentral/issues)
