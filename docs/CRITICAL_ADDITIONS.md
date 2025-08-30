@@ -8,6 +8,8 @@
 
 This document identifies the 5 essential fixes that must be implemented before the development team can safely work on critical errors in the PrivaChain Decentral system. These are fundamental blockers that prevent proper error diagnosis and system stability.
 
+**📋 COMPANION DOCUMENT**: This document focuses on core security fixes. See [Critical Additions2](./CRITICAL_ADDITIONS2.md) for additional infrastructure and operational requirements that must also be completed.
+
 ## Critical Issues Requiring Immediate Fixes
 
 ### ❌ 1. ZK-Proofs Are Placeholder Implementations
@@ -127,10 +129,11 @@ Before production deployment, all of the following must be complete:
 
 ## Related Documentation
 
+- **[Critical Additions2](./CRITICAL_ADDITIONS2.md) - Additional infrastructure and operational fixes (REQUIRED)**
 - [Production Readiness Issues](./PRODUCTION_READINESS_ISSUES.md) - Comprehensive technical details
 - [Claims and Limitations](./claims_and_limitations.md) - Security disclaimers and current status
 - [Architecture Overview](./architecture/overview.md) - System design and implementation phases
 
 ---
 
-**⚠️ WARNING**: Do not attempt to work on critical errors until all items in this document are resolved. The current placeholder implementations will prevent accurate error diagnosis and may mask serious security vulnerabilities.
+**⚠️ WARNING**: Do not attempt to work on critical errors until all items in BOTH this document AND [Critical Additions2](./CRITICAL_ADDITIONS2.md) are resolved. The current placeholder implementations will prevent accurate error diagnosis and may mask serious security vulnerabilities.
