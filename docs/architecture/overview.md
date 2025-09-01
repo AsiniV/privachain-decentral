@@ -4,6 +4,8 @@
 **Phase**: Phase 0 (Stabilization)  
 **Last Updated**: 2024-12-19
 
+> **Note:** This project uses the official Cosmos testnet/mainnet. The development team does NOT run or maintain validator nodes or a sovereign chain. All smart contracts are deployed to public Cosmos networks.
+
 ## System Architecture
 
 PrivaChain Decentral is designed as a multi-layered privacy platform combining blockchain infrastructure, peer-to-peer networking, and cryptographic protocols.
@@ -113,11 +115,13 @@ graph TB
 - **Video Signaling**: WebRTC connection establishment and quality optimization
 
 ### Blockchain Layer
-- **Cosmos Hub Testnet**: Primary blockchain infrastructure
+- **Cosmos Hub Testnet**: Primary blockchain infrastructure (public network)
 - **Domain Registry Contract**: .prv domain registration and management
 - **Reputation Contract**: Trust scoring for network participants
 - **Search Anchor Contract**: On-chain search index verification
 - **Video Quality Contract**: TURN server management and incentives
+
+**Note**: All contracts are deployed to public Cosmos networks. PrivaChain does not operate validator nodes or maintain a sovereign blockchain.
 
 ### Storage Layer
 - **IPFS/Helia Network**: Decentralized content storage
