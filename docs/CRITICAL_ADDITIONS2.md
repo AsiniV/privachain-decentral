@@ -35,7 +35,7 @@ This document identifies 5 additional essential fixes that complement the [Criti
 
 ### ❌ 2. Economic Incentive System Missing
 **Issue**: No economic model for network sustainability  
-**Impact**: No incentives for node operators, TURN servers, storage providers  
+**Impact**: No incentives for service providers (TURN servers, storage providers, relay nodes)  
 **Location**: Economic model design, tokenomics implementation
 
 **Important Note**: Incentives are designed for network participants (storage providers, relayers, TURN servers, mixnet nodes), NOT validator operators. Staking, rewards, and gas models interact with the public Cosmos network.

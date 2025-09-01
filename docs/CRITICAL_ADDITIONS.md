@@ -4,6 +4,8 @@
 **Priority**: IMMEDIATE - Must be completed before addressing critical system errors  
 **Status**: Action Required
 
+> **Note:** This project uses the official Cosmos testnet/mainnet. The development team does NOT run or maintain validator nodes or a sovereign chain. All smart contracts are deployed to public Cosmos networks.
+
 ## Overview
 
 This document identifies the 5 essential fixes that must be implemented before the development team can safely work on critical errors in the PrivaChain Decentral system. These are fundamental blockers that prevent proper error diagnosis and system stability.

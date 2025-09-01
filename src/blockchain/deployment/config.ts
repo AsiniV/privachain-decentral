@@ -1,3 +1,5 @@
+// Deployment configuration for public Cosmos networks
+// Note: PrivaChain connects to existing Cosmos testnet/mainnet - we do NOT operate validators
 // Removed unused imports: CosmWasmClient, SigningCosmWasmClient, DirectSecp256k1HdWallet, GasPrice
 
 export interface DeploymentConfig {
@@ -10,20 +12,20 @@ export interface DeploymentConfig {
 }
 
 export const testnetConfig: DeploymentConfig = {
-  rpcEndpoint: 'https://rpc.cosmos-testnet.priv',
-  chainId: 'privachain-testnet-1',
+  rpcEndpoint: 'https://rpc.theta-testnet.polypore.xyz',  // Public Cosmos Hub testnet
+  chainId: 'theta-testnet-001',  // Official Cosmos Hub testnet
   mnemonic: process.env.DEPLOYER_MNEMONIC || 'your mnemonic here',
-  gasPrice: '0.025upriv',
-  codeUploadFee: '0.1upriv',
+  gasPrice: '0.025uatom',  // Cosmos Hub testnet gas token
+  codeUploadFee: '0.1uatom',
   deployerAddress: 'cosmos1...'
 }
 
 export const mainnetConfig: DeploymentConfig = {
-  rpcEndpoint: 'https://rpc.cosmos.priv',
-  chainId: 'privachain-1',
+  rpcEndpoint: 'https://rpc.cosmos.network',  // Public Cosmos Hub mainnet
+  chainId: 'cosmoshub-4',  // Official Cosmos Hub mainnet
   mnemonic: process.env.DEPLOYER_MNEMONIC || '',
-  gasPrice: '0.001upriv',
-  codeUploadFee: '1upriv',
+  gasPrice: '0.025uatom',  // Cosmos Hub mainnet gas token
+  codeUploadFee: '1uatom',
   deployerAddress: 'cosmos1...'
 }
 
