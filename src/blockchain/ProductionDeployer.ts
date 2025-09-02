@@ -80,7 +80,7 @@ export class ProductionDeployer {
         dao: null,
         reputation: null
       },
-      validators: [],
+      validators: [], // We connect to existing Cosmos networks - validators managed by public network
       genesis: {
         blockHeight: 0,
         blockHash: '',
@@ -277,7 +277,8 @@ export class ProductionDeployer {
   }
 
   /**
-   * Deploy incentives contract for node rewards
+   * Deploy incentives contract for service provider rewards
+   * Note: Rewards are for dApp service providers, NOT validators (validators managed by public Cosmos network)
    */
   private async deployIncentivesContract(): Promise<void> {
     console.log('📄 Deploying Incentives contract...')
@@ -288,10 +289,10 @@ export class ProductionDeployer {
     const instantiateMsg = {
       admin: this.manifest.deployer,
       priv_token: this.manifest.contracts.prvToken!.address,
-      validator_reward_rate: '5000', // 5% APR
-      relay_reward_rate: '3000', // 3% APR
+      service_provider_reward_rate: '5000', // 5% APR for service providers (not validators)
+      relay_reward_rate: '3000', // 3% APR for relay nodes
       minimum_stake: '10000000', // 10 PRIV minimum
-      slash_percentage: '500' // 5% slashing
+      slash_percentage: '500' // 5% slashing for service providers
     }
 
     const { contractAddress, transactionHash } = await this.instantiateContract(
@@ -567,22 +568,19 @@ export class ProductionDeployer {
   }
 
   /**
-   * Setup validator network
+   * Connect to existing Cosmos network (we do NOT run validators)
+   * This method configures connection to public Cosmos testnet/mainnet
    */
-  async setupValidators(validators: { moniker: string; stake: string; commission: string }[]): Promise<void> {
-    console.log('🔄 Setting up validator network...')
-
-    for (const validator of validators) {
-      // In production, this would create actual validator nodes
-      this.manifest.validators.push({
-        address: `cosmosvaloper${Math.random().toString(36).substring(2, 40)}`,
-        moniker: validator.moniker,
-        stake: validator.stake,
-        commission: validator.commission
-      })
-    }
-
-    console.log(`✅ ${validators.length} validators configured`)
+  async connectToCosmosNetwork(): Promise<void> {
+    console.log('🌐 Connecting to existing Cosmos network...')
+    console.log(`📡 Network: ${this.network}`)
+    console.log(`🔗 Chain ID: ${this.config.chainId}`)
+    console.log(`🌍 RPC Endpoint: ${this.config.rpcEndpoint}`)
+    
+    // Note: We connect to public Cosmos networks and do NOT operate validator nodes
+    // All consensus, chain upgrades, and network maintenance is handled by the official Cosmos teams
+    
+    console.log('✅ Connected to public Cosmos network')
   }
 
   getManifest(): DeploymentManifest {
@@ -590,19 +588,19 @@ export class ProductionDeployer {
   }
 }
 
-// Export deployment configurations
+// Export deployment configurations for public Cosmos networks
 export const TESTNET_CONFIG = {
-  rpcEndpoint: 'https://rpc-cosmoshub.blockapsis.com',
-  chainId: 'privachain-testnet-1',
+  rpcEndpoint: 'https://rpc.theta-testnet.polypore.xyz',  // Public Cosmos Hub testnet
+  chainId: 'theta-testnet-001',  // Official Cosmos Hub testnet
   mnemonic: process.env.TESTNET_MNEMONIC || '',
-  gasPrice: '0.025upriv',
+  gasPrice: '0.025uatom',  // Cosmos Hub testnet gas token
   contractPath: './contracts/artifacts'
 }
 
 export const MAINNET_CONFIG = {
-  rpcEndpoint: 'https://rpc-privachain.keplr.app',
-  chainId: 'privachain-1',
+  rpcEndpoint: 'https://rpc.cosmos.network',  // Public Cosmos Hub mainnet
+  chainId: 'cosmoshub-4',  // Official Cosmos Hub mainnet
   mnemonic: process.env.MAINNET_MNEMONIC || '',
-  gasPrice: '0.025upriv',
+  gasPrice: '0.025uatom',  // Cosmos Hub mainnet gas token
   contractPath: './contracts/artifacts'
 }

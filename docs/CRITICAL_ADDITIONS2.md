@@ -4,6 +4,8 @@
 **Priority**: IMMEDIATE - Must be completed alongside Critical Additions before addressing critical system errors  
 **Status**: Action Required
 
+> **Note:** This project uses the official Cosmos testnet/mainnet. The development team does NOT run or maintain validator nodes or a sovereign chain. All smart contracts are deployed to public Cosmos networks.
+
 ## Overview
 
 This document identifies 5 additional essential fixes that complement the [Critical Additions](./CRITICAL_ADDITIONS.md) document. These infrastructure and operational blockers must be implemented alongside the core security fixes before the development team can safely work on critical errors in the PrivaChain Decentral system.
@@ -33,22 +35,24 @@ This document identifies 5 additional essential fixes that complement the [Criti
 
 ### ❌ 2. Economic Incentive System Missing
 **Issue**: No economic model for network sustainability  
-**Impact**: No incentives for node operators, TURN servers, storage providers  
+**Impact**: No incentives for service providers (TURN servers, storage providers, relay nodes)  
 **Location**: Economic model design, tokenomics implementation
+
+**Important Note**: Incentives are designed for network participants (storage providers, relayers, TURN servers, mixnet nodes), NOT validator operators. Staking, rewards, and gas models interact with the public Cosmos network.
 
 **Required Fix**:
 ```bash
-# Design and implement comprehensive tokenomics
-# Priority: CRITICAL - Network sustainability
+# Design and implement comprehensive tokenomics for dApp services
+# Priority: CRITICAL - Network sustainability (service layer)
 # Estimated: 8-12 weeks
 ```
 
 **Action Items**:
-- [ ] Design economic incentive model for network participants
-- [ ] Implement token distribution mechanisms
-- [ ] Create staking and reward systems
-- [ ] Establish gas fee models and payment systems
-- [ ] Design sustainable economics for storage and bandwidth
+- [ ] Design economic incentive model for service providers (not validators)
+- [ ] Implement token distribution mechanisms for dApp participants
+- [ ] Create staking and reward systems that work with public Cosmos networks
+- [ ] Establish gas fee models for sponsored transactions
+- [ ] Design sustainable economics for storage and bandwidth providers
 
 ### ❌ 3. Data Persistence and Backup Systems Missing
 **Issue**: No backup or recovery mechanisms for user data  
@@ -74,19 +78,23 @@ This document identifies 5 additional essential fixes that complement the [Criti
 **Impact**: Cannot operate a functional decentralized network  
 **Location**: Infrastructure deployment, operational systems
 
+**Important Note**: PrivaChain connects to existing Cosmos testnet/mainnet and does NOT operate validator nodes or a sovereign chain. Infrastructure requirements focus on dApp services, not blockchain consensus.
+
 **Required Fix**:
 ```bash
-# Establish production infrastructure and operations
-# Priority: HIGH - Network operation
+# Establish production infrastructure and operations for dApp services
+# Priority: HIGH - Network operation (dApp layer only)
 # Estimated: 8-10 weeks
 ```
 
 **Action Items**:
-- [ ] Deploy distributed TURN server network
-- [ ] Set up Nym mixnet integration infrastructure
-- [ ] Establish monitoring and alerting systems
-- [ ] Create operational runbooks and procedures
-- [ ] Implement automated deployment and scaling systems
+- [ ] Deploy distributed TURN server network for video calls
+- [ ] Set up Nym mixnet integration infrastructure for privacy
+- [ ] Establish monitoring and alerting systems for dApp services
+- [ ] Create operational runbooks for service management
+- [ ] Implement automated deployment and scaling for application services
+
+**Note**: Validator node operation, chain upgrades, and consensus maintenance are managed by the official Cosmos network teams.
 
 ### ❌ 5. Advanced Security Infrastructure Gap
 **Issue**: Missing advanced privacy protection infrastructure  

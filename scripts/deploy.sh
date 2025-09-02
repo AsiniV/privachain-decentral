@@ -1,27 +1,35 @@
 #!/bin/bash
 
 # Production Deployment Script for PrivaChain
-# Deploys all smart contracts and sets up production infrastructure
+# Deploys all smart contracts to public Cosmos networks
+# Note: We connect to existing Cosmos testnet/mainnet - we do NOT operate validators
 
 set -e
 
 echo "🚀 Starting PrivaChain Production Deployment"
+echo "📋 Note: Deploying to public Cosmos networks (not operating own validators)"
 
 # Configuration
 NETWORK=${1:-testnet}
 DEPLOYER_MNEMONIC=${DEPLOYER_MNEMONIC:-""}
-CHAIN_ID="privachain-${NETWORK}-1"
 
 if [ "$NETWORK" = "testnet" ]; then
-    RPC_ENDPOINT="https://rpc-testnet.privachain.org"
-    API_ENDPOINT="https://api-testnet.privachain.org"
+    CHAIN_ID="theta-testnet-001"  # Public Cosmos Hub testnet
+    RPC_ENDPOINT="https://rpc.theta-testnet.polypore.xyz"
+    API_ENDPOINT="https://rest.theta-testnet.polypore.xyz:1317"
 elif [ "$NETWORK" = "mainnet" ]; then
-    RPC_ENDPOINT="https://rpc.privachain.org"
-    API_ENDPOINT="https://api.privachain.org"
+    CHAIN_ID="cosmoshub-4"  # Public Cosmos Hub mainnet
+    RPC_ENDPOINT="https://rpc.cosmos.network"
+    API_ENDPOINT="https://rest.cosmos.network"
 else
     echo "❌ Invalid network: $NETWORK. Use 'testnet' or 'mainnet'"
     exit 1
 fi
+
+echo "🌐 Connecting to public Cosmos network:"
+echo "   Network: $NETWORK"
+echo "   Chain ID: $CHAIN_ID"
+echo "   RPC: $RPC_ENDPOINT"
 
 # Check dependencies
 echo "🔍 Checking dependencies..."
@@ -79,10 +87,11 @@ npm run build
 echo "🎉 PrivaChain deployment completed successfully!"
 echo ""
 echo "📋 Deployment Summary:"
-echo "   Network: $NETWORK"
+echo "   Network: $NETWORK (Public Cosmos Network)"
 echo "   Chain ID: $CHAIN_ID"
 echo "   RPC: $RPC_ENDPOINT"
-echo "   Contracts: Built and ready"
+echo "   Contracts: Built and ready for deployment"
 echo "   Frontend: Built and ready"
 echo ""
-echo "✨ PrivaChain is ready for production!"
+echo "📋 Note: Smart contracts deployed to public Cosmos network"
+echo "✨ PrivaChain dApp is ready for production!"

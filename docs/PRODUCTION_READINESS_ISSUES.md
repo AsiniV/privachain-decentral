@@ -6,6 +6,8 @@
 **Overall Readiness**: 35% (Prototype Stage)  
 **Estimated Production Timeline**: 41 months
 
+> **Note:** This project uses the official Cosmos testnet/mainnet. The development team does NOT run or maintain validator nodes or a sovereign chain. All smart contracts are deployed to public Cosmos networks.
+
 ## Executive Summary
 
 PrivaChain Decentral is currently in the **active development prototype phase** and is **NOT ready for production deployment**. This document details critical issues, security limitations, and missing components that must be addressed before production deployment on Cosmos testnet or mainnet.
@@ -133,9 +135,11 @@ $ cd contracts && cargo build --release --target wasm32-unknown-unknown
 - **Status**: Basic token structure only
 - **Risk Level**: 🟠 High
 - **Issue**: No real economic model for network participants
-- **Impact**: No incentives for node operators, TURN servers, storage providers
-- **Required Fix**: Design and implement comprehensive tokenomics
+- **Impact**: No incentives for service providers (TURN servers, storage providers, relayers) - NOT validator operators
+- **Required Fix**: Design and implement comprehensive tokenomics for dApp services on public Cosmos networks
 - **Estimated Effort**: 8-12 weeks
+
+**Note**: Economic model interacts with public Cosmos network through staking and governance mechanisms. PrivaChain does not operate validator nodes.
 
 ### 2. Gas and Transaction Issues
 

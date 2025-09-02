@@ -407,8 +407,8 @@ export class ProductionInitializer {
       // Register real .prv domains for production use
       await this.registerProductionDomains()
       
-      // Setup real validator network
-      await this.setupProductionValidators()
+      // Connect to public Cosmos network (we do NOT operate validators)
+      await this.connectToCosmosNetwork()
       
       // Initialize real economic data
       await this.setupProductionEconomics()
@@ -472,34 +472,32 @@ export class ProductionInitializer {
     return keyPair.publicKey
   }
 
-  private async setupProductionValidators(): Promise<void> {
+  private async connectToCosmosNetwork(): Promise<void> {
     if (!this.deployer) return
 
-    const productionValidators = [
-      { moniker: 'PrivaChain Genesis', stake: '100000000', commission: '5' },
-      { moniker: 'PrivaChain Community', stake: '75000000', commission: '7' },
-      { moniker: 'PrivaChain Enterprise', stake: '85000000', commission: '6' }
-    ]
-
-    await this.deployer.setupValidators(productionValidators)
-    console.log('🏛️ Production validators configured')
+    // Connect to public Cosmos testnet/mainnet (we do NOT run validators)
+    await this.deployer.connectToCosmosNetwork()
+    console.log('🌐 Connected to public Cosmos network')
   }
 
   private async setupProductionEconomics(): Promise<void> {
     // Create real economic positions for platform operation
+    // Note: Staking delegated to existing validators on public Cosmos network
     const productionStakingPositions = [
-      { staker: 'foundation-treasury', amount: '50000000', validator: 'val1' },
-      { staker: 'community-pool', amount: '30000000', validator: 'val2' },
-      { staker: 'development-fund', amount: '25000000', validator: 'val3' }
+      { staker: 'foundation-treasury', amount: '50000000', note: 'Staked with public Cosmos validators' },
+      { staker: 'community-pool', amount: '30000000', note: 'Delegated to existing network validators' },
+      { staker: 'development-fund', amount: '25000000', note: 'Staked with community-selected validators' }
     ]
 
     for (const position of productionStakingPositions) {
       try {
+        // Stake with optimal validator selected from public network
         await productionEconomicSystem.stakeTokens(
           position.staker,
-          position.amount,
-          position.validator
+          position.amount
+          // No specific validator - will auto-select from public network
         )
+        console.log(`💰 ${position.staker}: ${position.note}`)
       } catch (error) {
         console.warn('Failed to create production staking position:', error)
       }

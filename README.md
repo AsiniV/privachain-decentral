@@ -2,6 +2,8 @@
 
 A decentralized blockchain platform for private communication and digital identity management.
 
+> **Network Architecture Note:** PrivaChain connects to the official Cosmos testnet/mainnet. We do NOT operate our own validator nodes or sovereign blockchain. All smart contracts are deployed to public Cosmos networks.
+
 ## Current Prototype Limitations ⚠️
 
 **THIS IS AN ACTIVE DEVELOPMENT PROTOTYPE**
