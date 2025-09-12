@@ -11,12 +11,13 @@
  * - Fallback search using local indexing when OrbitDB unavailable
  */
 
-// Simple search indexing for fallback mode
+// Enhanced search indexing for fallback mode with stemming
 class FallbackSearchIndex {
   private documents: SearchDocument[] = []
   private termIndex: Map<string, Set<string>> = new Map() // term -> document IDs
+  private lunrIndex: any = null
 
-  addDocument(doc: SearchDocument) {
+  async addDocument(doc: SearchDocument) {
     this.documents.push(doc)
     
     // Index terms for faster search
@@ -29,9 +30,59 @@ class FallbackSearchIndex {
       }
       this.termIndex.get(term)!.add(doc.id)
     }
+
+    // Rebuild lunr index when documents are added
+    await this.rebuildLunrIndex()
+  }
+
+  private async rebuildLunrIndex() {
+    try {
+      // Dynamic import to handle lunr availability
+      const lunr = await import('lunr')
+      
+      this.lunrIndex = lunr.default(function () {
+        this.field('title', { boost: 10 })
+        this.field('description', { boost: 5 })
+        this.field('content')
+        this.field('keywords', { boost: 8 })
+        this.ref('id')
+
+        // Add all documents to the index
+        for (const doc of this.documents) {
+          this.add({
+            id: doc.id,
+            title: doc.title,
+            description: doc.description,
+            content: doc.content,
+            keywords: doc.keywords.join(' ')
+          })
+        }
+      })
+      
+      console.log('🔍 Rebuilt lunr search index with', this.documents.length, 'documents')
+    } catch (error) {
+      console.warn('Lunr not available, using basic search:', error)
+      this.lunrIndex = null
+    }
   }
 
   search(query: string): SearchDocument[] {
+    if (this.lunrIndex) {
+      // Use lunr for advanced search with stemming and scoring
+      try {
+        const results = this.lunrIndex.search(query)
+        return results.map((result: any) => {
+          const doc = this.documents.find(d => d.id === result.ref)!
+          // Update relevance score from lunr
+          doc.relevanceScore = result.score
+          return doc
+        }).filter(Boolean)
+      } catch (error) {
+        console.warn('Lunr search failed, falling back to basic search:', error)
+      }
+    }
+
+    // Fallback to basic term matching
     const queryTerms = query.toLowerCase().split(/\s+/).filter(term => term.length > 2)
     const candidates = new Set<string>()
     
@@ -70,6 +121,7 @@ class FallbackSearchIndex {
   clear() {
     this.documents = []
     this.termIndex.clear()
+    this.lunrIndex = null
   }
 
   getDocumentCount(): number {
@@ -195,14 +247,26 @@ export class OrbitDBHybridIndexing {
       const { createHelia } = await import('helia')
       const { createOrbitDB } = await import('@orbitdb/core')
 
-      // Create libp2p node
+      // Create libp2p node with enhanced configuration
       this.libp2p = await createLibp2p({
         addresses: {
           listen: ['/ip4/0.0.0.0/tcp/0/ws']
         },
         transports: [webSockets()],
         connectionEncryption: [noise()],
-        streamMuxers: [yamux()]
+        streamMuxers: [yamux()],
+        peerDiscovery: [
+          // Add bootstrap peers from relay nodes
+          ...(await this.getBootstrapPeers())
+        ],
+        services: {
+          // Enable distributed hash table for peer discovery
+          kadDHT: (components: any) => new KadDHT(components),
+          // Enable peer identification
+          identify: (components: any) => new Identify(components),
+          // Enable gossipsub for pub/sub messaging
+          pubsub: (components: any) => new GossipSub(components)
+        }
       })
 
       // Create Helia IPFS node
@@ -254,6 +318,27 @@ export class OrbitDBHybridIndexing {
     } catch (error) {
       console.error('❌ Failed to create search database:', error)
       throw error
+    }
+  }
+
+  /**
+   * Get bootstrap peers from relay nodes
+   */
+  private async getBootstrapPeers(): Promise<any[]> {
+    try {
+      // In a real implementation, this would load from relay_nodes_bootstrap.json
+      const bootstrapPeers = [
+        '/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ',
+        '/ip4/104.236.179.241/tcp/4001/p2p/QmSoLPppuBtQSGwKDZT2M73ULpjvfd3aZ6ha4oFGL1KrGM',
+        '/ip4/178.62.158.247/tcp/4001/p2p/QmSoLer265NRgSp2LA3dPaeykiS1J6DifTC88f5uVQKNAd'
+      ]
+      
+      // Import bootstrap peer discovery dynamically
+      const { bootstrap } = await import('@libp2p/bootstrap')
+      return [bootstrap({ list: bootstrapPeers })]
+    } catch (error) {
+      console.warn('Failed to load bootstrap peers:', error)
+      return []
     }
   }
 
@@ -407,6 +492,33 @@ export class OrbitDBHybridIndexing {
     const startTime = Date.now()
     
     try {
+      // Generate ZK proof for privacy-preserving search
+      let zkProof: string | undefined
+      if (query.zkEncrypted) {
+        try {
+          // Import ZK service dynamically to avoid circular dependencies
+          const { default: zkIdentityManager } = await import('../zkCrypto')
+          
+          const zkInputs = {
+            statement: { 
+              searchTerm: query.term,
+              type: 'search_query',
+              timestamp: Date.now()
+            },
+            witness: {
+              userIntent: query.term,
+              filters: JSON.stringify(query.filters)
+            }
+          }
+          
+          const proof = await zkIdentityManager.generateProof(zkInputs)
+          zkProof = proof.proof
+          console.log('🔐 Generated ZK proof for private search')
+        } catch (zkError) {
+          console.warn('⚠️ ZK proof generation failed, proceeding without privacy:', zkError)
+        }
+      }
+
       // Check for bang commands first
       const bangResult = await this.processBangCommand(query)
       if (bangResult) {

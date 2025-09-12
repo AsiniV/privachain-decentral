@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { cosmosClient, CosmosAccount, COSMOS_CONFIG } from '@/lib/cosmos'
 import { toast } from 'sonner'
+import * as sodium from 'libsodium-wrappers'
 
 export interface CosmosState {
   isConnected: boolean
@@ -8,6 +9,133 @@ export interface CosmosState {
   account: CosmosAccount | null
   error: string | null
   mnemonic: string | null
+}
+
+/**
+ * Encrypted storage utilities for secure mnemonic handling
+ */
+class SecureMnemonicStorage {
+  private static readonly DB_NAME = 'PrivachainSecureDB'
+  private static readonly DB_VERSION = 1
+  private static readonly STORE_NAME = 'encryptedWallets'
+  
+  static async init(): Promise<void> {
+    await sodium.ready
+  }
+  
+  static async encryptMnemonic(mnemonic: string, passphrase: string): Promise<string> {
+    const salt = sodium.randombytes_buf(sodium.crypto_pwhash_SALTBYTES)
+    const key = sodium.crypto_pwhash(
+      sodium.crypto_secretbox_KEYBYTES,
+      passphrase,
+      salt,
+      sodium.crypto_pwhash_OPSLIMIT_INTERACTIVE,
+      sodium.crypto_pwhash_MEMLIMIT_INTERACTIVE,
+      sodium.crypto_pwhash_ALG_DEFAULT
+    )
+    
+    const nonce = sodium.randombytes_buf(sodium.crypto_secretbox_NONCEBYTES)
+    const encrypted = sodium.crypto_secretbox_easy(mnemonic, nonce, key)
+    
+    // Combine salt + nonce + encrypted data
+    const combined = new Uint8Array(salt.length + nonce.length + encrypted.length)
+    combined.set(salt, 0)
+    combined.set(nonce, salt.length)
+    combined.set(encrypted, salt.length + nonce.length)
+    
+    return sodium.to_base64(combined)
+  }
+  
+  static async decryptMnemonic(encryptedData: string, passphrase: string): Promise<string> {
+    const combined = sodium.from_base64(encryptedData)
+    
+    const salt = combined.slice(0, sodium.crypto_pwhash_SALTBYTES)
+    const nonce = combined.slice(sodium.crypto_pwhash_SALTBYTES, sodium.crypto_pwhash_SALTBYTES + sodium.crypto_secretbox_NONCEBYTES)
+    const encrypted = combined.slice(sodium.crypto_pwhash_SALTBYTES + sodium.crypto_secretbox_NONCEBYTES)
+    
+    const key = sodium.crypto_pwhash(
+      sodium.crypto_secretbox_KEYBYTES,
+      passphrase,
+      salt,
+      sodium.crypto_pwhash_OPSLIMIT_INTERACTIVE,
+      sodium.crypto_pwhash_MEMLIMIT_INTERACTIVE,
+      sodium.crypto_pwhash_ALG_DEFAULT
+    )
+    
+    const decrypted = sodium.crypto_secretbox_open_easy(encrypted, nonce, key)
+    return sodium.to_string(decrypted)
+  }
+  
+  static async storeEncryptedMnemonic(encryptedMnemonic: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(this.DB_NAME, this.DB_VERSION)
+      
+      request.onerror = () => reject(new Error('Failed to open database'))
+      
+      request.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result
+        if (!db.objectStoreNames.contains(this.STORE_NAME)) {
+          db.createObjectStore(this.STORE_NAME)
+        }
+      }
+      
+      request.onsuccess = () => {
+        const db = request.result
+        const transaction = db.transaction([this.STORE_NAME], 'readwrite')
+        const store = transaction.objectStore(this.STORE_NAME)
+        
+        const putRequest = store.put(encryptedMnemonic, 'wallet')
+        putRequest.onsuccess = () => resolve()
+        putRequest.onerror = () => reject(new Error('Failed to store encrypted mnemonic'))
+      }
+    })
+  }
+  
+  static async getEncryptedMnemonic(): Promise<string | null> {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(this.DB_NAME, this.DB_VERSION)
+      
+      request.onerror = () => reject(new Error('Failed to open database'))
+      
+      request.onsuccess = () => {
+        const db = request.result
+        if (!db.objectStoreNames.contains(this.STORE_NAME)) {
+          resolve(null)
+          return
+        }
+        
+        const transaction = db.transaction([this.STORE_NAME], 'readonly')
+        const store = transaction.objectStore(this.STORE_NAME)
+        
+        const getRequest = store.get('wallet')
+        getRequest.onsuccess = () => resolve(getRequest.result || null)
+        getRequest.onerror = () => reject(new Error('Failed to retrieve encrypted mnemonic'))
+      }
+    })
+  }
+  
+  static async clearStoredMnemonic(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(this.DB_NAME, this.DB_VERSION)
+      
+      request.onerror = () => reject(new Error('Failed to open database'))
+      
+      request.onsuccess = () => {
+        const db = request.result
+        if (!db.objectStoreNames.contains(this.STORE_NAME)) {
+          resolve()
+          return
+        }
+        
+        const transaction = db.transaction([this.STORE_NAME], 'readwrite')
+        const store = transaction.objectStore(this.STORE_NAME)
+        
+        const deleteRequest = store.delete('wallet')
+        deleteRequest.onsuccess = () => resolve()
+        deleteRequest.onerror = () => reject(new Error('Failed to clear stored mnemonic'))
+      }
+    })
+  }
 }
 
 /**
@@ -22,8 +150,14 @@ export function useCosmos() {
     mnemonic: null
   })
 
+  // Initialize secure storage
+  useEffect(() => {
+    SecureMnemonicStorage.init().catch(console.error)
+  }, [])
+
   // Persist wallet mnemonic securely
   const [storedMnemonic, setStoredMnemonic] = useState<string | null>(null)
+  const [userPassphrase, setUserPassphrase] = useState<string | null>(null)
 
   useEffect(() => {
     const initializeConnection = async () => {
@@ -45,28 +179,37 @@ export function useCosmos() {
         const client = await StargateClient.connect(config.rpcEndpoint)
         setState(prev => ({ ...prev, client }))
         
-        // Check for existing wallet
-        if (storedMnemonic) {
-          const wallet = await DirectSecp256k1HdWallet.fromMnemonic(storedMnemonic, {
-            prefix: config.addressPrefix
-          })
-          
-          const [firstAccount] = await wallet.getAccounts()
-          const address = firstAccount.address
-          
-          const signingClient = await SigningStargateClient.connectWithSigner(
-            config.rpcEndpoint,
-            wallet,
-            { gasPrice: GasPrice.fromString(`0.025${config.feeToken}`) }
-          )
-          
-          setState(prev => ({
-            ...prev,
-            wallet,
-            signingClient,
-            address,
-            isConnected: true
-          }))
+        // Check for existing encrypted wallet
+        const encryptedMnemonic = await SecureMnemonicStorage.getEncryptedMnemonic()
+        if (encryptedMnemonic && userPassphrase) {
+          try {
+            const decryptedMnemonic = await SecureMnemonicStorage.decryptMnemonic(encryptedMnemonic, userPassphrase)
+            const wallet = await DirectSecp256k1HdWallet.fromMnemonic(decryptedMnemonic, {
+              prefix: config.addressPrefix
+            })
+            
+            const [firstAccount] = await wallet.getAccounts()
+            const address = firstAccount.address
+            
+            const signingClient = await SigningStargateClient.connectWithSigner(
+              config.rpcEndpoint,
+              wallet,
+              { gasPrice: GasPrice.fromString(`0.025${config.feeToken}`) }
+            )
+            
+            setState(prev => ({
+              ...prev,
+              wallet,
+              signingClient,
+              address,
+              isConnected: true,
+              mnemonic: decryptedMnemonic
+            }))
+          } catch (decryptError) {
+            console.error('Failed to decrypt stored mnemonic:', decryptError)
+            // Clear invalid encrypted data
+            await SecureMnemonicStorage.clearStoredMnemonic()
+          }
         }
         
       } catch (error) {
@@ -81,12 +224,22 @@ export function useCosmos() {
     }
     
     initializeConnection()
-  }, [storedMnemonic])
+  }, [userPassphrase])
 
-  const createWallet = async (): Promise<boolean> => {
+  const setPassphrase = (passphrase: string) => {
+    setUserPassphrase(passphrase)
+  }
+
+  const createWallet = async (passphrase?: string): Promise<boolean> => {
     setState(prev => ({ ...prev, isConnecting: true, error: null }))
 
     try {
+      // Prompt for passphrase if not provided
+      const actualPassphrase = passphrase || userPassphrase || await promptPassphrase('Enter a passphrase to encrypt your wallet:')
+      if (!actualPassphrase) {
+        throw new Error('Passphrase is required for secure wallet storage')
+      }
+
       await cosmosClient.createWallet()
       const signingClient = await cosmosClient.connectWallet()
       
@@ -96,7 +249,10 @@ export function useCosmos() {
 
       const mnemonic = cosmosClient.getMnemonic()
       if (mnemonic) {
-        setStoredMnemonic(mnemonic)
+        // Encrypt and store mnemonic securely
+        const encryptedMnemonic = await SecureMnemonicStorage.encryptMnemonic(mnemonic, actualPassphrase)
+        await SecureMnemonicStorage.storeEncryptedMnemonic(encryptedMnemonic)
+        setUserPassphrase(actualPassphrase)
         setState(prev => ({ ...prev, mnemonic }))
       }
 
@@ -108,7 +264,7 @@ export function useCosmos() {
         isConnecting: false 
       }))
 
-      toast.success('Cosmos wallet created successfully!')
+      toast.success('Cosmos wallet created and encrypted successfully!')
       return true
 
     } catch (error) {
@@ -123,10 +279,16 @@ export function useCosmos() {
     }
   }
 
-  const restoreWallet = async (mnemonic: string): Promise<boolean> => {
+  const importWallet = async (mnemonic: string, passphrase?: string): Promise<boolean> => {
     setState(prev => ({ ...prev, isConnecting: true, error: null }))
 
     try {
+      // Prompt for passphrase if not provided
+      const actualPassphrase = passphrase || await promptPassphrase('Enter a passphrase to encrypt your imported wallet:')
+      if (!actualPassphrase) {
+        throw new Error('Passphrase is required for secure wallet storage')
+      }
+
       await cosmosClient.createWallet(mnemonic)
       const signingClient = await cosmosClient.connectWallet()
       
@@ -134,37 +296,39 @@ export function useCosmos() {
         throw new Error('Failed to connect signing client')
       }
 
+      // Encrypt and store mnemonic securely
+      const encryptedMnemonic = await SecureMnemonicStorage.encryptMnemonic(mnemonic, actualPassphrase)
+      await SecureMnemonicStorage.storeEncryptedMnemonic(encryptedMnemonic)
+      setUserPassphrase(actualPassphrase)
+
       const account = await cosmosClient.getAccount()
       
       setState(prev => ({ 
         ...prev, 
-        account, 
+        account,
         mnemonic,
         isConnecting: false 
       }))
 
+      toast.success('Wallet imported and encrypted successfully!')
       return true
 
     } catch (error) {
-      console.error('Failed to restore wallet:', error)
+      console.error('Failed to import wallet:', error)
       setState(prev => ({ 
         ...prev, 
         isConnecting: false, 
-        error: error instanceof Error ? error.message : 'Failed to restore wallet' 
+        error: error instanceof Error ? error.message : 'Failed to import wallet' 
       }))
+      toast.error('Failed to import wallet')
       return false
     }
   }
 
-  const importWallet = async (mnemonic: string): Promise<boolean> => {
-    const success = await restoreWallet(mnemonic)
-    if (success) {
-      setStoredMnemonic(mnemonic)
-      toast.success('Wallet imported successfully!')
-    } else {
-      toast.error('Failed to import wallet')
-    }
-    return success
+  // Helper function to prompt for passphrase (can be replaced with a proper UI component)
+  const promptPassphrase = async (message: string): Promise<string | null> => {
+    // In a real app, this should be replaced with a proper modal/dialog
+    return prompt(message)
   }
 
   const refreshAccount = async (): Promise<void> => {
@@ -247,7 +411,9 @@ export function useCosmos() {
 
   const disconnect = async (): Promise<void> => {
     await cosmosClient.disconnect()
-    setStoredMnemonic(null)
+    // Clear encrypted storage on disconnect
+    await SecureMnemonicStorage.clearStoredMnemonic()
+    setUserPassphrase(null)
     setState({
       isConnected: false,
       isConnecting: false,
@@ -255,7 +421,7 @@ export function useCosmos() {
       error: null,
       mnemonic: null
     })
-    toast.info('Disconnected from Cosmos')
+    toast.info('Disconnected from Cosmos and cleared encrypted storage')
   }
 
   const getFaucetInfo = () => {
@@ -266,6 +432,7 @@ export function useCosmos() {
     ...state,
     createWallet,
     importWallet,
+    setPassphrase,
     refreshAccount,
     registerZKIdentity,
     registerDomain,
