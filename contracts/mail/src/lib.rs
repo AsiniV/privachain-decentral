@@ -11,7 +11,11 @@ pub use crate::error::ContractError;
 
 #[cfg(not(target_arch = "wasm32"))]
 fn init_logging() {
-    env_logger::init();
+    use std::sync::Once;
+    static INIT: Once = Once::new();
+    INIT.call_once(|| {
+        env_logger::init();
+    });
 }
 
 #[cfg(target_arch = "wasm32")]
