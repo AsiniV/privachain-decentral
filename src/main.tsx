@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import { BlockchainProvider } from "./blockchain/CosmosBlockchain";
+import { BlockchainProvider } from "./blockchain";
 import { createDID, publishDID } from "./identity/did";
 import { startP2P } from "./p2p/node";
 import { initSignal } from "./messenger/signal";

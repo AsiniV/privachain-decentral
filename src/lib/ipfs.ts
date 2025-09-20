@@ -1,5 +1,4 @@
 import { createHelia } from "helia";
-import { pins } from "@helia/pins";
 
 /**
  * IPFS Client Service for PrivaChain
@@ -8,8 +7,8 @@ import { pins } from "@helia/pins";
 
 export async function createPersistentNode() {
   const node = await createHelia({ repo: "./ipfs-repo" });
-  const pin = pins(node);
-  return { node, pin };
+  // Note: Pinning functionality may vary by Helia version
+  return { node, pin: node };
 }
 
 export interface IPFSFile {
