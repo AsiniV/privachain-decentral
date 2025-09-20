@@ -1,0 +1,12 @@
+[package]
+name = "did-registry"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+cosmwasm-std = "1.1"
+cw-storage-plus = "1.0"
+serde = { version = "1.0", default-features = false, features = ["derive"] }

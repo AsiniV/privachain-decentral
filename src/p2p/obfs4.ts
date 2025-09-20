@@ -1,7 +1,9 @@
 import { createBoxStream, createUnboxStream } from "./salsa20box";
-const key = Buffer.from(process.env.OBFS4_SHARED_SECRET!, "hex");
 
 export function obfs4Transport(transport: any) {
+  const secretHex = import.meta.env.VITE_OBFS4_SHARED_SECRET || import.meta.env.OBFS4_SHARED_SECRET || "changeme";
+  const key = Buffer.from(secretHex, "hex");
+  
   return {
     ...transport,
     dialer:  (ma: any, opts: any) =>

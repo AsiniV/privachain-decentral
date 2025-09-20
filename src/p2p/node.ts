@@ -6,7 +6,7 @@ import { gossipsub } from "@chainsafe/libp2p-gossipsub";
 import { webSockets } from "@libp2p/websockets";
 
 export async function startP2P(did: string) {
-  const bootstrap = process.env.LIBP2P_BOOTSTRAP!.split(",");
+  const bootstrap = (import.meta.env.VITE_LIBP2P_BOOTSTRAP || import.meta.env.LIBP2P_BOOTSTRAP || "").split(",").filter(Boolean);
   const node = await createLibp2p({
     addresses: { listen: ["/ip4/127.0.0.1/tcp/0/ws"] },
     transports: [

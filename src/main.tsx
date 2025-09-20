@@ -8,7 +8,6 @@ import "./main.css"
 import "./styles/theme.css"
 import "./index.css"
 
-// PrivaChain bootstrap integration
 import { createDID, publishDID } from "./identity/did";
 import { startP2P } from "./p2p/node";
 import { initSignal } from "./messenger/signal";
@@ -32,7 +31,10 @@ async function bootstrap() {
     console.log("✅ Search index created");
     
     // Only try to connect to cosmos if env vars are available
-    if (process.env.COSMOS_RPC && process.env.COSMOS_RELAYER_MNEMONIC) {
+    const rpcEndpoint = import.meta.env.VITE_COSMOS_RPC || import.meta.env.COSMOS_RPC;
+    const mnemonic = import.meta.env.VITE_COSMOS_RELAYER_MNEMONIC || import.meta.env.COSMOS_RELAYER_MNEMONIC;
+    
+    if (rpcEndpoint && mnemonic) {
       const client = await getSigningClient();
       await publishDID(did, pubKey);
       console.log("✅ DID published to blockchain");

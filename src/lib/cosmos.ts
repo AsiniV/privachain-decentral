@@ -1,18 +1,27 @@
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { GasPrice } from "@cosmjs/stargate";
-import "dotenv/config";
 
 let client: SigningCosmWasmClient | null = null;
 
 export async function getSigningClient() {
   if (client) return client;
+  
+  // Use import.meta.env for Vite environment variables
+  const mnemonic = import.meta.env.VITE_COSMOS_RELAYER_MNEMONIC || import.meta.env.COSMOS_RELAYER_MNEMONIC;
+  const rpc = import.meta.env.VITE_COSMOS_RPC || import.meta.env.COSMOS_RPC || 'https://rpc.theta-testnet.polypore.xyz:443';
+  
+  if (!mnemonic) {
+    console.warn('No COSMOS_RELAYER_MNEMONIC found, using mock client');
+    return null;
+  }
+  
   const wallet = await DirectSecp256k1HdWallet.fromMnemonic(
-    process.env.COSMOS_RELAYER_MNEMONIC!,
+    mnemonic,
     { prefix: "cosmos" }
   );
   client = await SigningCosmWasmClient.connectWithSigner(
-    process.env.COSMOS_RPC!,
+    rpc,
     wallet,
     { gasPrice: GasPrice.fromString("0.025uatom") }
   );
@@ -21,6 +30,10 @@ export async function getSigningClient() {
 
 export async function relay(contract: string, msg: any, funds?: any[]) {
   const c = await getSigningClient();
+  if (!c) {
+    console.warn('No signing client available for relay');
+    return null;
+  }
   const [account] = await c.getAccounts();
   return c.execute(account.address, contract, msg, "auto", "", funds);
 }
