@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react'
 import { useKV } from '../hooks/useKV'
 import { toast } from 'sonner'
+import { getSigningClient } from '../lib/cosmos'
 
 // Cosmos SDK blockchain implementation
 interface BlockchainState {
@@ -103,19 +104,34 @@ export function CosmosProvider({ children }: { children: ReactNode }) {
     initializeState()
   }, [initializeState])
 
-  // Simulate blockchain progression
+  // Real blockchain data fetching
   useEffect(() => {
     if (!isConnected) return
 
-    const interval = setInterval(() => {
-      setState(prev => ({
-        ...prev,
-        blockHeight: prev.blockHeight + 1
-      }))
-    }, 2000) // 2-second block time
+    const updateBlockchainData = async () => {
+      try {
+        const client = await getSigningClient();
+        if (client) {
+          const height = await client.getHeight();
+          const balance = await client.getBalance("cosmos1relayer", "uatom");
+          setState(prev => ({
+            ...prev,
+            blockHeight: height,
+          }));
+          setAtomBalance(balance.amount);
+        }
+      } catch (error) {
+        console.error('Failed to fetch blockchain data:', error);
+      }
+    };
 
-    return () => clearInterval(interval)
-  }, [isConnected, setState])
+    // Initial fetch
+    updateBlockchainData();
+    
+    // Update every 30 seconds
+    const interval = setInterval(updateBlockchainData, 30000);
+    return () => clearInterval(interval);
+  }, [isConnected, setState, setAtomBalance])
 
   const connect = async () => {
     try {

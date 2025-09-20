@@ -1,5 +1,6 @@
 import { useCosmos } from './CosmosBlockchain'
 import { videoQualityContract } from './videoQualityContract'
+import { relay } from '../lib/cosmos'
 
 // Smart Contract Interfaces
 export interface MailContract {
@@ -62,217 +63,31 @@ export interface Domain {
 
 // Smart Contract Implementation
 export function useSmartContracts() {
-  const { sendTransaction, walletAddress, isConnected } = useCosmos()
-
-  // Envelope Contract Implementation
-  const mailContract: MailContract = {
-    sendMail: async (recipient: string, contentCID: string, zkProof: string) => {
-      if (!isConnected) throw new Error('Wallet not connected')
-      
-      return await sendTransaction({
-        type: 'mail',
-        recipient,
-        data: {
-          contentCID,
-          zkProof,
-          action: 'send_mail'
-        }
-      })
-    },
-
-    getMail: async (domain: string): Promise<Email[]> => {
-      // Simulate fetching emails from blockchain for the specified domain
-      const mockEmails: Email[] = [
-        {
-          senderAlias: `user@${domain}`,
-          contentCID: 'QmXyZ123abc456def789',
-          zkProof: '0x1234567890abcdef',
-          timestamp: Date.now() - 3600000,
-          encrypted: true
-        },
-        {
-          senderAlias: 'anonymous.prv',
-          contentCID: 'QmAbc789xyz123def456',
-          zkProof: '0xabcdef1234567890',
-          timestamp: Date.now() - 7200000,
-          encrypted: true
-        }
-      ]
-      return mockEmails
-    },
-
-    validatePoW: (sender: string): boolean => {
-      // Simulate Proof-of-Work validation
-      return sender.length > 10 // Simple mock validation
-    }
-  }
-
-  // Domain Contract Implementation
-  const domainContract: DomainContract = {
-    registerDomain: async (domainName: string, zkProof: string, publicKey: string) => {
-      if (!isConnected) throw new Error('Wallet not connected')
-      
-      return await sendTransaction({
-        type: 'domain',
-        data: {
-          domainName,
-          zkProof,
-          publicKey,
-          action: 'register_domain'
-        }
-      })
-    },
-
-    isRegistered: (domainName: string): boolean => {
-      // Simulate domain registry check
-      const registeredDomains = ['alice.prv', 'bob.prv', 'journalist.prv']
-      return registeredDomains.includes(domainName)
-    },
-
-    getPublicKey: async (domainName: string): Promise<string> => {
-      // Simulate fetching public key from registry
-      return `-----BEGIN PGP PUBLIC KEY BLOCK-----
-mQENBF...${domainName}...example...key
------END PGP PUBLIC KEY BLOCK-----`
-    },
-
-    renewDomain: async (domainName: string) => {
-      if (!isConnected) throw new Error('Wallet not connected')
-      
-      await sendTransaction({
-        type: 'domain',
-        data: {
-          domainName,
-          action: 'renew_domain'
-        }
-      })
-    }
-  }
-
-  // VideoCamera Signaling Contract Implementation
-  const videoContract: VideoSignalingContract = {
-    startSession: async (receiver: string, stunServer: string) => {
-      if (!isConnected) throw new Error('Wallet not connected')
-      
-      const sessionId = generateSessionId()
-      
-      await sendTransaction({
-        type: 'video_signal',
-        recipient: receiver,
-        data: {
-          sessionId,
-          stunServer,
-          action: 'start_session'
-        }
-      })
-      
-      return sessionId
-    },
-
-    endSession: async (sessionId: string) => {
-      if (!isConnected) throw new Error('Wallet not connected')
-      
-      await sendTransaction({
-        type: 'video_signal',
-        data: {
-          sessionId,
-          action: 'end_session'
-        }
-      })
-    },
-
-    getActiveSession: async (user: string): Promise<VideoSession | null> => {
-      // Simulate fetching active session
-      return {
-        id: 'session_123',
-        initiator: walletAddress || '',
-        receiver: user,
-        startTime: Date.now(),
-        stunTurnServer: 'turn:node1.priv:3478',
-        isActive: true,
-        quality: 'HD'
-      }
-    }
-  }
-
-  // Rewards Contract Implementation
-  const rewardsContract: RewardsContract = {
-    payRelayNode: async (nodeAddress: string, dataAmount: number) => {
-      if (!isConnected) throw new Error('Wallet not connected')
-      
-      const reward = dataAmount * 0.001 // 0.001 PRIV per MB
-      
-      await sendTransaction({
-        type: 'transfer',
-        recipient: nodeAddress,
-        amount: reward.toString(),
-        data: {
-          action: 'pay_relay',
-          dataAmount
-        }
-      })
-    },
-
-    claimRewards: async (): Promise<string> => {
-      if (!isConnected) throw new Error('Wallet not connected')
-      
-      return await sendTransaction({
-        type: 'transfer',
-        data: {
-          action: 'claim_rewards'
-        }
-      })
-    },
-
-    getRewards: async (): Promise<string> => {
-      // Simulate fetching pending rewards
-      return (Math.random() * 100).toFixed(2)
-    }
-  }
-
-  // Consensus Contract Implementation
-  const consensusContract: ConsensusContract = {
-    proposeBlock: async (blockHash: string) => {
-      if (!isConnected) throw new Error('Wallet not connected')
-      
-      await sendTransaction({
-        type: 'vote',
-        data: {
-          blockHash,
-          action: 'propose_block'
-        }
-      })
-    },
-
-    validateBlock: (blockHash: string, proof: string): boolean => {
-      // Simulate ZK-proof validation
-      return blockHash.length === 64 && proof.length > 10
-    },
-
-    slashValidator: async (validator: string, reason: string) => {
-      if (!isConnected) throw new Error('Wallet not connected')
-      
-      await sendTransaction({
-        type: 'delegate',
-        recipient: validator,
-        data: {
-          action: 'slash',
-          reason
-        }
-      })
-    }
-  }
+  const contract = import.meta.env.VITE_CONTRACT_DID || import.meta.env.CONTRACT_DID;
 
   return {
-    mailContract,
-    domainContract,
-    videoContract,
-    rewardsContract,
-    consensusContract,
-    videoQualityContract
-  }
+    async sendMail(recipient: string, contentCID: string) {
+      if (!contract) throw new Error('CONTRACT_DID not configured');
+      return relay(contract, { send_mail: { recipient, content_cid: contentCID } });
+    },
+    async registerDomain(domain: string) {
+      if (!contract) throw new Error('CONTRACT_DID not configured');
+      return relay(contract, { register_domain: { domain } });
+    },
+    async startVideoSession(receiver: string, stunServer: string) {
+      if (!contract) throw new Error('CONTRACT_DID not configured');
+      return relay(contract, { start_video_session: { receiver, stun_server: stunServer } });
+    },
+    async calculateRewards(stakingAmount: string, duration: number) {
+      if (!contract) throw new Error('CONTRACT_DID not configured');
+      return relay(contract, { calculate_rewards: { staking_amount: stakingAmount, duration } });
+    },
+    async submitProposal(title: string, description: string) {
+      if (!contract) throw new Error('CONTRACT_DID not configured');
+      return relay(contract, { submit_proposal: { title, description } });
+    }
+  };
 }
-
 // ZK-Rollup Implementation
 export interface ZKRollup {
   state: ZKState
