@@ -169,7 +169,7 @@ mod tests {
     #[test]
     fn test_domain_proof_validation() {
         let domain_hash = "test_domain_hash";
-        let proof_json = r#""valid_proof_hash_1234567890abcdef1234567890abcdef""#;
+        let proof_json = r#""abcdef1234567890abcdef1234567890abcdef123456""#;
         let public_signals = vec![domain_hash.to_string()];
         
         let result = verify_domain_proof(domain_hash, proof_json, &public_signals);
@@ -179,7 +179,7 @@ mod tests {
     #[test]
     fn test_domain_hash_mismatch() {
         let domain_hash = "test_domain_hash";
-        let proof_json = r#""valid_proof_hash_1234567890abcdef1234567890abcdef""#;
+        let proof_json = r#""abcdef1234567890abcdef1234567890abcdef123456""#;
         let public_signals = vec!["different_hash".to_string()];
         
         let result = verify_domain_proof(domain_hash, proof_json, &public_signals);
