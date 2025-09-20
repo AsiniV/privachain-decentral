@@ -19,6 +19,11 @@ pub struct ZKProofData {
 
 impl ZKProofData {
     pub fn from_json(proof_json: &str, public_signals: &[String]) -> StdResult<Self> {
+        // Validate that proof_json is not empty
+        if proof_json.trim().is_empty() {
+            return Err(StdError::generic_err("Proof JSON is empty".to_string()));
+        }
+        
         // Parse the proof JSON (simplified version)
         let parsed: serde_json::Value = serde_json::from_str(proof_json)
             .map_err(|e| StdError::generic_err(format!("Invalid proof JSON: {}", e)))?;
