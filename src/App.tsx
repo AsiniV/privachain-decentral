@@ -12,6 +12,7 @@ import ProductReadinessDashboard from './components/ProductReadinessDashboard'
 import { Toaster } from './components/ui/sonner'
 import { usePlanSystem } from './hooks/usePlanSystem'
 import { toast } from 'sonner'
+import proxyVPN from './services/proxyVPN'
 
 export type View = 'messenger' | 'email' | 'search' | 'profile' | 'deployment' | 'browser' | 'readiness'
 
@@ -22,6 +23,12 @@ function App() {
   
   // Initialize plan system on app start
   const { planStatus, loading: planLoading, error: planError } = usePlanSystem()
+
+  // Initialize DPI bypass killswitch on app start
+  useEffect(() => {
+    proxyVPN.enableKillSwitch()
+    return () => proxyVPN.disableKillSwitch()
+  }, [])
 
   // Show welcome message when plan is loaded
   useEffect(() => {
