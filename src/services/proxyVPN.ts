@@ -6,6 +6,7 @@
 import { SocksProxyAgent } from 'socks-proxy-agent'
 import { chacha20 } from '@noble/ciphers/chacha'
 import { randomBytes } from '@noble/hashes/utils'
+import { cosmosClient } from '@/lib/cosmos'
 
 export interface ProxyNode {
   id: string
@@ -73,7 +74,19 @@ class ProxyVPNService {
   }
 
   private async loadProxyNodes(): Promise<void> {
-    // In a real implementation, this would fetch from the Cosmos network
+    try {
+      // Try to load proxy nodes from Cosmos network
+      const dynamicNodes = await this.loadNodesFromCosmos()
+      if (dynamicNodes.length > 0) {
+        this.nodes = dynamicNodes
+        console.log(`Loaded ${dynamicNodes.length} proxy nodes from Cosmos network`)
+        return
+      }
+    } catch (error) {
+      console.warn('Failed to load nodes from Cosmos, using fallback static nodes:', error)
+    }
+
+    // Fallback to static nodes if dynamic loading fails
     this.nodes = [
       {
         id: 'node-nl-001',
@@ -156,6 +169,48 @@ class ProxyVPNService {
         premium: true
       }
     ]
+  }
+
+  private async loadNodesFromCosmos(): Promise<ProxyNode[]> {
+    try {
+      // Query relay nodes from the Cosmos blockchain
+      const relays = await cosmosClient.queryRelays()
+      
+      if (!relays || !Array.isArray(relays)) {
+        console.warn('No relays returned from Cosmos query')
+        return []
+      }
+
+      // Transform Cosmos relay data to ProxyNode format
+      return relays.map((relay: any, index: number) => ({
+        id: relay.address || `cosmos-node-${index}`,
+        location: relay.location || 'Unknown',
+        country: relay.country || relay.location?.substring(0, 2).toUpperCase() || 'XX',
+        city: relay.city || relay.location || 'Unknown',
+        ip: relay.ip || relay.endpoint?.split(':')[0] || '0.0.0.0',
+        port: relay.port || parseInt(relay.endpoint?.split(':')[1]) || 8080,
+        protocol: relay.protocol || 'https',
+        encryption: relay.encryption || 'AES-256-GCM',
+        speed: relay.speed || 50,
+        load: relay.load || 50,
+        uptime: relay.uptime || 95.0,
+        latency: relay.latency || 50,
+        active: relay.active !== false, // Default to true if not specified
+        premium: relay.premium === true
+      }))
+
+    } catch (error) {
+      console.error('Error loading nodes from Cosmos:', error)
+      return []
+    }
+  }
+
+  async refreshNodes(): Promise<void> {
+    console.log('Refreshing proxy nodes from Cosmos network...')
+    await this.loadProxyNodes()
+    if (this.nodes.length > 0) {
+      await this.selectOptimalNode()
+    }
   }
 
   private async selectOptimalNode(): Promise<void> {
@@ -628,6 +683,76 @@ class ProxyVPNService {
         }
       }
     }, 60000) // Check every minute
+  }
+
+  // Nym Network Integration for DPI Bypass
+  async setupNymTransport(): Promise<boolean> {
+    try {
+      console.log('Setting up Nym transport for DPI bypass...')
+      
+      // In a real implementation, this would initialize Nym mixnet connection
+      // For now, we'll use enhanced traffic obfuscation as a placeholder
+      
+      const nymConfig = {
+        mixnetEndpoint: 'wss://mixnet.nymtech.net',
+        gatewayId: 'auto-select',
+        clientMode: 'vpn',
+        trafficObfuscation: true
+      }
+      
+      // Simulate Nym initialization
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      console.log('Nym transport configured:', nymConfig)
+      return true
+      
+    } catch (error) {
+      console.error('Failed to setup Nym transport:', error)
+      return false
+    }
+  }
+
+  async routeViaNym(data: Uint8Array): Promise<Uint8Array> {
+    try {
+      // In a real implementation, this would route through Nym mixnet
+      // For now, apply enhanced obfuscation to simulate Nym routing
+      
+      // Add multiple layers of obfuscation
+      let obfuscated = this.obfuscateTraffic(data)
+      
+      // Simulate mixnet delay (realistic for Nym)
+      await new Promise(resolve => setTimeout(resolve, 100 + Math.random() * 200))
+      
+      // Add packet timing obfuscation
+      obfuscated = this.addTimingObfuscation(obfuscated)
+      
+      return obfuscated
+      
+    } catch (error) {
+      console.error('Nym routing failed, using fallback:', error)
+      return data
+    }
+  }
+
+  private addTimingObfuscation(data: Uint8Array): Uint8Array {
+    // Add random padding to break timing analysis
+    const paddingSize = Math.floor(Math.random() * 64) + 16
+    const padded = new Uint8Array(data.length + paddingSize)
+    padded.set(data, 0)
+    padded.set(randomBytes(paddingSize), data.length)
+    
+    return padded
+  }
+
+  getProxyChain(): ProxyChain | null {
+    if (!this.activeProxyChain || this.activeProxyChain.nodes.length === 0) {
+      return null
+    }
+    
+    return {
+      ...this.activeProxyChain,
+      agent: this.activeProxyChain.agent || undefined
+    }
   }
 }
 

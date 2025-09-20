@@ -150,9 +150,23 @@ export function useCosmos() {
     mnemonic: null
   })
 
-  // Initialize secure storage
+  // Initialize secure storage and check for stored wallets
   useEffect(() => {
-    SecureMnemonicStorage.init().catch(console.error)
+    const initialize = async () => {
+      await SecureMnemonicStorage.init()
+      
+      // Check if there's a stored wallet and notify user
+      try {
+        const hasWallet = await hasStoredWallet()
+        if (hasWallet) {
+          toast.info('Encrypted wallet found. Enter your passphrase to recover it.')
+        }
+      } catch (error) {
+        console.error('Error checking for stored wallet:', error)
+      }
+    }
+    
+    initialize().catch(console.error)
   }, [])
 
   // Persist wallet mnemonic securely
@@ -228,6 +242,39 @@ export function useCosmos() {
 
   const setPassphrase = (passphrase: string) => {
     setUserPassphrase(passphrase)
+  }
+
+  const recoverStoredWallet = async (passphrase: string): Promise<boolean> => {
+    setState(prev => ({ ...prev, isConnecting: true, error: null }))
+
+    try {
+      const encryptedMnemonic = await SecureMnemonicStorage.getEncryptedMnemonic()
+      if (!encryptedMnemonic) {
+        throw new Error('No stored wallet found')
+      }
+
+      const mnemonic = await SecureMnemonicStorage.decryptMnemonic(encryptedMnemonic, passphrase)
+      return await importWallet(mnemonic, passphrase)
+
+    } catch (error) {
+      console.error('Failed to recover stored wallet:', error)
+      setState(prev => ({ 
+        ...prev, 
+        isConnecting: false, 
+        error: error instanceof Error ? error.message : 'Failed to recover wallet' 
+      }))
+      toast.error('Failed to recover stored wallet - check your passphrase')
+      return false
+    }
+  }
+
+  const hasStoredWallet = async (): Promise<boolean> => {
+    try {
+      const encryptedMnemonic = await SecureMnemonicStorage.getEncryptedMnemonic()
+      return !!encryptedMnemonic
+    } catch {
+      return false
+    }
   }
 
   const createWallet = async (passphrase?: string): Promise<boolean> => {
@@ -432,6 +479,8 @@ export function useCosmos() {
     ...state,
     createWallet,
     importWallet,
+    recoverStoredWallet,
+    hasStoredWallet,
     setPassphrase,
     refreshAccount,
     registerZKIdentity,

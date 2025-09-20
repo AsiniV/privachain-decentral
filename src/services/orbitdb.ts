@@ -216,6 +216,7 @@ export class OrbitDBHybridIndexing {
   private libp2p: any = null
   private searchDatabase: any = null
   private simulatedPeers = 3
+  private syncCount = 0
   private torEnabled = true
   private fallbackIndex = new FallbackSearchIndex()
   private healthStatus: 'healthy' | 'degraded' | 'unavailable' = 'unavailable'
@@ -314,11 +315,54 @@ export class OrbitDBHybridIndexing {
         AccessController: 'ipfs', // Use IPFS access controller for decentralized access
       })
 
-      console.log('📚 Search database created:', this.searchDatabase.address)
+      // Set up real-time sync event listeners
+      this.setupRealtimeSync()
+
+      console.log('📚 Search database created with real-time sync:', this.searchDatabase.address)
     } catch (error) {
       console.error('❌ Failed to create search database:', error)
       throw error
     }
+  }
+
+  /**
+   * Set up real-time synchronization
+   */
+  private setupRealtimeSync() {
+    if (!this.searchDatabase) return
+
+    // Listen for new entries from other peers
+    this.searchDatabase.events.on('write', (address: string, entry: any) => {
+      console.log('📥 New entry synced from peer:', address, entry.payload.value)
+      
+      // Add to local index for faster searching
+      if (entry.payload.value) {
+        this.localIndex.set(entry.payload.value.id, entry.payload.value)
+        this.fallbackIndex.addDocument(entry.payload.value)
+      }
+    })
+
+    // Listen for peer join events
+    this.searchDatabase.events.on('join', (peerId: string) => {
+      console.log('👥 Peer joined search network:', peerId)
+      this.syncCount += 1
+    })
+
+    // Listen for peer leave events
+    this.searchDatabase.events.on('leave', (peerId: string) => {
+      console.log('👋 Peer left search network:', peerId)
+      this.syncCount = Math.max(0, this.syncCount - 1)
+    })
+
+    // Listen for replication progress
+    this.searchDatabase.events.on('replicate', (address: string) => {
+      console.log('🔄 Replicating with peer:', address)
+    })
+
+    // Listen for sync completion
+    this.searchDatabase.events.on('replicate.progress', (address: string, hash: string, entry: any) => {
+      console.log('⚡ Sync progress:', { address, hash, entryCount: entry.clock.time })
+    })
   }
 
   /**
@@ -511,7 +555,7 @@ export class OrbitDBHybridIndexing {
             }
           }
           
-          const proof = await zkIdentityManager.generateProof(zkInputs)
+          const proof = await zkIdentityManager.generateZKProof(zkInputs.statement, zkInputs.witness)
           zkProof = proof.proof
           console.log('🔐 Generated ZK proof for private search')
         } catch (zkError) {
