@@ -208,7 +208,7 @@ async function runAllZKTests() {
   console.log('==================================')
   
   let passed = 0
-  let total = results.length
+  const total = results.length
   
   for (const { name, success } of results) {
     const status = success ? '✅ PASS' : '❌ FAIL'

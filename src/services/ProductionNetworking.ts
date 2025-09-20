@@ -5,9 +5,9 @@
 
 import { randomBytes } from '@noble/hashes/utils'
 import { sha256 } from '@noble/hashes/sha256'
-// @ts-ignore - libsodium-wrappers types may not be perfect
+// @ts-expect-error - libsodium-wrappers types may not be perfect
 import * as sodium from 'libsodium-wrappers'
-// @ts-ignore - socks-proxy-agent types may not be available
+// @ts-expect-error - socks-proxy-agent types may not be available
 import { SocksProxyAgent } from 'socks-proxy-agent'
 
 interface PeerInfo {
@@ -238,9 +238,9 @@ export class ProductionNetworking {
       // Test Tor connectivity
       const testUrl = 'https://check.torproject.org/api/ip'
       const response = await fetch(testUrl, { 
-        // @ts-ignore - agent may not be in fetch types
+        // @ts-expect-error - agent may not be in fetch types
         agent: this.torProxy,
-        // @ts-ignore - timeout may not be in fetch types
+        // @ts-expect-error - timeout may not be in fetch types
         timeout: 10000
       })
       
@@ -1458,9 +1458,9 @@ export class ProductionNetworking {
           'X-Circuit-Protocol': 'privachain-onion-v1'
         },
         body: data.buffer, // Convert Uint8Array to ArrayBuffer
-        // @ts-ignore - agent may not be in fetch types
+        // @ts-expect-error - agent may not be in fetch types
         agent,
-        // @ts-ignore - timeout may not be in fetch types
+        // @ts-expect-error - timeout may not be in fetch types
         timeout: 10000
       })
 
@@ -1488,7 +1488,7 @@ export class ProductionNetworking {
     return new Promise((resolve, reject) => {
       // Use a conditional WebSocket check for browser/node compatibility
       const WebSocketClass = typeof WebSocket !== 'undefined' ? WebSocket : 
-        // @ts-ignore - Dynamic import for Node.js environments
+        // @ts-expect-error - Dynamic import for Node.js environments
         require('ws')
       
       const ws = new WebSocketClass(node.endpoint)
