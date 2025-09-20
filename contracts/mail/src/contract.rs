@@ -194,6 +194,17 @@ pub fn execute_register_domain(
             e
         })?;
 
+    // Also verify using Groth16 if proof format supports it
+    use crate::crypto::verify_zk_proof_groth16;
+    let commitment = Binary(domain_hash.to_vec());
+    let public_inputs = Binary(domain_hash_hex.as_bytes().to_vec());
+    
+    // Try Groth16 verification (will use placeholder until full circuit setup)
+    if let Err(e) = verify_zk_proof_groth16(&commitment, &zk_proof, &public_inputs) {
+        // Log the Groth16 verification attempt but don't fail registration
+        log::warn!("Groth16 verification not ready: {:?}", e);
+    }
+
     // Validate PGP public key format
     if public_key.is_empty() || public_key.len() < 64 {
         return Err(ContractError::InvalidPublicKey {});
