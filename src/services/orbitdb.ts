@@ -497,7 +497,7 @@ export class OrbitDBHybridIndexing {
       if (query.zkEncrypted) {
         try {
           // Import ZK service dynamically to avoid circular dependencies
-          const { default: zkIdentityManager } = await import('../zkCrypto')
+          const { zkIdentityManager } = await import('./zkCrypto')
           
           const zkInputs = {
             statement: { 
