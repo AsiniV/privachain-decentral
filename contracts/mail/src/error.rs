@@ -21,8 +21,8 @@ pub enum ContractError {
     #[error("Invalid domain name")]
     InvalidDomain {},
 
-    #[error("Invalid ZK proof")]
-    InvalidZkProof {},
+    #[error("Invalid ZK proof: {reason}")]
+    InvalidZkProof { reason: String },
 
     #[error("Invalid public key")]
     InvalidPublicKey {},

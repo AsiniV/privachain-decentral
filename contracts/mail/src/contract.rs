@@ -162,11 +162,37 @@ pub fn execute_register_domain(
         return Err(ContractError::InsufficientFunds {});
     }
 
-    // TODO: Verify ZK-SNARK proof of ownership
-    // For now, we'll just validate the proof is not empty
+    // Verify ZK-SNARK proof of ownership using real cryptographic verification
     if zk_proof.is_empty() {
-        return Err(ContractError::InvalidZkProof {});
+        return Err(ContractError::InvalidZkProof { 
+            reason: "Empty ZK proof provided".to_string() 
+        });
     }
+
+    // Use the crypto module for real ZK verification
+    use crate::crypto::verify_domain_proof;
+    
+    // Generate domain hash for verification
+    let mut hasher = Sha256::new();
+    hasher.update(format!("{}.prv", domain).as_bytes());
+    let domain_hash = hasher.finalize();
+    let domain_hash_hex = hex::encode(domain_hash);
+    
+    // Parse public signals (domain hash should be first)
+    let public_signals = vec![domain_hash_hex.clone()];
+    
+    // Convert Binary to string for verification
+    let zk_proof_str = String::from_utf8(zk_proof.to_vec())
+        .map_err(|_| ContractError::InvalidZkProof { 
+            reason: "Invalid UTF-8 in ZK proof".to_string() 
+        })?;
+    
+    // Verify the ZK proof
+    verify_domain_proof(&domain_hash_hex, &zk_proof_str, &public_signals)
+        .map_err(|e| {
+            error!("ZK proof verification failed: {:?}", e);
+            e
+        })?;
 
     // Validate PGP public key format
     if public_key.is_empty() || public_key.len() < 64 {

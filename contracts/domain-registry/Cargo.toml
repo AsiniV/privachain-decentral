@@ -18,6 +18,8 @@ cosmwasm-std = "1.5"
 cosmwasm-storage = "1.5"
 cw-storage-plus = "1.2"
 cw2 = "1.1"
+ark-groth16 = "0.4"
+ark-bn254 = "0.4"
 schemars = "0.8"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 thiserror = "1.0"
