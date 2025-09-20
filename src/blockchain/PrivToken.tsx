@@ -1,7 +1,7 @@
 import { createContext, useContext, ReactNode } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
-import { AlertTriangle } from '@phosphor-icons/react'
+import { Warning } from '@phosphor-icons/react'
 
 // PRIV Token has been deprecated - gas fees now paid with ATOM by developer wallet
 interface TokenContextType {
@@ -38,7 +38,7 @@ export function PrivTokenDeprecationNotice() {
     <Card className="border-orange-200 bg-orange-50">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-orange-800">
-          <AlertTriangle className="w-5 h-5" />
+          <Warning className="w-5 h-5" />
           PRIV Token Deprecated
         </CardTitle>
       </CardHeader>

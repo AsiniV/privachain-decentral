@@ -187,6 +187,13 @@ pub fn execute_register_domain(
             reason: "Invalid UTF-8 in ZK proof".to_string() 
         })?;
     
+    // Additional validation for empty proof strings
+    if zk_proof_str.trim().is_empty() {
+        return Err(ContractError::InvalidZkProof { 
+            reason: "Empty ZK proof provided".to_string() 
+        });
+    }
+    
     // Verify the ZK proof
     verify_domain_proof(&domain_hash_hex, &zk_proof_str, &public_signals)
         .map_err(|e| {
