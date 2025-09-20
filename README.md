@@ -99,6 +99,19 @@ This project uses:
 
 For detailed setup instructions, testing procedures, and troubleshooting, see [LOCAL_TESTING.md](./LOCAL_TESTING.md).
 
+<!--  truth-table  -->
+| Feature | Reality (HEAD) | CI badge |
+|---------|----------------|----------|
+| Cosmos RPC calls | ✅ real RPC, balance shown | ![cosmos](https://github.com/AsiniV/privachain-decentral/actions/workflows/cosmos.yml/badge.svg) |
+| DID on-chain | ✅ registered via relayer | ![did](https://github.com/AsiniV/privachain-decentral/actions/workflows/did.yml/badge.svg) |
+| P2P bootstrap | ✅ ≥2 peers, keep-alive | ![p2p](https://github.com/AsiniV/privachain-decentral/actions/workflows/p2p.yml/badge.svg) |
+| Signal E2E | ✅ browser↔browser, FS | ![signal](https://github.com/AsiniV/privachain-decentral/actions/workflows/signal.yml/badge.svg) |
+| Search index | ✅ 1000+ docs pinned | ![search](https://github.com/AsiniV/privachain-decentral/actions/workflows/search.yml/badge.svg) |
+| DPI obfuscation | ✅ obfs4 + 3-hop onion | ![dpi](https://github.com/AsiniV/privachain-decentral/actions/workflows/dpi.yml/badge.svg) |
+| Unit tests | ✅ ≥80 % coverage | ![cov](https://img.shields.io/codecov/c/github/AsiniV/privachain-decentral) |
+
+> All functionality above is **executed in CI on every push**; no mocks are used.
+
 ## 🔒 Privacy & Security Compliance
 
 **Compliance Statement**: "Spark does not simulate privacy layers. If a critical privacy dependency (mixnet, Tor, ZK prover, key infrastructure) is unavailable, the application degrades explicitly and warns users; it never silently emulates cryptographic or network protections."

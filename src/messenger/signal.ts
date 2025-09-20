@@ -39,3 +39,29 @@ export async function decrypt(store: SignalStore, theirDid: string, ctJson: stri
   // Mock decryption - just return a placeholder
   return "Decrypted message (mock implementation)";
 }
+
+export async function uploadBundle(node: any, did: string) {
+  const identity = await store.getIdentityKeyPair ? await store.getIdentityKeyPair() : { pubKey: store.identityKey };
+  // Mock key generation - in production use proper Signal Protocol
+  const preKey = { keyId: 0, keyPair: { pubKey: randomBytes(32) } };
+  const signed = { keyId: 0, keyPair: { pubKey: randomBytes(32) }, signature: randomBytes(64) };
+  
+  const bundle = {
+    did,
+    identityKey: identity.pubKey,
+    preKey: { id: preKey.keyId, key: preKey.keyPair.pubKey },
+    signedPreKey: { id: signed.keyId, key: signed.keyPair.pubKey, signature: signed.signature }
+  };
+  await node.pubsub.publish("privachain.signal.bundle", new TextEncoder().encode(JSON.stringify(bundle)));
+}
+
+export async function downloadBundle(node: any, theirDid: string): Promise<any> {
+  return new Promise((resolve) => {
+    node.pubsub.subscribe("privachain.signal.bundle");
+    node.pubsub.addEventListener("message", (evt: any) => {
+      const msg = JSON.parse(new TextDecoder().decode(evt.detail.data));
+      if (msg.did === theirDid) resolve(msg);
+    });
+    setTimeout(() => resolve(null), 10_000); // fallback
+  });
+}
