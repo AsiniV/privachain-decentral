@@ -1,0 +1,52 @@
+[package]
+name = "dpi-bypass"
+version = "0.1.0"
+edition = "2021"
+authors = ["PrivaChain Team <team@privachain.org>"]
+
+[lib]
+name = "dpi_bypass"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# Obfs5 dependencies
+snow = "0.9"
+rand = "0.8"
+tokio = { version = "1.0", features = ["full"] }
+
+# TLS and networking
+rustls = { version = "0.23", features = ["ring"] }
+rustls-webpki = "0.102"
+reqwest = { version = "0.12", features = ["json", "stream"] }
+
+# UDP and QUIC
+quinn = "0.11"
+
+# Configuration
+toml = "0.8"
+serde = { version = "1.0", features = ["derive"] }
+url = "2.5"
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Crypto
+ring = "0.17"
+hex = "0.4"
+
+# FFI for JavaScript integration
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+web-sys = "0.3"
+
+[dependencies.getrandom]
+version = "0.2"
+features = ["js"]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = 'abort'
