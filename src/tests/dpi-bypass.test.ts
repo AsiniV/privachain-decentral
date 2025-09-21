@@ -223,10 +223,21 @@ describe('DPI Bypass Functionality', () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         status: 200,
-        headers: new Headers({'x-proxied': 'true'})
-      })
+        headers: new Headers({'x-proxied': 'true'}),
+        arrayBuffer: async () => new ArrayBuffer(0)
+      } as any)
       
       // 7. Test routing through obfuscated chain
+      const response = await service.routeRequest('https://ipfs.io/ipfs/QmTest')
+      expect(response.status).toBe(200)
+      expect(response.headers.get('x-proxied')).toBe('true')
+      
+      // 8. Verify DPI bypass integration
+      const stats = service.getStats()
+      expect(stats).toHaveProperty('dpiBypass')
+      expect(stats.dpiBypass).toHaveProperty('available')
+      expect(stats.dpiBypass).toHaveProperty('initialized')
+      
       const proxyChain = service.getProxyChain()
       expect(proxyChain).toBeDefined()
       expect(proxyChain?.obfuscation).toBe(true)
