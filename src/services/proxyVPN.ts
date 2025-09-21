@@ -8,6 +8,7 @@ import { xchacha20 } from '@noble/ciphers/chacha'
 import { randomBytes } from '@noble/hashes/utils'
 import { cosmosClient } from '@/lib/cosmos'
 import V2Ray, { V2RayConfig } from '@/lib/v2ray-stub'
+import { dpiBypass } from './dpi-bypass'
 
 export interface ProxyNode {
   id: string
@@ -453,8 +454,18 @@ class ProxyVPNService {
    * Create a real multi-hop SOCKS proxy agent with domain fronting
    */
   private async createMultiHopAgent(chain: ProxyNode[]): Promise<SocksProxyAgent> {
-    // Rotate front domains (domain fronting for DPI evasion)
-    const fronts = ['front.cloudflare.com', 'front.google.com', 'front.aws.com', 'front.fastly.com']
+    // Enhanced domain fronting with more sophisticated front domains
+    const fronts = [
+      'front.cloudflare.com', 
+      'front.google.com', 
+      'front.aws.com', 
+      'front.fastly.com',
+      'api.github.com',
+      'assets.gitlab.com',
+      'cdn.jsdelivr.net',
+      'unpkg.com',
+      'cdnjs.cloudflare.com'
+    ]
     const front = fronts[Math.floor(Math.random() * fronts.length)]
     
     // Masquerade as HTTPS for all nodes
@@ -551,11 +562,21 @@ class ProxyVPNService {
         ...options.headers
       }
 
-      // Route through proxy chain or single node
-      const response = await this.executeProxiedRequest(url, {
-        ...options,
-        headers: proxyHeaders
-      })
+      // Enhanced DPI bypass - use domain fronting if available
+      let response: Response;
+      if (dpiBypass.isAvailable() && this.shouldUseDPIBypass(url)) {
+        console.log('🔒 Using DPI bypass for request:', url)
+        response = await dpiBypass.fetchWithBypass(url, {
+          ...options,
+          headers: proxyHeaders
+        })
+      } else {
+        // Route through standard proxy chain or single node
+        response = await this.executeProxiedRequest(url, {
+          ...options,
+          headers: proxyHeaders
+        })
+      }
 
       // Update stats
       this.updateTrafficStats(response)
@@ -619,6 +640,51 @@ class ProxyVPNService {
       'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:121.0) Gecko/20100101 Firefox/121.0'
     ]
     return userAgents[Math.floor(Math.random() * userAgents.length)]
+  }
+
+  /**
+   * Determine if DPI bypass should be used for a given URL
+   */
+  private shouldUseDPIBypass(url: string): boolean {
+    try {
+      const targetUrl = new URL(url)
+      const hostname = targetUrl.hostname.toLowerCase()
+      
+      // Use DPI bypass for potentially censored domains
+      const censoredPatterns = [
+        'ipfs.io',
+        'gateway.pinata.cloud',
+        'cloudflare-ipfs.com',
+        'dweb.link',
+        'nftstorage.link',
+        'privachain.io',
+        'tor.',
+        'onion.',
+        '.bit',
+        'decentralized',
+        'blockchain',
+        'crypto',
+        'privacy'
+      ]
+      
+      // Check if hostname matches censored patterns
+      const isCensored = censoredPatterns.some(pattern => 
+        hostname.includes(pattern)
+      )
+      
+      // Also check for specific protocols that might be blocked
+      const protocolBasedBypass = 
+        targetUrl.protocol === 'ws:' || 
+        targetUrl.protocol === 'wss:' ||
+        targetUrl.pathname.includes('/ipfs/') ||
+        targetUrl.pathname.includes('/ipns/')
+      
+      return isCensored || protocolBasedBypass
+    } catch (error) {
+      // If URL parsing fails, default to no bypass
+      console.warn('Failed to parse URL for DPI bypass check:', error)
+      return false
+    }
   }
 
   private updateTrafficStats(response: Response): void {
@@ -750,8 +816,11 @@ class ProxyVPNService {
     return this.proxyChain
   }
 
-  getStats(): TrafficStats {
-    return { ...this.stats }
+  getStats(): TrafficStats & { dpiBypass?: any } {
+    return {
+      ...this.stats,
+      dpiBypass: dpiBypass.getStats()
+    }
   }
 
   isConnected(): boolean {
