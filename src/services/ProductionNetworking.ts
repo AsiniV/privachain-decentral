@@ -10,6 +10,15 @@ import * as sodium from 'libsodium-wrappers'
 // @ts-expect-error - socks-proxy-agent types may not be available
 import { SocksProxyAgent } from 'socks-proxy-agent'
 
+// Import new anonymous network components
+import { 
+  OnionRouter, 
+  OnionNode, 
+  OnionCircuit,
+  AnonymousMessageRouter,
+  AnonymousMessage
+} from '../anonymous_network'
+
 interface PeerInfo {
   id: string
   multiaddrs: string[]
@@ -136,6 +145,11 @@ export class ProductionNetworking {
   private messageCounter = 0
   private dummyMessageQueue: Uint8Array[] = []
 
+  // New anonymous network components
+  private onionRouter: OnionRouter | null = null
+  private messageRouter: AnonymousMessageRouter | null = null
+  private onionNodes: OnionNode[] = []
+
   async initialize(): Promise<boolean> {
     try {
       console.log('🌐 Initializing production networking...')
@@ -162,6 +176,9 @@ export class ProductionNetworking {
 
       // Start networking services
       await this.startNetworkingServices()
+
+      // Initialize anonymous network components
+      await this.initializeAnonymousNetwork()
 
       // Start circuit management
       await this.startCircuitManagement()
@@ -541,6 +558,59 @@ export class ProductionNetworking {
 
     // Start mesh networking service
     await this.startMeshNetworkingService()
+  }
+
+  /**
+   * Initialize new anonymous network components
+   */
+  private async initializeAnonymousNetwork(): Promise<void> {
+    try {
+      console.log('🕵️ Initializing anonymous network layer...')
+
+      // Convert mixnet nodes to onion nodes format
+      this.onionNodes = Array.from(this.mixnetNodes.values()).map(node => ({
+        address: node.endpoint,
+        publicKey: node.publicKey
+      }))
+
+      // Add some default test nodes if none available
+      if (this.onionNodes.length === 0) {
+        this.onionNodes = [
+          {
+            address: '127.0.0.1:8001',
+            publicKey: sodium.randombytes_buf(32)
+          },
+          {
+            address: '127.0.0.1:8002', 
+            publicKey: sodium.randombytes_buf(32)
+          },
+          {
+            address: '127.0.0.1:8003',
+            publicKey: sodium.randombytes_buf(32)
+          },
+          {
+            address: '127.0.0.1:8004',
+            publicKey: sodium.randombytes_buf(32)
+          },
+          {
+            address: '127.0.0.1:8005',
+            publicKey: sodium.randombytes_buf(32)
+          }
+        ]
+      }
+
+      // Initialize onion router
+      this.onionRouter = new OnionRouter(this.onionNodes)
+
+      // Initialize anonymous message router
+      this.messageRouter = new AnonymousMessageRouter()
+      await this.messageRouter.initialize()
+
+      console.log(`✅ Anonymous network initialized with ${this.onionNodes.length} onion nodes`)
+    } catch (error) {
+      console.error('❌ Failed to initialize anonymous network:', error)
+      throw error
+    }
   }
 
   /**
@@ -1529,6 +1599,91 @@ export class ProductionNetworking {
     }
   }
 
+  // Anonymous Network Methods
+
+  /**
+   * Create an anonymous onion circuit using the new onion router
+   */
+  async createAnonymousCircuit(pathLength = 3): Promise<string> {
+    if (!this.onionRouter) {
+      throw new Error('Anonymous network not initialized')
+    }
+
+    try {
+      const circuitId = await this.onionRouter.buildCircuit(pathLength)
+      console.log(`🧅 Created anonymous circuit: ${circuitId}`)
+      return circuitId
+    } catch (error) {
+      console.error('❌ Failed to create anonymous circuit:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Send data through an anonymous onion circuit
+   */
+  async sendThroughAnonymousCircuit(circuitId: string, data: Uint8Array, destination: string): Promise<Uint8Array> {
+    if (!this.onionRouter) {
+      throw new Error('Anonymous network not initialized')
+    }
+
+    try {
+      const response = await this.onionRouter.sendOnionRequest(circuitId, data, destination)
+      console.log(`📤 Sent ${data.length} bytes through anonymous circuit ${circuitId}`)
+      return response
+    } catch (error) {
+      console.error('❌ Failed to send through anonymous circuit:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Send an anonymous message through the network
+   */
+  async sendAnonymousMessage(content: Uint8Array, recipient?: string): Promise<string> {
+    if (!this.messageRouter) {
+      throw new Error('Message router not initialized')
+    }
+
+    try {
+      const messageId = await this.messageRouter.sendAnonymousMessage(content, recipient)
+      console.log(`📨 Sent anonymous message: ${messageId}`)
+      return messageId
+    } catch (error) {
+      console.error('❌ Failed to send anonymous message:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Get anonymous network statistics
+   */
+  getAnonymousNetworkStats() {
+    const onionStats = this.onionRouter ? {
+      activeCircuits: this.onionRouter.getActiveCircuits().length,
+      availableNodes: this.onionNodes.length
+    } : null
+
+    const messageStats = this.messageRouter ? this.messageRouter.getStatistics() : null
+
+    return {
+      onionRouting: onionStats,
+      messageRouting: messageStats,
+      initialized: !!(this.onionRouter && this.messageRouter)
+    }
+  }
+
+  /**
+   * Get detailed circuit information for debugging
+   */
+  getAnonymousCircuitInfo(circuitId: string) {
+    if (!this.onionRouter) {
+      throw new Error('Anonymous network not initialized')
+    }
+
+    return this.onionRouter.getCircuitMetrics(circuitId)
+  }
+
   private calculateAverageLatency(): number {
     if (this.activeCircuits.size === 0) return 0
     
@@ -1643,6 +1798,15 @@ export class ProductionNetworking {
       if (this.node && typeof this.node.stop === 'function') {
         await this.node.stop()
       }
+
+      // Shutdown anonymous network components
+      if (this.messageRouter) {
+        await this.messageRouter.shutdown()
+        this.messageRouter = null
+      }
+      
+      this.onionRouter = null
+      this.onionNodes = []
 
       // Clear state
       this.activeCircuits.clear()

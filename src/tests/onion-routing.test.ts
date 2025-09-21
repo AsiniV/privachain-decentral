@@ -197,6 +197,78 @@ describe('Onion Routing Integration Tests', () => {
       expect(metrics).toBeDefined()
     })
   })
+
+  describe('Anonymous Network Integration (Phase 2)', () => {
+    test('should create anonymous circuit', async () => {
+      const circuitId = await networking.createAnonymousCircuit(3)
+      
+      expect(circuitId).toBeDefined()
+      expect(typeof circuitId).toBe('string')
+      expect(circuitId).toMatch(/^circuit_/)
+      
+      const stats = networking.getAnonymousNetworkStats()
+      expect(stats.initialized).toBe(true)
+      expect(stats.onionRouting?.activeCircuits).toBeGreaterThan(0)
+    })
+
+    test('should send data through anonymous circuit', async () => {
+      const circuitId = await networking.createAnonymousCircuit(3)
+      const testData = new TextEncoder().encode('Anonymous test message')
+      const destination = 'example.com:443'
+      
+      const response = await networking.sendThroughAnonymousCircuit(circuitId, testData, destination)
+      
+      expect(response).toBeInstanceOf(Uint8Array)
+      expect(response.length).toBeGreaterThan(0)
+    })
+
+    test('should send anonymous message', async () => {
+      const content = new TextEncoder().encode('Test anonymous message via ProductionNetworking')
+      
+      const messageId = await networking.sendAnonymousMessage(content)
+      
+      expect(messageId).toBeDefined()
+      expect(typeof messageId).toBe('string')
+      
+      const stats = networking.getAnonymousNetworkStats()
+      expect(stats.messageRouting?.cachedMessages).toBeGreaterThan(0)
+    })
+
+    test('should get anonymous network statistics', () => {
+      const stats = networking.getAnonymousNetworkStats()
+      
+      expect(stats).toHaveProperty('onionRouting')
+      expect(stats).toHaveProperty('messageRouting')
+      expect(stats).toHaveProperty('initialized')
+      expect(stats.initialized).toBe(true)
+    })
+
+    test('should get circuit information', async () => {
+      const circuitId = await networking.createAnonymousCircuit(4)
+      
+      const circuitInfo = networking.getAnonymousCircuitInfo(circuitId)
+      
+      expect(circuitInfo).toHaveProperty('circuitId', circuitId)
+      expect(circuitInfo).toHaveProperty('nodeCount', 4)
+      expect(circuitInfo).toHaveProperty('createdAt')
+      expect(circuitInfo).toHaveProperty('age')
+      expect(circuitInfo).toHaveProperty('nodes')
+      expect(circuitInfo.nodes).toHaveLength(4)
+    })
+
+    test('should handle multiple anonymous circuits', async () => {
+      const circuits = await Promise.all([
+        networking.createAnonymousCircuit(3),
+        networking.createAnonymousCircuit(4),
+        networking.createAnonymousCircuit(2)
+      ])
+      
+      expect(circuits).toHaveLength(3)
+      
+      const stats = networking.getAnonymousNetworkStats()
+      expect(stats.onionRouting?.activeCircuits).toBe(3)
+    })
+  })
 })
 
 /**
