@@ -55,6 +55,18 @@ interface CosmosContextType {
   sendTransaction: (tx: Partial<Transaction>) => Promise<string>
   // Removed staking functions as per requirements
   delegateVote: (proposal: string, vote: 'yes' | 'no' | 'abstain') => Promise<void>
+  queryDomain: (domain: string) => Promise<DomainRecord | null>
+}
+
+// Domain record interface for content resolution
+interface DomainRecord {
+  domain: string
+  contentHash: string
+  encryptionKey?: string
+  contentType: string
+  owner: string
+  active: boolean
+  expires: number
 }
 
 const CosmosContext = createContext<CosmosContextType | null>(null)
@@ -195,6 +207,49 @@ export function CosmosProvider({ children }: { children: ReactNode }) {
     toast.success(`Vote cast: ${vote}`)
   }
 
+  const queryDomain = async (domain: string): Promise<DomainRecord | null> => {
+    if (!isConnected) {
+      console.warn('Not connected to blockchain for domain query')
+      return null
+    }
+
+    try {
+      // Simulate domain query - in production this would query the smart contract
+      await new Promise(resolve => setTimeout(resolve, 100)) // Simulate network delay
+      
+      // Mock domain records for testing
+      if (domain === 'example.priva') {
+        return {
+          domain: 'example.priva',
+          contentHash: 'QmExampleContentHash123456789',
+          encryptionKey: undefined, // No encryption for this example
+          contentType: 'text/html',
+          owner: walletAddress || 'unknown',
+          active: true,
+          expires: Date.now() + 365 * 24 * 60 * 60 * 1000 // Expires in 1 year
+        }
+      }
+      
+      if (domain === 'encrypted.priva') {
+        return {
+          domain: 'encrypted.priva',
+          contentHash: 'QmEncryptedContentHash987654321',
+          encryptionKey: 'abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890', // 32-byte hex key
+          contentType: 'application/json',
+          owner: walletAddress || 'unknown',
+          active: true,
+          expires: Date.now() + 365 * 24 * 60 * 60 * 1000
+        }
+      }
+
+      // Domain not found
+      return null
+    } catch (error) {
+      console.error('❌ Failed to query domain:', error)
+      return null
+    }
+  }
+
   return (
     <CosmosContext.Provider value={{
       state,
@@ -204,7 +259,8 @@ export function CosmosProvider({ children }: { children: ReactNode }) {
       connect,
       disconnect,
       sendTransaction,
-      delegateVote
+      delegateVote,
+      queryDomain
     }}>
       {children}
     </CosmosContext.Provider>
@@ -218,6 +274,9 @@ export const useCosmos = () => {
   }
   return context
 }
+
+// Export interfaces for use by other modules
+export type { DomainRecord }
 
 // Helper functions
 function generateValidators(): Validator[] {
