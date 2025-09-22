@@ -17,6 +17,7 @@ pub mod webrtc_p2p;
 pub mod retract;
 pub mod nym_sender;
 pub mod global_dpi_test;
+pub mod onion_integration;
 
 use serde::{Deserialize, Serialize};
 
