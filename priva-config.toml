@@ -6,6 +6,7 @@ chain_id = "provider-testnet"
 rpc_node = "https://rpc.provider-testnet.cosmoshub.strange.love"
 light_client_trust_period = "336h"  # 14 days
 light_client_trusting_period = "168h"  # 7 days
+contract = "cosmos1...<your_contract>"  # Contract address for on-chain operations
 
 [ipfs]
 # IPFS configuration for light client header storage
