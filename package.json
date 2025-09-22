@@ -47,7 +47,14 @@
         "verify-features:verbose": "tsx scripts/verify-features.ts --verbose",
         "example:cosmos-connection": "tsx examples/cosmos-hub-connection.ts",
         "example:cosmos-connection:js": "node examples/cosmos-hub-connection.js",
-        "validate:cosmos-config": "tsx examples/validate-config.ts"
+        "validate:cosmos-config": "tsx examples/validate-config.ts",
+        "git:add": "bash scripts/git-ops.sh add",
+        "git:commit": "bash scripts/git-workflow.sh",
+        "git:push": "bash scripts/git-ops.sh push",
+        "git:full": "bash scripts/git-ops.sh full",
+        "git:commit-push": "bash scripts/git-workflow.sh --push",
+        "git:quick": "bash scripts/git-workflow.sh --skip-tests",
+        "git:force": "bash scripts/git-workflow.sh --force --push"
     },
     "dependencies": {
         "@chainsafe/libp2p-gossipsub": "^14.1.1",
