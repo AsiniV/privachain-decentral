@@ -61,3 +61,4 @@ pub type MessengerResult<T> = Result<T, MessengerError>;
 pub use kyber_upgrade::PqHandshake;
 pub use double_ratchet::DoubleRatchet;
 pub use dilithium_sign::DilithiumSigner;
+pub use file_transfer::{FileTransfer, Cid};
