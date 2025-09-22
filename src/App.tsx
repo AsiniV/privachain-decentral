@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import './lib/kvStorage' // Initialize KV storage early
 import { VideoCallProvider } from './components/VideoCallProvider'
+import { AppStateProvider } from './lib/app_state'
 import { Sidebar } from './components/Sidebar'
 import { MessengerView } from './components/MessengerView'
 import { EmailView } from './components/EmailView'
@@ -78,36 +79,38 @@ function App() {
   }
 
   return (
-    <VideoCallProvider>
-      <div className="h-screen bg-background text-foreground flex overflow-hidden">
-        {planLoading ? (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center space-y-4">
-              <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto"></div>
-              <div>
-                <h3 className="text-lg font-semibold">Initializing PrivaChain</h3>
-                <p className="text-muted-foreground">Setting up your plan and developer-sponsored gas...</p>
+    <AppStateProvider>
+      <VideoCallProvider>
+        <div className="h-screen bg-background text-foreground flex overflow-hidden">
+          {planLoading ? (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center space-y-4">
+                <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto"></div>
+                <div>
+                  <h3 className="text-lg font-semibold">Initializing PrivaChain</h3>
+                  <p className="text-muted-foreground">Setting up your plan and developer-sponsored gas...</p>
+                </div>
               </div>
             </div>
-          </div>
-        ) : (
-          <>
-            <Sidebar 
-              currentView={currentView}
-              onViewChange={setCurrentView}
-              open={sidebarOpen}
-              onOpenChange={setSidebarOpen}
-            />
-            
-            <main className="flex-1 flex flex-col min-w-0">
-              {renderView()}
-            </main>
-          </>
-        )}
-        
-        <Toaster />
-      </div>
-    </VideoCallProvider>
+          ) : (
+            <>
+              <Sidebar 
+                currentView={currentView}
+                onViewChange={setCurrentView}
+                open={sidebarOpen}
+                onOpenChange={setSidebarOpen}
+              />
+              
+              <main className="flex-1 flex flex-col min-w-0">
+                {renderView()}
+              </main>
+            </>
+          )}
+          
+          <Toaster />
+        </div>
+      </VideoCallProvider>
+    </AppStateProvider>
   )
 }
 

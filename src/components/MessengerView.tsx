@@ -9,6 +9,9 @@ import { ScrollArea } from './ui/scroll-area'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip'
 import { useVideoCall } from './VideoCallProvider'
 import { getE2EService } from '../services/e2eEncryption'
+import { useAppState } from '../lib/app_state'
+import { storeCID, retractCID } from '../lib/onchain_ops'
+import { WalletBar } from './WalletBar'
 import { 
   PaperPlaneTilt, 
   Lock, 
@@ -17,7 +20,9 @@ import {
   DotsThree,
   User,
   ShieldCheck,
-  ShieldWarning
+  ShieldWarning,
+  CloudArrowUp,
+  Trash
 } from '@phosphor-icons/react'
 import { cn } from '../lib/utils'
 import { toast } from 'sonner'
@@ -30,6 +35,8 @@ interface Message {
   encrypted: boolean
   sessionSecure: boolean
   type: 'text' | 'system'
+  cid?: string  // IPFS CID for on-chain storage
+  txHash?: string  // Blockchain transaction hash
 }
 
 interface Contact {
@@ -70,9 +77,11 @@ export function MessengerView() {
   const [selectedContact, setSelectedContact] = useKV<string | null>('selected-contact', null)
   const [newMessage, setNewMessage] = useState('')
   const [sessionStatus, setSessionStatus] = useState<Record<string, boolean>>({})
+  const [isSending, setIsSending] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   
   const selectedContactData = contacts.find(c => c.id === selectedContact)
+  const { cosmosAddress, isKeplrConnected } = useAppState()
   
   // Use video call hook
   const { initiateCall, isInCall } = useVideoCall()
@@ -142,6 +151,8 @@ export function MessengerView() {
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedContact || !selectedContactData) return
 
+    setIsSending(true)
+
     try {
       const e2eService = getE2EService('messenger-user')
       let session = e2eService.getSessionByContact(selectedContactData.address)
@@ -164,6 +175,9 @@ export function MessengerView() {
       // Encrypt message using E2E encryption
       const encryptedMessage = await e2eService.encryptMessage(session.sessionId, newMessage)
 
+      // Generate a mock CID for the encrypted message (in real implementation, this would be IPFS)
+      const mockCid = `bafybei${Math.random().toString(36).substring(2, 50)}`
+
       const message: Message = {
         id: Date.now().toString(),
         sender: 'me',
@@ -171,13 +185,26 @@ export function MessengerView() {
         timestamp: Date.now(),
         encrypted: true,
         sessionSecure: true,
-        type: 'text'
+        type: 'text',
+        cid: mockCid
+      }
+
+      // Try to store on blockchain if wallet is connected
+      if (cosmosAddress && isKeplrConnected) {
+        try {
+          const txHash = await storeCID(mockCid)
+          message.txHash = txHash
+          toast.success(`Message sent & stored on-chain! TX: ${txHash.slice(0, 12)}...`)
+        } catch (error) {
+          console.error('Failed to store on-chain:', error)
+          toast.warning('Message sent but failed to store on blockchain')
+        }
+      } else {
+        toast.info('Message sent (connect wallet for on-chain storage)')
       }
 
       setMessages(current => [...current, message])
       setNewMessage('')
-      
-      toast.success('Message sent with E2E encryption')
 
       // Simulate encrypted response
       setTimeout(() => {
@@ -195,6 +222,31 @@ export function MessengerView() {
     } catch (error) {
       console.error('❌ Failed to send encrypted message:', error)
       toast.error('Failed to send encrypted message')
+    } finally {
+      setIsSending(false)
+    }
+  }
+
+  const retractMessage = async (message: Message) => {
+    if (!message.cid || !cosmosAddress || !isKeplrConnected) {
+      toast.error('Cannot retract: Wallet not connected or message not stored on-chain')
+      return
+    }
+
+    try {
+      // Generate mock ZK proof for retraction (in real implementation, this would be proper ZK)
+      const mockNullifier = `nullifier_${message.cid.slice(-16)}`
+      const mockProof = `proof_${Math.random().toString(36).substring(2, 50)}`
+
+      const result = await retractCID(mockNullifier, mockProof)
+      
+      // Remove message from local state
+      setMessages(current => current.filter(m => m.id !== message.id))
+      
+      toast.success(`Message retracted! TX: ${result.transactionHash.slice(0, 12)}...`)
+    } catch (error) {
+      console.error('Failed to retract message:', error)
+      toast.error('Failed to retract message from blockchain')
     }
   }
 
@@ -212,6 +264,12 @@ export function MessengerView() {
       <div className="w-80 border-r border-border flex flex-col">
         <div className="p-4 border-b border-border">
           <h2 className="text-lg font-semibold mb-3">Conversations</h2>
+          
+          {/* Wallet Connection Bar */}
+          <div className="mb-3">
+            <WalletBar />
+          </div>
+          
           <Input 
             placeholder="MagnifyingGlass conversations..." 
             className="w-full mb-3"
@@ -384,28 +442,59 @@ export function MessengerView() {
                   <div 
                     key={message.id}
                     className={cn(
-                      "flex",
+                      "flex group",
                       message.sender === 'me' ? 'justify-end' : 'justify-start'
                     )}
                   >
                     <div className={cn(
-                      "max-w-[70%] rounded-lg p-3",
+                      "max-w-[70%] rounded-lg p-3 relative",
                       message.sender === 'me' 
                         ? 'bg-accent text-accent-foreground' 
                         : 'bg-muted'
                     )}>
                       <p>{message.content}</p>
-                      <div className="flex items-center gap-1 mt-1 text-xs opacity-70">
-                        {message.encrypted && (
-                          <>
-                            {message.sessionSecure ? (
-                              <ShieldCheck className="w-3 h-3 text-green-600" />
-                            ) : (
-                              <Lock className="w-3 h-3" />
-                            )}
-                          </>
+                      <div className="flex items-center justify-between gap-2 mt-1">
+                        <div className="flex items-center gap-1 text-xs opacity-70">
+                          {message.encrypted && (
+                            <>
+                              {message.sessionSecure ? (
+                                <ShieldCheck className="w-3 h-3 text-green-600" />
+                              ) : (
+                                <Lock className="w-3 h-3" />
+                              )}
+                            </>
+                          )}
+                          {message.txHash && (
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <CloudArrowUp className="w-3 h-3 text-blue-600" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Stored on blockchain: {message.txHash.slice(0, 12)}...</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                          <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
+                        </div>
+                        
+                        {/* Retract button for own messages with on-chain storage */}
+                        {message.sender === 'me' && message.cid && message.txHash && cosmosAddress && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => retractMessage(message)}
+                              >
+                                <Trash className="w-3 h-3 text-red-500" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Retract message from blockchain</p>
+                            </TooltipContent>
+                          </Tooltip>
                         )}
-                        <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
                       </div>
                     </div>
                   </div>
@@ -420,13 +509,43 @@ export function MessengerView() {
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Type a secure message..."
-                  onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                  onKeyDown={(e) => e.key === 'Enter' && !isSending && sendMessage()}
                   className="flex-1"
+                  disabled={isSending}
                 />
-                <Button onClick={sendMessage} disabled={!newMessage.trim()}>
-                  <PaperPlaneTilt className="w-4 h-4" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      onClick={sendMessage} 
+                      disabled={!newMessage.trim() || isSending}
+                      className="flex items-center gap-2"
+                    >
+                      <PaperPlaneTilt className="w-4 h-4" />
+                      {cosmosAddress && isKeplrConnected ? (
+                        isSending ? 'Storing...' : 'Send & Store'
+                      ) : (
+                        'Send'
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>
+                      {cosmosAddress && isKeplrConnected 
+                        ? 'Send encrypted message and store CID on blockchain'
+                        : 'Send encrypted message (connect wallet for on-chain storage)'
+                      }
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
+              
+              {/* Status indicator */}
+              {cosmosAddress && isKeplrConnected && (
+                <div className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
+                  <CloudArrowUp className="w-3 h-3 text-blue-600" />
+                  <span>Messages will be stored on blockchain</span>
+                </div>
+              )}
             </div>
           </>
         ) : (
