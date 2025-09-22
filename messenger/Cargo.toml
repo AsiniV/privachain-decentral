@@ -25,6 +25,10 @@ bls12_381 = "0.8"
 ff = "0.13"
 group = "0.13"
 
+[features]
+default = []
+nym = ["tokio/full"]
+
 [lib]
 name = "privachain_messenger"
 crate-type = ["cdylib", "rlib"]
@@ -33,4 +37,3 @@ crate-type = ["cdylib", "rlib"]
 opt-level = "z"
 lto = true
 codegen-units = 1
-panic = "abort"
