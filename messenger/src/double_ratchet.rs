@@ -221,6 +221,15 @@ impl DoubleRatchet {
     pub fn get_our_ratchet_public_key(&self) -> Option<Vec<u8>> {
         Some(vec![0u8; 32]) // Placeholder
     }
+
+    /// Derive SRTP master key material from current ratchet state
+    pub fn derive_srtp_material(&self, key_len: usize) -> MessengerResult<Vec<u8>> {
+        let hkdf = Hkdf::<Sha256>::new(Some(&self.root_key), &[]);
+        let mut master_key = vec![0u8; key_len];
+        hkdf.expand(b"srtp_master_key", &mut master_key)
+            .map_err(|_| MessengerError::KeyGenerationFailed("Failed to derive SRTP master key".to_string()))?;
+        Ok(master_key)
+    }
 }
 
 #[cfg(test)]
@@ -258,5 +267,26 @@ mod tests {
         ratchet.inject_pq_secret(pq_secret).unwrap();
         
         assert!(ratchet.is_pq_upgraded());
+    }
+
+    #[test]
+    fn test_srtp_material_derivation() {
+        let initial_shared_key = b"test_shared_key_32_bytes_long!!!";
+        let ratchet = DoubleRatchet::new(initial_shared_key).unwrap();
+        
+        // Test SRTP key derivation
+        let srtp_material = ratchet.derive_srtp_material(32).unwrap();
+        assert_eq!(srtp_material.len(), 32);
+        
+        // Test that multiple calls produce the same result (deterministic)
+        let srtp_material2 = ratchet.derive_srtp_material(32).unwrap();
+        assert_eq!(srtp_material, srtp_material2);
+        
+        // Test different key lengths
+        let short_key = ratchet.derive_srtp_material(16).unwrap();
+        assert_eq!(short_key.len(), 16);
+        
+        let long_key = ratchet.derive_srtp_material(64).unwrap();
+        assert_eq!(long_key.len(), 64);
     }
 }
