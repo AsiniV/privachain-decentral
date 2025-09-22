@@ -44,6 +44,7 @@ Visit `http://localhost:5173` to see the application.
 
 ### Development and Testing
 - **[LOCAL_TESTING.md](./LOCAL_TESTING.md)** - Comprehensive guide for local development and testing
+- **[Git Workflow](./docs/git-workflow.md)** - Automated git operations with security validation
 
 ### Cosmos Testnet Deployment
 - **[COSMOS_TESTNET_DEPLOYMENT.md](./docs/COSMOS_TESTNET_DEPLOYMENT.md)** - Complete deployment guide for Cosmos testnet
@@ -74,6 +75,12 @@ npm run verify-features:verbose # Detailed verification report
 # Cosmos Hub Testnet Examples (NEW)
 npm run example:cosmos-connection    # TypeScript example
 npm run example:cosmos-connection:js # JavaScript example
+
+# Git Workflow Automation (NEW)
+npm run git:add                      # Add all changes with security validation
+npm run git:commit "message"         # Commit with full validation pipeline
+npm run git:push                     # Push to current branch
+npm run git:full "message"           # Complete add + commit + push workflow
 ```
 
 ## 🛠️ Development
