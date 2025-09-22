@@ -60,8 +60,9 @@ pub type MessengerResult<T> = Result<T, MessengerError>;
 
 /// Re-export key modules for external use
 pub use kyber_upgrade::PqHandshake;
-pub use double_ratchet::DoubleRatchet;
+pub use double_ratchet::{DoubleRatchet, EncryptedMessage, MessageType};
 pub use dilithium_sign::DilithiumSigner;
-pub use file_transfer::{FileTransfer, Cid};
+pub use file_transfer::{FileTransfer, Cid, IpfsClient};
 pub use webrtc_p2p::{WebRtcP2p, SrtpContext, OnionIceCandidate};
 pub use video_quality_optimizer::{target_bitrate, VideoQualityOptimizer, VideoQualityProfile};
+pub use retract::{retract, RetractionNotice, MessageRetractor};
