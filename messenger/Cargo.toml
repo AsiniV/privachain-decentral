@@ -15,6 +15,11 @@ ed25519-dalek = "2.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tokio = { version = "1.0", features = ["full"] }
+# ZK-SNARK dependencies for Groth16
+bellman = "0.14"
+bls12_381 = "0.8"
+ff = "0.13"
+group = "0.13"
 
 [lib]
 name = "privachain_messenger"

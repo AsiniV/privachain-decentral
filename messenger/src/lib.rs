@@ -19,6 +19,9 @@ pub mod nym_sender;
 pub mod global_dpi_test;
 pub mod onion_integration;
 
+#[cfg(test)]
+mod tests;
+
 use serde::{Deserialize, Serialize};
 
 /// Core messenger error types
@@ -30,6 +33,8 @@ pub enum MessengerError {
     InvalidSignature(String),
     NetworkError(String),
     ZkProofError(String),
+    CryptoError(String),
+    InvalidInput(String),
 }
 
 impl std::fmt::Display for MessengerError {
@@ -41,6 +46,8 @@ impl std::fmt::Display for MessengerError {
             MessengerError::InvalidSignature(msg) => write!(f, "Invalid signature: {}", msg),
             MessengerError::NetworkError(msg) => write!(f, "Network error: {}", msg),
             MessengerError::ZkProofError(msg) => write!(f, "ZK proof error: {}", msg),
+            MessengerError::CryptoError(msg) => write!(f, "Crypto error: {}", msg),
+            MessengerError::InvalidInput(msg) => write!(f, "Invalid input: {}", msg),
         }
     }
 }
