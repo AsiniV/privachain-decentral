@@ -1,0 +1,36 @@
+# priva-config.toml - PrivaChain Configuration
+# Configuration for Cosmos light client and blockchain operations
+
+[cosmos]
+chain_id = "provider-testnet"
+rpc_node = "https://rpc.provider-testnet.cosmoshub.strange.love"
+light_client_trust_period = "336h"  # 14 days
+light_client_trusting_period = "168h"  # 7 days
+
+[ipfs]
+# IPFS configuration for light client header storage
+node_url = "http://localhost:5001"
+gateway_url = "http://localhost:8080"
+
+[nym]
+# Nym mixnet configuration  
+client_url = "http://localhost:1977"
+enabled = false  # Set to true when --mixnet nym flag is used
+
+[webrtc]
+# WebRTC configuration for STUN-less operation
+ice_servers = []  # Empty - no STUN servers used
+use_onion_candidates = true
+
+[decoy]
+# Decoy traffic configuration
+interval_seconds = 30
+jitter_percent = 5
+chunk_size_kb = 256
+
+[zk]
+# Zero-knowledge proof configuration
+circuit_path = "./circuits"
+ptau_file = "ptau15.ptau"
+verification_key = "vk.json"
+proving_key = "pk.bin"

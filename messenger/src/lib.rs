@@ -19,6 +19,7 @@ pub mod retract;
 pub mod nym_sender;
 pub mod global_dpi_test;
 pub mod onion_integration;
+pub mod keplr_ops;
 
 #[cfg(test)]
 mod tests;
@@ -66,3 +67,4 @@ pub use file_transfer::{FileTransfer, Cid, IpfsClient};
 pub use webrtc_p2p::{WebRtcP2p, SrtpContext, OnionIceCandidate};
 pub use video_quality_optimizer::{target_bitrate, VideoQualityOptimizer, VideoQualityProfile};
 pub use retract::{retract, RetractionNotice, MessageRetractor};
+pub use keplr_ops::{sign_store_cid, sign_retract_nullifier, get_cosmos_address, verify_signature};
