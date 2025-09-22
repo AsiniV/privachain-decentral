@@ -15,6 +15,10 @@ ed25519-dalek = "2.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tokio = { version = "1.0", features = ["full"] }
+tokio-util = { version = "0.7", features = ["io"] }
+futures-util = "0.3"
+hex = "0.4"
+chrono = { version = "0.4", features = ["serde"] }
 # ZK-SNARK dependencies for Groth16
 bellman = "0.14"
 bls12_381 = "0.8"

@@ -25,6 +25,7 @@ extern int32_t messenger_decrypt_message(const uint8_t* ciphertext, size_t ciphe
                                         const uint8_t* shared_secret, size_t shared_secret_len,
                                         uint8_t* plaintext_out, size_t* plaintext_len);
 extern void messenger_free_buffer(uint8_t* buffer);
+extern void messenger_send_file_with_progress(const char* path, const char* key_b64, void (*progress)(uint32_t percent));
 
 // Error codes
 #define MESSENGER_SUCCESS 0
@@ -138,6 +139,16 @@ uint8_t* messenger_buffer_get_data(messenger_buffer_t* buffer) {
 
 size_t messenger_buffer_get_length(messenger_buffer_t* buffer) {
     return buffer ? buffer->length : 0;
+}
+
+// File transfer with progress callback
+void send_file_with_progress(const char* path, const char* key_b64, void (*progress)(uint32_t percent)) {
+    if (!path || !key_b64 || !progress) {
+        return;
+    }
+    
+    // Call the Rust implementation
+    messenger_send_file_with_progress(path, key_b64, progress);
 }
 
 #ifdef __cplusplus
