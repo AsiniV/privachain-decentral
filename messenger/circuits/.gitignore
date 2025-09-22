@@ -1,0 +1,10 @@
+# ZK Circuit build artifacts
+artifacts/
+test_artifacts/
+
+# Node modules for circuit dependencies
+node_modules/
+
+# Temporary files
+*.tmp
+*.log
