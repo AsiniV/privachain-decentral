@@ -9,6 +9,7 @@ use aes_gcm::aead::Aead;
 use rand::{thread_rng, RngCore};
 use crate::{MessengerError, MessengerResult, kyber_upgrade::PqHandshake};
 use serde::{Deserialize, Serialize};
+use serde_json;
 
 /// Double Ratchet state for a messaging session (simplified)
 #[derive(Debug, Clone)]
@@ -38,6 +39,27 @@ pub struct RatchetMessage {
     pub message_number: u32,
     /// Previous chain length
     pub previous_chain_length: u32,
+}
+
+/// Message types for different operations
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum MessageType {
+    Normal(Vec<u8>),
+    Retract(String), // CID to retract
+}
+
+/// High-level encrypted message wrapper
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EncryptedMessage {
+    pub message_type: MessageType,
+    pub ratchet_message: RatchetMessage,
+}
+
+impl EncryptedMessage {
+    /// Create a new retract message
+    pub fn new_retract(cid: String) -> MessageType {
+        MessageType::Retract(cid)
+    }
 }
 
 impl DoubleRatchet {
@@ -123,6 +145,21 @@ impl DoubleRatchet {
             ciphertext,
             message_number,
             previous_chain_length: 0, // Simplified
+        })
+    }
+
+    /// Send a message through the Double Ratchet (encrypt and format)
+    pub async fn send(&mut self, message_type: MessageType) -> MessengerResult<EncryptedMessage> {
+        // Serialize the message type
+        let plaintext = serde_json::to_vec(&message_type)
+            .map_err(|e| MessengerError::EncryptionFailed(format!("Serialization failed: {}", e)))?;
+        
+        // Encrypt using the double ratchet
+        let ratchet_message = self.encrypt(&plaintext)?;
+        
+        Ok(EncryptedMessage {
+            message_type,
+            ratchet_message,
         })
     }
 

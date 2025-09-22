@@ -24,7 +24,7 @@ impl std::fmt::Display for Cid {
 pub type Error = MessengerError;
 
 /// Mock IPFS client for demonstration
-struct IpfsClient {
+pub struct IpfsClient {
     _base_url: String,
 }
 
@@ -45,9 +45,19 @@ impl IpfsClient {
         // Mock implementation - in real code this would pin content in IPFS
         Ok(())
     }
+    
+    pub async fn pin_rm(&self, _cid: &str) -> Result<(), Error> {
+        // Mock implementation - in real code this would unpin content from IPFS
+        Ok(())
+    }
+    
+    pub async fn dht_provide_stop(&self, _cid: &str) -> Result<(), Error> {
+        // Mock implementation - in real code this would stop providing content via DHT
+        Ok(())
+    }
 }
 
-struct AddResponse {
+pub struct AddResponse {
     hash: String,
 }
 
