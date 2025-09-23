@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
+    to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
     Timestamp, Addr, StdError,
 };
 use cw2::set_contract_version;
@@ -421,17 +421,17 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     use crate::msg::*;
     
     match msg {
-        QueryMsg::Domain { domain_hash } => to_binary(&query_domain(deps, domain_hash)?),
+        QueryMsg::Domain { domain_hash } => to_json_binary(&query_domain(deps, domain_hash)?),
         QueryMsg::DomainsOwned { owner_pubkey, start_after, limit } => {
-            to_binary(&query_domains_owned(deps, owner_pubkey, start_after, limit)?)
+            to_json_binary(&query_domains_owned(deps, owner_pubkey, start_after, limit)?)
         }
         QueryMsg::ExpiringSoon { within_seconds, start_after, limit } => {
-            to_binary(&query_expiring_soon(deps, env, within_seconds, start_after, limit)?)
+            to_json_binary(&query_expiring_soon(deps, env, within_seconds, start_after, limit)?)
         }
-        QueryMsg::Config {} => to_binary(&query_config(deps)?),
-        QueryMsg::Stats {} => to_binary(&query_stats(deps)?),
+        QueryMsg::Config {} => to_json_binary(&query_config(deps)?),
+        QueryMsg::Stats {} => to_json_binary(&query_stats(deps)?),
         QueryMsg::VerifyProof { commitment, proof, public_inputs } => {
-            to_binary(&query_verify_proof(deps, commitment, proof, public_inputs)?)
+            to_json_binary(&query_verify_proof(deps, commitment, proof, public_inputs)?)
         }
     }
 }

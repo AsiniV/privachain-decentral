@@ -29,7 +29,7 @@ pub fn instantiate(_deps: DepsMut, _env: Env, _info: MessageInfo, _msg: Instanti
 pub fn execute(deps: DepsMut, _env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
         ExecuteMsg::Register { did, pub_key } => {
-            deps.api.addr_validate(&info.sender)?;
+            deps.api.addr_validate(info.sender.as_str())?;
             DID.save(deps.storage, &did, &pub_key)?;
             Ok(Response::new().add_attribute("action", "register"))
         }
