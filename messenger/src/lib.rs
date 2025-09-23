@@ -23,6 +23,7 @@ pub mod keplr_ops;
 pub mod otc_generator;
 pub mod local_vault;
 pub mod otc_recovery;
+pub mod otc_refresh;
 
 #[cfg(test)]
 mod tests;
@@ -74,3 +75,4 @@ pub use keplr_ops::{sign_store_cid, sign_retract_nullifier, get_cosmos_address, 
 pub use otc_generator::{generate_otc_pair, validate_otc_code};
 pub use local_vault::{save_otc_pair, load_otc_pair, burn_otc_pair, has_otc_pair};
 pub use otc_recovery::{generate_recovery_proof, code_to_private_key, derive_pubkey};
+pub use otc_refresh::{refresh_codes, refresh_after_recovery, secure_overwrite};
