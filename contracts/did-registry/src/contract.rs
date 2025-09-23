@@ -16,7 +16,7 @@ pub enum QueryMsg {
     Resolve { did: String },
 }
 
-use cw_storage_plus::{Map, Item};
+use cw_storage_plus::Map;
 
 pub const DID: Map<&str, Vec<u8>> = Map::new("did");
 

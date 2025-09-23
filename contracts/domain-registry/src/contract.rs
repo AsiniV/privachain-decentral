@@ -1,15 +1,15 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
-    Timestamp, Addr, StdError,
+    to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+    Timestamp,
 };
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, MigrateMsg};
 use crate::state::{Config, DomainRecord, ContractStats, CONFIG, STATS, DOMAINS, DOMAINS_BY_OWNER, DOMAINS_BY_EXPIRY, DAILY_REGISTRATIONS};
-use crate::crypto::{verify_zk_proof, hash_domain, verify_signature};
+use crate::crypto::{verify_zk_proof, verify_signature};
 
 const CONTRACT_NAME: &str = "privachain-domain-registry";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -201,7 +201,7 @@ fn execute_renew(
         .map_err(|_| ContractError::DomainNotFound { domain: domain_hash.clone() })?;
     
     // Verify ownership (signature verification)
-    if !verify_signature(&ownership_proof, &domain.owner_pubkey, &domain_hash.as_bytes())? {
+    if !verify_signature(&ownership_proof, &domain.owner_pubkey, domain_hash.as_bytes())? {
         return Err(ContractError::InvalidSignature {
             reason: "ownership proof signature invalid".to_string(),
         });
