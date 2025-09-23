@@ -1,4 +1,0 @@
-# Error Logs
-# Automatic error logging during tests
-# Format: Timestamp - ERROR: [description]
-2025-07-29T12:44:34.396Z - ERROR: Test error message for verification

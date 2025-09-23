@@ -1,5 +1,6 @@
 {
-    "name": "spark-template",
+    "name": "privachain",
+    "description": "Post-quantum, DPI-proof, zero-server messenger",
     "private": true,
     "version": "0.0.0",
     "type": "module",
@@ -70,7 +71,6 @@
         "@noble/ed25519": "^3.0.0",
         "@noble/hashes": "^1.8.0",
         "@octokit/core": "^7.0.3",
-        "@orbitdb/core": "^3.0.2",
         "@phosphor-icons/react": "^2.1.7",
         "@radix-ui/colors": "^3.0.0",
         "@radix-ui/react-accordion": "^1.2.3",
@@ -121,7 +121,6 @@
         "graphql-request": "^7.2.0",
         "helia": "^5.5.1",
         "input-otp": "^1.4.2",
-        "ipfs-http-client": "^60.0.1",
         "it-pipe": "^3.0.1",
         "kyber-crystals": "^1.0.7",
         "libp2p": "^2.10.0",

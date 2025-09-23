@@ -42,6 +42,7 @@ Cargo.lock
 
 # Contract build artifacts
 contracts/*/target/
+contracts/mail/target/
 contracts/artifacts/*.wasm
 
 # Temporary files
@@ -57,3 +58,6 @@ contracts/artifacts/*.wasm
 orbitdb/
 .orbitdb/
 *.orbitdb/
+
+# Test directories that should be excluded from builds but not from git
+# (tests/ folder is kept in git for actual test files)
