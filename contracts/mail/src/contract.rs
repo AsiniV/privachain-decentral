@@ -174,7 +174,7 @@ pub fn execute_register_domain(
     
     // Generate domain hash for verification
     let mut hasher = Sha256::new();
-    hasher.update(format!("{}.prv", domain).as_bytes());
+    hasher.update(format!("{domain}.prv").as_bytes());
     let domain_hash = hasher.finalize();
     let domain_hash_hex = hex::encode(domain_hash);
     
@@ -197,7 +197,7 @@ pub fn execute_register_domain(
     // Verify the ZK proof
     verify_domain_proof(&domain_hash_hex, &zk_proof_str, &public_signals)
         .map_err(|e| {
-            error!("ZK proof verification failed: {:?}", e);
+            error!("ZK proof verification failed: {e:?}");
             e
         })?;
 
@@ -209,7 +209,7 @@ pub fn execute_register_domain(
     // Try Groth16 verification (will use placeholder until full circuit setup)
     if let Err(e) = verify_zk_proof_groth16(&commitment, &zk_proof, &public_inputs) {
         // Log the Groth16 verification attempt but don't fail registration
-        log::warn!("Groth16 verification not ready: {:?}", e);
+        log::warn!("Groth16 verification not ready: {e:?}");
     }
 
     // Validate PGP public key format

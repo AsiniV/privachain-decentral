@@ -1,15 +1,15 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
-    Timestamp, Addr, StdError,
+    to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+    Timestamp,
 };
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, MigrateMsg};
 use crate::state::{Config, DomainRecord, ContractStats, CONFIG, STATS, DOMAINS, DOMAINS_BY_OWNER, DOMAINS_BY_EXPIRY, DAILY_REGISTRATIONS};
-use crate::crypto::{verify_zk_proof, hash_domain, verify_signature};
+use crate::crypto::{verify_zk_proof, verify_signature};
 
 const CONTRACT_NAME: &str = "privachain-domain-registry";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -201,7 +201,7 @@ fn execute_renew(
         .map_err(|_| ContractError::DomainNotFound { domain: domain_hash.clone() })?;
     
     // Verify ownership (signature verification)
-    if !verify_signature(&ownership_proof, &domain.owner_pubkey, &domain_hash.as_bytes())? {
+    if !verify_signature(&ownership_proof, &domain.owner_pubkey, domain_hash.as_bytes())? {
         return Err(ContractError::InvalidSignature {
             reason: "ownership proof signature invalid".to_string(),
         });
@@ -421,17 +421,17 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     use crate::msg::*;
     
     match msg {
-        QueryMsg::Domain { domain_hash } => to_binary(&query_domain(deps, domain_hash)?),
+        QueryMsg::Domain { domain_hash } => to_json_binary(&query_domain(deps, domain_hash)?),
         QueryMsg::DomainsOwned { owner_pubkey, start_after, limit } => {
-            to_binary(&query_domains_owned(deps, owner_pubkey, start_after, limit)?)
+            to_json_binary(&query_domains_owned(deps, owner_pubkey, start_after, limit)?)
         }
         QueryMsg::ExpiringSoon { within_seconds, start_after, limit } => {
-            to_binary(&query_expiring_soon(deps, env, within_seconds, start_after, limit)?)
+            to_json_binary(&query_expiring_soon(deps, env, within_seconds, start_after, limit)?)
         }
-        QueryMsg::Config {} => to_binary(&query_config(deps)?),
-        QueryMsg::Stats {} => to_binary(&query_stats(deps)?),
+        QueryMsg::Config {} => to_json_binary(&query_config(deps)?),
+        QueryMsg::Stats {} => to_json_binary(&query_stats(deps)?),
         QueryMsg::VerifyProof { commitment, proof, public_inputs } => {
-            to_binary(&query_verify_proof(deps, commitment, proof, public_inputs)?)
+            to_json_binary(&query_verify_proof(deps, commitment, proof, public_inputs)?)
         }
     }
 }

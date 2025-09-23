@@ -10,3 +10,4 @@ crate-type = ["cdylib", "rlib"]
 cosmwasm-std = "1.1"
 cw-storage-plus = "1.0"
 serde = { version = "1.0", default-features = false, features = ["derive"] }
+thiserror = "1.0"

@@ -3,7 +3,7 @@
  * NO STUB / NO SIMULATION - Real cryptographic verification only
  */
 
-use cosmwasm_std::{Binary, StdError, StdResult};
+use cosmwasm_std::{Binary, StdResult};
 use sha2::{Digest, Sha256};
 
 use crate::error::ContractError;
@@ -79,16 +79,6 @@ pub fn verify_zk_proof(
     // This prevents double-spending of domain ownership proofs
     
     Ok(true)
-}
-
-/// Create expected proof signature for verification
-/// This is a simplified proof structure - in production would use actual ZK circuits
-fn create_proof_signature(commitment: &Binary, public_inputs: &Binary) -> StdResult<Vec<u8>> {
-    let mut hasher = Sha256::new();
-    hasher.update(b"zk_proof_signature:");
-    hasher.update(commitment);
-    hasher.update(public_inputs);
-    Ok(hasher.finalize().to_vec())
 }
 
 /// Check if array is all zeros
@@ -243,7 +233,7 @@ pub fn generate_domain_commitment(
     hasher.update(b"domain_commitment:");
     hasher.update(domain_name.as_bytes());
     hasher.update(owner_pubkey);
-    hasher.update(&nonce.to_be_bytes());
+    hasher.update(nonce.to_be_bytes());
     hasher.finalize().to_vec()
 }
 
@@ -302,7 +292,7 @@ mod tests {
         // The function should not error but may return false for invalid proof
         match result {
             Ok(verified) => {
-                println!("Proof verification result: {}", verified);
+                println!("Proof verification result: {verified}");
                 // Either result is acceptable for testing
             },
             Err(e) => {

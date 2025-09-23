@@ -3,8 +3,7 @@ use cosmwasm_std::{coins, Binary, Uint128, Addr};
 use cw_multi_test::{App, ContractWrapper, Executor};
 
 use crate::contract::{execute, instantiate, query};
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::ContractError;
+use crate::msg::{ExecuteMsg, InstantiateMsg};
 
 /// Enhanced fuzz testing for contract robustness
 /// Tests various edge cases, malformed inputs, and property-based scenarios
@@ -63,8 +62,8 @@ mod fuzz_tests {
             
             let register_msg = ExecuteMsg::RegisterDomain {
                 domain: domain.to_string(),
-                zk_proof: Binary::from(format!("mock_proof_{}", domain).as_bytes()),
-                public_key: Binary::from(format!("mock_key_{}", domain).as_bytes()),
+                zk_proof: Binary::from(format!("mock_proof_{domain}").as_bytes()),
+                public_key: Binary::from(format!("mock_key_{domain}").as_bytes()),
                 mx_records: None,
             };
 
@@ -76,10 +75,10 @@ mod fuzz_tests {
             );
 
             match (result.is_ok(), should_succeed) {
-                (true, true) => println!("✅ {}: '{}' correctly accepted", description, domain),
-                (false, false) => println!("✅ {}: '{}' correctly rejected", description, domain),
-                (true, false) => println!("⚠️ {}: '{}' unexpectedly accepted", description, domain),
-                (false, true) => println!("⚠️ {}: '{}' unexpectedly rejected", description, domain),
+                (true, true) => println!("✅ {description}: '{domain}' correctly accepted"),
+                (false, false) => println!("✅ {description}: '{domain}' correctly rejected"),
+                (true, false) => println!("⚠️ {description}: '{domain}' unexpectedly accepted"),
+                (false, true) => println!("⚠️ {description}: '{domain}' unexpectedly rejected"),
             }
         }
 
@@ -163,7 +162,7 @@ mod fuzz_tests {
             let user = Addr::unchecked("user");
             
             let register_msg = ExecuteMsg::RegisterDomain {
-                domain: format!("domain{}", idx), // Use index for unique domains
+                domain: format!("domain{idx}"), // Use index for unique domains
                 zk_proof: Binary::from(b"mock_proof_payment_test"),
                 public_key: Binary::from(b"mock_key_payment_test"),
                 mx_records: None,
@@ -177,10 +176,10 @@ mod fuzz_tests {
             );
 
             match (result.is_ok(), should_succeed) {
-                (true, true) => println!("✅ Payment test - {}: correctly accepted", description),
-                (false, false) => println!("✅ Payment test - {}: correctly rejected", description),
-                (true, false) => println!("⚠️ Payment test - {}: unexpectedly accepted", description),
-                (false, true) => println!("⚠️ Payment test - {}: unexpectedly rejected", description),
+                (true, true) => println!("✅ Payment test - {description}: correctly accepted"),
+                (false, false) => println!("✅ Payment test - {description}: correctly rejected"),
+                (true, false) => println!("⚠️ Payment test - {description}: unexpectedly accepted"),
+                (false, true) => println!("⚠️ Payment test - {description}: unexpectedly rejected"),
             }
         }
 
@@ -210,7 +209,7 @@ mod fuzz_tests {
         let mut failed_registrations = 0;
 
         for i in 0..20 {
-            let user = Addr::unchecked(format!("user{}", i));
+            let user = Addr::unchecked(format!("user{i}"));
             let domain = format!("domain{}", i % 10); // Some domains will conflict
             
             // Give each user initial balance for testing
@@ -223,8 +222,8 @@ mod fuzz_tests {
             
             let register_msg = ExecuteMsg::RegisterDomain {
                 domain: domain.clone(),
-                zk_proof: Binary::from(format!("proof{}", i).as_bytes()),
-                public_key: Binary::from(format!("key{}", i).as_bytes()),
+                zk_proof: Binary::from(format!("proof{i}").as_bytes()),
+                public_key: Binary::from(format!("key{i}").as_bytes()),
                 mx_records: None,
             };
 
@@ -237,7 +236,7 @@ mod fuzz_tests {
 
             if result.is_ok() {
                 successful_registrations += 1;
-                println!("✅ Domain '{}' registered by user{}", domain, i);
+                println!("✅ Domain '{domain}' registered by user{i}");
             } else {
                 failed_registrations += 1;
                 println!("❌ Domain '{}' registration failed for user{}: {:?}", domain, i, result.err());
@@ -245,8 +244,8 @@ mod fuzz_tests {
         }
 
         println!("✅ Concurrent operations test completed:");
-        println!("   Successful: {}", successful_registrations);
-        println!("   Failed: {}", failed_registrations);
+        println!("   Successful: {successful_registrations}");
+        println!("   Failed: {failed_registrations}");
         
         // Should have some successes and some failures due to conflicts
         // Relaxed assertions since ZK validation might cause more failures
@@ -284,7 +283,7 @@ mod fuzz_tests {
         // Should handle correctly
         match result {
             Ok(_) => println!("Domain registration handled successfully"),
-            Err(e) => println!("Domain registration rejected appropriately: {:?}", e),
+            Err(e) => println!("Domain registration rejected appropriately: {e:?}"),
         }
 
         println!("✅ Basic fuzz test passed");

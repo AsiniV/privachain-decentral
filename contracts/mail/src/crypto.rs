@@ -1,10 +1,6 @@
 use cosmwasm_std::{StdError, StdResult, Binary};
 use sha2::{Sha256, Digest};
 use crate::error::ContractError;
-use ark_bn254::{Bn254, Fr as BnFr};
-use ark_groth16::{Groth16, Proof, VerifyingKey};
-use ark_ff::{Field, PrimeField};
-use ark_serialize::CanonicalDeserialize;
 
 // For now, use a placeholder ZK verification system until circuit setup is complete
 // This provides the structure for real Groth16 verification
@@ -26,7 +22,7 @@ impl ZKProofData {
         
         // Parse the proof JSON (simplified version)
         let parsed: serde_json::Value = serde_json::from_str(proof_json)
-            .map_err(|e| StdError::generic_err(format!("Invalid proof JSON: {}", e)))?;
+            .map_err(|e| StdError::generic_err(format!("Invalid proof JSON: {e}")))?;
         
         // Extract proof hash or generate from proof data
         let proof_hash = if let Some(proof_str) = parsed.as_str() {
@@ -140,11 +136,11 @@ pub fn verify_domain_proof(
     
     let proof_data = ZKProofData::from_json(proof_json, public_signals)
         .map_err(|e| ContractError::InvalidZkProof { 
-            reason: format!("Failed to parse proof: {}", e) 
+            reason: format!("Failed to parse proof: {e}") 
         })?;
     
     // Additional domain-specific validation
-    if proof_data.public_inputs.len() < 1 {
+    if proof_data.public_inputs.is_empty() {
         return Err(ContractError::InvalidZkProof {
             reason: "Insufficient public inputs for domain proof".to_string(),
         });
