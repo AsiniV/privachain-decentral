@@ -4,7 +4,7 @@
  */
 
 import { SocksProxyAgent } from 'socks-proxy-agent'
-import { xchacha20 } from '@noble/ciphers/chacha'
+import { xchacha20 } from '@noble/ciphers/chacha.js'
 import { randomBytes } from '@noble/hashes/utils'
 import { cosmosClient } from '@/lib/cosmos'
 import V2Ray, { V2RayConfig } from '@/lib/v2ray-stub'
