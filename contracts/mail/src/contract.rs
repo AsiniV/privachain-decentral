@@ -13,7 +13,7 @@ use crate::msg::{
 };
 use crate::state::{
     Config, Domain, Email, RelayNode, CONFIG, DOMAINS, EMAILS, DOMAIN_EMAILS, 
-    RELAYS, RELAYS_BY_LOCATION, SPAM_REPORTS, USED_NONCES,
+    RELAYS, RELAYS_BY_LOCATION, SPAM_REPORTS, USED_NONCES, RATE_LIMIT,
 };
 
 // Contract metadata
@@ -140,8 +140,19 @@ pub fn execute_register_domain(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     
-    // Validate domain name
-    if domain.is_empty() || domain.len() > 63 || domain.contains('.') {
+    // ✅ H4: Comprehensive input sanitization
+    // Validate domain name length and format
+    if domain.is_empty() || domain.len() > 63 {
+        return Err(ContractError::InvalidDomain {});
+    }
+    
+    // Validate domain contains only alphanumeric, hyphens (no dots allowed)
+    if !domain.chars().all(|c| c.is_alphanumeric() || c == '-') {
+        return Err(ContractError::InvalidDomain {});
+    }
+    
+    // Validate domain doesn't start/end with hyphen
+    if domain.starts_with('-') || domain.ends_with('-') {
         return Err(ContractError::InvalidDomain {});
     }
 
@@ -247,7 +258,9 @@ pub fn execute_register_domain(
         .add_attribute("method", "register_domain")
         .add_attribute("domain", &domain)
         .add_attribute("owner", info.sender)
-        .add_attribute("registration_fee", payment))
+        .add_attribute("registration_fee", payment)
+        .add_attribute("expires_at", domain_info.expires_at.to_string())
+        .add_attribute("reputation", domain_info.reputation.to_string()))
 }
 
 pub fn execute_send_email(
@@ -260,6 +273,39 @@ pub fn execute_send_email(
     sender_alias: Option<String>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
+
+    // ✅ H4: Comprehensive input sanitization
+    // Validate recipient domain
+    if recipient_domain.is_empty() || recipient_domain.len() > 63 {
+        return Err(ContractError::InvalidDomain {});
+    }
+    
+    // Validate content CID format and length  
+    if content_cid.is_empty() || content_cid.len() > 128 {
+        return Err(ContractError::Std(StdError::generic_err("Content CID length must be 1-128 characters")));
+    }
+    
+    // Validate content CID contains only valid characters (base58)
+    if !content_cid.chars().all(|c| c.is_alphanumeric()) {
+        return Err(ContractError::Std(StdError::generic_err("Content CID contains invalid characters")));
+    }
+    
+    // Validate sender alias if provided
+    if let Some(ref alias) = sender_alias {
+        if alias.len() > 64 {
+            return Err(ContractError::Std(StdError::generic_err("Sender alias too long (max 64 chars)")));
+        }
+        if !alias.chars().all(|c| c.is_alphanumeric() || c == '.' || c == '-') {
+            return Err(ContractError::Std(StdError::generic_err("Sender alias contains invalid characters")));
+        }
+    }
+
+    // ✅ M1: Rate limiting (60 seconds between emails per address)
+    let last_action = RATE_LIMIT.may_load(deps.storage, &info.sender)?.unwrap_or(0);
+    if env.block.time.seconds() - last_action < 60 {
+        return Err(ContractError::Std(StdError::generic_err("Rate limited: wait 60 seconds between emails")));
+    }
+    RATE_LIMIT.save(deps.storage, &info.sender, &env.block.time.seconds())?;
 
     // Verify payment
     let payment = info
@@ -302,8 +348,8 @@ pub fn execute_send_email(
     let email = Email {
         id: email_id.clone(),
         recipient_domain: recipient_domain.clone(),
-        sender_alias: alias,
-        content_cid,
+        sender_alias: alias.clone(),
+        content_cid: content_cid.clone(),
         timestamp: env.block.time.seconds(),
         delivered: false,
         relay_path: vec![],
@@ -328,7 +374,10 @@ pub fn execute_send_email(
         .add_attribute("method", "send_email")
         .add_attribute("recipient", &recipient_domain)
         .add_attribute("email_id", &email_id)
-        .add_attribute("sender_fee", payment))
+        .add_attribute("sender_fee", payment)
+        .add_attribute("sender_alias", &alias)
+        .add_attribute("content_cid", &content_cid)
+        .add_attribute("timestamp", env.block.time.seconds().to_string()))
 }
 
 pub fn execute_update_domain(
@@ -378,6 +427,19 @@ pub fn execute_register_relay(
     stake: Uint128,
     endpoint: String,
 ) -> Result<Response, ContractError> {
+    // ✅ L2: Input length validation
+    if location.is_empty() || location.len() > 64 {
+        return Err(ContractError::Std(StdError::generic_err("Location length must be 1-64 characters")));
+    }
+    
+    if endpoint.is_empty() || endpoint.len() > 256 {
+        return Err(ContractError::Std(StdError::generic_err("Endpoint length must be 1-256 characters")));
+    }
+    
+    // Validate endpoint format (basic URL check)
+    if !endpoint.starts_with("http://") && !endpoint.starts_with("https://") {
+        return Err(ContractError::Std(StdError::generic_err("Endpoint must be a valid HTTP/HTTPS URL")));
+    }
     // Verify minimum stake
     if stake < Uint128::new(1000000) { // 1 PRIV minimum
         return Err(ContractError::InsufficientStake {});
@@ -539,7 +601,11 @@ pub fn query_relay(deps: Deps, address: String) -> StdResult<RelayResponse> {
     let relay = RELAYS.load(deps.storage, &addr)?;
     
     let success_rate = if relay.emails_relayed > 0 {
-        ((relay.successful_deliveries * 100) / relay.emails_relayed) as u32
+        // ✅ Use checked arithmetic to prevent overflow
+        relay.successful_deliveries
+            .checked_mul(100)
+            .and_then(|result| result.checked_div(relay.emails_relayed))
+            .unwrap_or(0) as u32
     } else {
         0
     };
@@ -576,7 +642,11 @@ pub fn query_relays(
             .map(|addr| {
                 let relay = RELAYS.load(deps.storage, addr)?;
                 let success_rate = if relay.emails_relayed > 0 {
-                    ((relay.successful_deliveries * 100) / relay.emails_relayed) as u32
+                    // ✅ Use checked arithmetic to prevent overflow
+                    relay.successful_deliveries
+                        .checked_mul(100)
+                        .and_then(|result| result.checked_div(relay.emails_relayed))
+                        .unwrap_or(0) as u32
                 } else {
                     0
                 };
@@ -601,7 +671,11 @@ pub fn query_relays(
             .map(|item| {
                 let (_, relay) = item?;
                 let success_rate = if relay.emails_relayed > 0 {
-                    ((relay.successful_deliveries * 100) / relay.emails_relayed) as u32
+                    // ✅ Use checked arithmetic to prevent overflow
+                    relay.successful_deliveries
+                        .checked_mul(100)
+                        .and_then(|result| result.checked_div(relay.emails_relayed))
+                        .unwrap_or(0) as u32
                 } else {
                     0
                 };
@@ -651,7 +725,7 @@ pub fn query_stats(deps: Deps) -> StdResult<StatsResponse> {
                 None
             }
         })
-        .count() as u64;
+        .count() as u32;
 
     // Count active relays
     let active_relays = RELAYS
@@ -663,11 +737,11 @@ pub fn query_stats(deps: Deps) -> StdResult<StatsResponse> {
                 None
             }
         })
-        .count() as u64;
+        .count() as u32;
 
     let total_relays = RELAYS
         .range(deps.storage, None, None, Order::Ascending)
-        .count() as u64;
+        .count() as u32;
 
     Ok(StatsResponse {
         total_domains: config.total_domains,
@@ -690,7 +764,10 @@ fn verify_pow(proof: &Binary, difficulty: u32) -> bool {
     let hash = hasher.finalize();
     
     // Check if hash has required number of leading zeros
-    let leading_zeros = hash.iter().take_while(|&&b| b == 0).count() * 8;
+    // ✅ Use checked arithmetic to prevent overflow
+    let leading_zeros = hash.iter().take_while(|&&b| b == 0).count()
+        .checked_mul(8)
+        .unwrap_or(0);
     leading_zeros >= difficulty as usize
 }
 

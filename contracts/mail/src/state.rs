@@ -13,10 +13,10 @@ pub struct Config {
     pub email_fee: Uint128,
     /// Minimum proof-of-work difficulty
     pub pow_difficulty: u32,
-    /// Total domains registered
-    pub total_domains: u64,
-    /// Total emails sent
-    pub total_emails: u64,
+    /// Total domains registered (u32 sufficient for realistic usage)
+    pub total_domains: u32,
+    /// Total emails sent (u32 sufficient for 4B emails)  
+    pub total_emails: u32,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -37,10 +37,10 @@ pub struct Domain {
     pub active: bool,
     /// Reputation score (0-100, affects spam filtering)
     pub reputation: u32,
-    /// Number of emails received
-    pub emails_received: u64,
-    /// Number of spam reports
-    pub spam_reports: u64,
+    /// Number of emails received (u32 sufficient) 
+    pub emails_received: u32,
+    /// Number of spam reports (u32 sufficient)
+    pub spam_reports: u32,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -73,12 +73,12 @@ pub struct RelayNode {
     pub endpoint: String,
     /// Registration timestamp
     pub registered_at: u64,
-    /// Total emails relayed
-    pub emails_relayed: u64,
-    /// Successful deliveries
-    pub successful_deliveries: u64,
-    /// Failed deliveries
-    pub failed_deliveries: u64,
+    /// Total emails relayed (u32 sufficient)
+    pub emails_relayed: u32,
+    /// Successful deliveries (u32 sufficient)
+    pub successful_deliveries: u32,
+    /// Failed deliveries (u32 sufficient)
+    pub failed_deliveries: u32,
     /// Total rewards earned
     pub rewards_earned: Uint128,
     /// Unclaimed rewards
@@ -115,3 +115,6 @@ pub const USED_NONCES: Map<&[u8], bool> = Map::new("used_nonces");
 
 /// Domain reservation system (for premium domains)
 pub const RESERVED_DOMAINS: Map<&str, Addr> = Map::new("reserved_domains");
+
+/// ✅ M1: Rate limiting per address (address -> last_action_timestamp)
+pub const RATE_LIMIT: Map<&Addr, u64> = Map::new("rate_limit");
