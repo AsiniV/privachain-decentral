@@ -85,8 +85,10 @@ pub fn verify_zk_proof(
     // let is_valid = Groth16::<Bn254>::verify(&vk, proof, public_inputs)?;
     
     // Structure validated - awaiting VK deployment for cryptographic verification
-    // Return false until real Groth16 implementation with verification key
-    Ok(false)
+    // ❌ CRITICAL FIX: No bypass allowed - fail securely until real VK is deployed
+    Err(ContractError::InvalidZKProof {
+        reason: "Real Groth16 verification requires verification key deployment - contact admin".to_string(),
+    })
 }
 
 /// Check if array is all zeros
@@ -307,7 +309,7 @@ mod tests {
                 // Should only error for structural issues, not verification failure
                 match e {
                     ContractError::InvalidZKProof { reason } => {
-                        assert!(reason.contains("proof") || reason.contains("commitment"));
+                        assert!(reason.contains("proof") || reason.contains("commitment") || reason.contains("verification key"));
                     },
                     _ => panic!("Unexpected error type"),
                 }
