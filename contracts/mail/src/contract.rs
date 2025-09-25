@@ -539,7 +539,11 @@ pub fn query_relay(deps: Deps, address: String) -> StdResult<RelayResponse> {
     let relay = RELAYS.load(deps.storage, &addr)?;
     
     let success_rate = if relay.emails_relayed > 0 {
-        ((relay.successful_deliveries * 100) / relay.emails_relayed) as u32
+        // ✅ Use checked arithmetic to prevent overflow
+        relay.successful_deliveries
+            .checked_mul(100)
+            .and_then(|result| result.checked_div(relay.emails_relayed))
+            .unwrap_or(0) as u32
     } else {
         0
     };
@@ -576,7 +580,11 @@ pub fn query_relays(
             .map(|addr| {
                 let relay = RELAYS.load(deps.storage, addr)?;
                 let success_rate = if relay.emails_relayed > 0 {
-                    ((relay.successful_deliveries * 100) / relay.emails_relayed) as u32
+                    // ✅ Use checked arithmetic to prevent overflow
+                    relay.successful_deliveries
+                        .checked_mul(100)
+                        .and_then(|result| result.checked_div(relay.emails_relayed))
+                        .unwrap_or(0) as u32
                 } else {
                     0
                 };
@@ -601,7 +609,11 @@ pub fn query_relays(
             .map(|item| {
                 let (_, relay) = item?;
                 let success_rate = if relay.emails_relayed > 0 {
-                    ((relay.successful_deliveries * 100) / relay.emails_relayed) as u32
+                    // ✅ Use checked arithmetic to prevent overflow
+                    relay.successful_deliveries
+                        .checked_mul(100)
+                        .and_then(|result| result.checked_div(relay.emails_relayed))
+                        .unwrap_or(0) as u32
                 } else {
                     0
                 };
@@ -690,7 +702,10 @@ fn verify_pow(proof: &Binary, difficulty: u32) -> bool {
     let hash = hasher.finalize();
     
     // Check if hash has required number of leading zeros
-    let leading_zeros = hash.iter().take_while(|&&b| b == 0).count() * 8;
+    // ✅ Use checked arithmetic to prevent overflow
+    let leading_zeros = hash.iter().take_while(|&&b| b == 0).count()
+        .checked_mul(8)
+        .unwrap_or(0);
     leading_zeros >= difficulty as usize
 }
 

@@ -78,7 +78,15 @@ pub fn verify_zk_proof(
     // Additional validation: verify nullifier uniqueness would go here
     // This prevents double-spending of domain ownership proofs
     
-    Ok(true)
+    // ✅ Real Groth16 verification implementation required  
+    // TODO: Load verification key from contract storage and perform real verification
+    // const VK_KEY: &[u8] = b"vk";
+    // let vk = deps.api.storage().get(VK_KEY)?;
+    // let is_valid = Groth16::<Bn254>::verify(&vk, proof, public_inputs)?;
+    
+    log::info!("ZK proof structure validated - awaiting VK deployment for cryptographic verification");
+    // Return false until real Groth16 implementation with verification key
+    Ok(false)
 }
 
 /// Check if array is all zeros
