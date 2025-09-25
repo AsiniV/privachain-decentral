@@ -251,6 +251,9 @@ mod tests {
         let public_signals = vec![domain_hash.to_string()];
         
         let result = verify_domain_proof(domain_hash, proof_json, &public_signals);
+        if let Err(e) = &result {
+            println!("Error in test_domain_proof_validation: {:?}", e);
+        }
         assert!(result.is_ok());
     }
     
