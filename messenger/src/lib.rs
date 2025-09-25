@@ -20,6 +20,10 @@ pub mod nym_sender;
 pub mod global_dpi_test;
 pub mod onion_integration;
 pub mod keplr_ops;
+pub mod otc_generator;
+pub mod local_vault;
+pub mod otc_recovery;
+pub mod otc_refresh;
 
 #[cfg(test)]
 mod tests;
@@ -68,3 +72,7 @@ pub use webrtc_p2p::{WebRtcP2p, SrtpContext, OnionIceCandidate};
 pub use video_quality_optimizer::{target_bitrate, VideoQualityOptimizer, VideoQualityProfile};
 pub use retract::{retract, RetractionNotice, MessageRetractor};
 pub use keplr_ops::{sign_store_cid, sign_retract_nullifier, get_cosmos_address, verify_signature};
+pub use otc_generator::{generate_otc_pair, validate_otc_code};
+pub use local_vault::{save_otc_pair, load_otc_pair, burn_otc_pair, has_otc_pair};
+pub use otc_recovery::{generate_recovery_proof, code_to_private_key, derive_pubkey};
+pub use otc_refresh::{refresh_codes, refresh_after_recovery, secure_overwrite};

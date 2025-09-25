@@ -1,0 +1,30 @@
+[package]
+name = "privachain-recovery-code"
+version = "0.1.0"
+authors = ["PrivaChain Team <dev@privachain.network>"]
+edition = "2021"
+description = "Recovery code contract with ZK proof validation for premium restoration - NO STUBS"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+library = []
+
+[dependencies]
+cosmwasm-schema = "1.5.11"
+cosmwasm-std = "1.5.11"
+cosmwasm-storage = "1.5.2"
+cw-storage-plus = "1.2.0"
+cw2 = "1.1.2"
+ark-groth16 = "0.4"
+ark-bn254 = "0.4"
+schemars = "0.8"
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+thiserror = "1.0"
+sha2 = "0.10"
+hex = "0.4"
+
+[dev-dependencies]
+cw-multi-test = "0.16.5"
