@@ -92,29 +92,30 @@ pub struct RelayNode {
 /// Contract configuration
 pub const CONFIG: Item<Config> = Item::new("config");
 
+/// ✅ H5: Namespaced storage keys to prevent collision
 /// Domain registry: domain_name -> Domain
-pub const DOMAINS: Map<&str, Domain> = Map::new("domains");
+pub const DOMAINS: Map<&str, Domain> = Map::new("domain:");
 
 /// Email storage: (domain, email_id) -> Email
-pub const EMAILS: Map<(&str, &str), Email> = Map::new("emails");
+pub const EMAILS: Map<(&str, &str), Email> = Map::new("email:");
 
 /// Domain emails index: domain -> Vec<email_id>
-pub const DOMAIN_EMAILS: Map<&str, Vec<String>> = Map::new("domain_emails");
+pub const DOMAIN_EMAILS: Map<&str, Vec<String>> = Map::new("domain_emails:");
 
 /// Relay nodes: relay_address -> RelayNode
-pub const RELAYS: Map<&Addr, RelayNode> = Map::new("relays");
+pub const RELAYS: Map<&Addr, RelayNode> = Map::new("relay:");
 
 /// Active relays by location: location -> Vec<relay_address>
-pub const RELAYS_BY_LOCATION: Map<&str, Vec<Addr>> = Map::new("relays_by_location");
+pub const RELAYS_BY_LOCATION: Map<&str, Vec<Addr>> = Map::new("relay_location:");
 
 /// Spam reports: (target, reporter) -> timestamp
-pub const SPAM_REPORTS: Map<(&str, &Addr), u64> = Map::new("spam_reports");
+pub const SPAM_REPORTS: Map<(&str, &Addr), u64> = Map::new("spam_report:");
 
 /// Used proof-of-work nonces to prevent replay attacks
-pub const USED_NONCES: Map<&[u8], bool> = Map::new("used_nonces");
+pub const USED_NONCES: Map<&[u8], bool> = Map::new("pow_nonce:");
 
 /// Domain reservation system (for premium domains)
-pub const RESERVED_DOMAINS: Map<&str, Addr> = Map::new("reserved_domains");
+pub const RESERVED_DOMAINS: Map<&str, Addr> = Map::new("reserved:");
 
-/// ✅ M1: Rate limiting per address (address -> last_action_timestamp)
-pub const RATE_LIMIT: Map<&Addr, u64> = Map::new("rate_limit");
+/// ✅ H3: Rate limiting per address (address -> last_action_timestamp)
+pub const RATE_LIMIT: Map<&Addr, u64> = Map::new("rate_limit:");
