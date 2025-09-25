@@ -110,10 +110,34 @@ fn execute_register(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     
+    // ✅ H4: Comprehensive input sanitization
     // Validate domain hash format (must be valid hex SHA256)
     if domain_hash.len() != 64 {
         return Err(ContractError::InvalidDomainHash {
             reason: "domain_hash must be 64 characters (SHA256 hex)".to_string(),
+        });
+    }
+    
+    // Validate domain hash contains only hex characters
+    if !domain_hash.chars().all(|c| c.is_ascii_hexdigit()) {
+        return Err(ContractError::InvalidDomainHash {
+            reason: "domain_hash must contain only hex characters".to_string(),
+        });
+    }
+    
+    // Validate public key length and format
+    if owner_pubkey.len() > 64 || owner_pubkey.is_empty() {
+        return Err(ContractError::InvalidInput {
+            field: "owner_pubkey".to_string(),
+            reason: "public key must be 1-64 bytes".to_string(),
+        });
+    }
+    
+    // Validate nonce is reasonable (prevent massive values)
+    if nonce > u64::MAX / 2 {
+        return Err(ContractError::InvalidInput {
+            field: "nonce".to_string(), 
+            reason: "nonce too large".to_string(),
         });
     }
     

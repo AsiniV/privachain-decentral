@@ -154,8 +154,8 @@ pub struct RelayResponse {
     pub stake: Uint128,
     /// Service endpoint
     pub endpoint: String,
-    /// Number of emails relayed
-    pub emails_relayed: u64,
+    /// Number of emails relayed (u32 for gas optimization)
+    pub emails_relayed: u32,
     /// Success rate percentage
     pub success_rate: u32,
     /// Total earned rewards
@@ -179,24 +179,24 @@ pub struct ConfigResponse {
     pub email_fee: Uint128,
     /// Proof-of-work difficulty
     pub pow_difficulty: u32,
-    /// Total domains registered
-    pub total_domains: u64,
-    /// Total emails sent
-    pub total_emails: u64,
+    /// Total domains registered (u32 for gas optimization)
+    pub total_domains: u32,
+    /// Total emails sent (u32 for gas optimization)
+    pub total_emails: u32,
 }
 
 #[cw_serde]
 pub struct StatsResponse {
-    /// Total domains registered
-    pub total_domains: u64,
-    /// Active domains
-    pub active_domains: u64,
-    /// Total emails sent
-    pub total_emails: u64,
-    /// Total relay nodes
-    pub total_relays: u64,
-    /// Active relay nodes
-    pub active_relays: u64,
+    /// Total domains registered (u32 for gas optimization)
+    pub total_domains: u32,
+    /// Active domains (u32 for gas optimization)
+    pub active_domains: u32,
+    /// Total emails sent (u32 for gas optimization)
+    pub total_emails: u32,
+    /// Total relay nodes (u32 for gas optimization)
+    pub total_relays: u32,
+    /// Active relay nodes (u32 for gas optimization)
+    pub active_relays: u32,
 }
 
 /// Migration message for contract upgrades

@@ -84,7 +84,7 @@ pub fn verify_zk_proof(
     // let vk = deps.api.storage().get(VK_KEY)?;
     // let is_valid = Groth16::<Bn254>::verify(&vk, proof, public_inputs)?;
     
-    log::info!("ZK proof structure validated - awaiting VK deployment for cryptographic verification");
+    // Structure validated - awaiting VK deployment for cryptographic verification
     // Return false until real Groth16 implementation with verification key
     Ok(false)
 }

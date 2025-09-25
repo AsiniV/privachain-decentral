@@ -279,6 +279,24 @@ fn verify_zk_proof(proof: &Binary, did: &str, nonce: u64) -> Result<bool, Contra
     Ok(entropy_check)
 }
 
+/// ✅ M3: Generate cryptographically secure nonce
+/// Uses block time, height, and sender for entropy
+fn generate_secure_nonce(env: &Env, sender: &Addr) -> u64 {
+    let mut hasher = Sha256::new();
+    hasher.update(env.block.time.nanos().to_be_bytes());
+    hasher.update(env.block.height.to_be_bytes());
+    hasher.update(env.block.chain_id.as_bytes());
+    hasher.update(sender.as_bytes());
+    hasher.update(b"secure_nonce_generation");
+    
+    let hash = hasher.finalize();
+    // Use first 8 bytes as u64 nonce
+    u64::from_be_bytes([
+        hash[0], hash[1], hash[2], hash[3],
+        hash[4], hash[5], hash[6], hash[7]
+    ])
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

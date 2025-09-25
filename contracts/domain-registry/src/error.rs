@@ -44,4 +44,7 @@ pub enum ContractError {
 
     #[error("Configuration error: {reason}")]
     ConfigError { reason: String },
+
+    #[error("Invalid input for {field}: {reason}")]
+    InvalidInput { field: String, reason: String },
 }

@@ -55,6 +55,22 @@ pub fn instantiate(deps: DepsMut, _env: Env, info: MessageInfo, msg: Instantiate
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Register { did, pub_key } => {
+            // ✅ H4: Comprehensive input sanitization
+            // Validate DID format and length
+            if did.len() > 64 || did.is_empty() {
+                return Err(ContractError::Std(StdError::generic_err("DID length must be 1-64 characters")));
+            }
+            
+            // Validate DID contains only alphanumeric, hyphens, and colons
+            if !did.chars().all(|c| c.is_alphanumeric() || c == '-' || c == ':') {
+                return Err(ContractError::Std(StdError::generic_err("DID contains invalid characters")));
+            }
+            
+            // Validate public key length
+            if pub_key.len() > 128 || pub_key.is_empty() {
+                return Err(ContractError::Std(StdError::generic_err("Public key length must be 1-128 bytes")));
+            }
+            
             // Check multi-sig admin access (requires any admin)
             let admins = ADMIN.load(deps.storage)?;
             if !admins.contains(&info.sender) {
@@ -106,7 +122,7 @@ pub fn execute_rotate_admin(
     
     let rotation = AdminRotation {
         new_admins: new_admins.clone(),
-        unlock_time: unlock_time.into(),
+        unlock_time: unlock_time,
         proposer: info.sender.clone(),
     };
     
@@ -129,7 +145,7 @@ pub fn execute_admin_rotation(
         .ok_or(ContractError::Std(StdError::generic_err("No pending admin rotation")))?;
     
     // Check if timelock has passed
-    if env.block.time < rotation.unlock_time.into() {
+    if env.block.time < rotation.unlock_time {
         return Err(ContractError::Std(StdError::generic_err("Timelock not yet expired")));
     }
     

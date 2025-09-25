@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Uint64};
+use cosmwasm_std::{Addr, Timestamp};
 use cw_storage_plus::Item;
 use serde::{Deserialize, Serialize};
 
@@ -9,7 +9,7 @@ pub const ADMIN: Item<Vec<Addr>> = Item::new("admin_multisig");
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct AdminRotation {
     pub new_admins: Vec<Addr>,
-    pub unlock_time: Uint64,
+    pub unlock_time: Timestamp,
     pub proposer: Addr,
 }
 
