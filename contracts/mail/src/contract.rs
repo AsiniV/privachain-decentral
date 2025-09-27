@@ -138,27 +138,60 @@ pub fn execute_register_domain(
     public_key: Binary,
     mx_records: Option<Vec<String>>,
 ) -> Result<Response, ContractError> {
+    // ✅ M4: Timestamp manipulation protection
+    if env.block.time.seconds() < 1_000_000_000 {
+        return Err(ContractError::Std(StdError::generic_err("Invalid timestamp - block time too low")));
+    }
+    
     let config = CONFIG.load(deps.storage)?;
     
-    // ✅ H4: Comprehensive input sanitization
-    // Validate domain name length and format
-    if domain.is_empty() || domain.len() > 63 {
+    // ✅ H2: Comprehensive input validation - Enhanced domain validation
+    // Validate domain name length and format (max 64 chars as per problem statement)
+    if domain.is_empty() || domain.len() > 64 {
         return Err(ContractError::InvalidDomain {});
     }
     
-    // Validate domain contains only alphanumeric, hyphens (no dots allowed)
-    if !domain.chars().all(|c| c.is_alphanumeric() || c == '-') {
+    // Validate domain contains only alphanumeric, hyphens, and colons (as per problem statement)
+    if !domain.chars().all(|c| c.is_alphanumeric() || c == '-' || c == ':') {
         return Err(ContractError::InvalidDomain {});
     }
     
-    // Validate domain doesn't start/end with hyphen
-    if domain.starts_with('-') || domain.ends_with('-') {
+    // Validate domain doesn't start/end with hyphen or colon
+    if domain.starts_with('-') || domain.ends_with('-') || domain.starts_with(':') || domain.ends_with(':') {
         return Err(ContractError::InvalidDomain {});
     }
 
     // Check if domain already exists
     if DOMAINS.has(deps.storage, &domain) {
         return Err(ContractError::DomainAlreadyExists {});
+    }
+
+    // ✅ H2: Comprehensive input validation - Public key validation
+    if public_key.is_empty() || public_key.len() > 512 {
+        return Err(ContractError::Std(StdError::generic_err("Public key length must be 1-512 bytes")));
+    }
+    
+    // Validate public key is not all zeros
+    if public_key.iter().all(|&b| b == 0) {
+        return Err(ContractError::Std(StdError::generic_err("Public key cannot be all zeros")));
+    }
+
+    // ✅ H2: Comprehensive input validation - MX records validation
+    if let Some(ref mx_records) = mx_records {
+        if mx_records.len() > 10 {
+            return Err(ContractError::Std(StdError::generic_err("Too many MX records (max 10)")));
+        }
+        
+        for mx_record in mx_records {
+            if mx_record.is_empty() || mx_record.len() > 255 {
+                return Err(ContractError::Std(StdError::generic_err("MX record length must be 1-255 chars")));
+            }
+            
+            // Basic MX record format validation
+            if !mx_record.chars().all(|c| c.is_alphanumeric() || c == '.' || c == '-' || c == ':' || c.is_ascii_whitespace()) {
+                return Err(ContractError::Std(StdError::generic_err("Invalid MX record format")));
+            }
+        }
     }
 
     // Verify payment
@@ -172,6 +205,13 @@ pub fn execute_register_domain(
     if payment < config.domain_registration_fee {
         return Err(ContractError::InsufficientFunds {});
     }
+
+    // ✅ H3: Rate limiting for domain registration (60 seconds between domain registrations per address)
+    let last_domain_registration = RATE_LIMIT.may_load(deps.storage, &info.sender)?.unwrap_or(0);
+    if env.block.time.seconds() - last_domain_registration < 60 {
+        return Err(ContractError::Std(StdError::generic_err("Rate limited: wait 60 seconds between domain registrations")));
+    }
+    RATE_LIMIT.save(deps.storage, &info.sender, &env.block.time.seconds())?;
 
     // Verify ZK-SNARK proof of ownership using real cryptographic verification
     if zk_proof.is_empty() {
@@ -255,6 +295,18 @@ pub fn execute_register_domain(
     CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::new()
+        // ✅ M2: Comprehensive event logging 
+        .add_event(
+            cosmwasm_std::Event::new("domain_registered")
+                .add_attribute("method", "register_domain")
+                .add_attribute("domain", &domain)
+                .add_attribute("owner", info.sender.to_string())
+                .add_attribute("registration_fee", payment.to_string())
+                .add_attribute("expires_at", domain_info.expires_at.to_string())
+                .add_attribute("reputation", domain_info.reputation.to_string())
+                .add_attribute("mx_records_count", domain_info.mx_records.len().to_string())
+                .add_attribute("registered_at", domain_info.registered_at.to_string())
+        )
         .add_attribute("method", "register_domain")
         .add_attribute("domain", &domain)
         .add_attribute("owner", info.sender)
@@ -272,6 +324,11 @@ pub fn execute_send_email(
     pow_proof: Binary,
     sender_alias: Option<String>,
 ) -> Result<Response, ContractError> {
+    // ✅ M4: Timestamp manipulation protection
+    if env.block.time.seconds() < 1_000_000_000 {
+        return Err(ContractError::Std(StdError::generic_err("Invalid timestamp - block time too low")));
+    }
+    
     let config = CONFIG.load(deps.storage)?;
 
     // ✅ H4: Comprehensive input sanitization
@@ -319,10 +376,15 @@ pub fn execute_send_email(
         return Err(ContractError::InsufficientFunds {});
     }
 
-    // Verify recipient domain exists
+    // Verify recipient domain exists and check expiration
     let domain = DOMAINS.load(deps.storage, &recipient_domain)?;
     if !domain.active {
         return Err(ContractError::DomainInactive {});
+    }
+    
+    // ✅ M7: Domain expiration edge cases - Comprehensive expiration check
+    if env.block.time.seconds() >= domain.expires_at {
+        return Err(ContractError::Std(StdError::generic_err("Domain expired - cannot send emails to expired domain")));
     }
 
     // Verify proof-of-work to prevent spam
@@ -371,6 +433,19 @@ pub fn execute_send_email(
     CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::new()
+        // ✅ M2: Comprehensive event logging 
+        .add_event(
+            cosmwasm_std::Event::new("email_sent")
+                .add_attribute("method", "send_email")
+                .add_attribute("from", info.sender.to_string())
+                .add_attribute("recipient", &recipient_domain)
+                .add_attribute("email_id", &email_id)
+                .add_attribute("sender_fee", payment.to_string())
+                .add_attribute("sender_alias", &alias)
+                .add_attribute("content_cid", &content_cid)
+                .add_attribute("timestamp", env.block.time.seconds().to_string())
+                .add_attribute("bytes", content_cid.len().to_string()) // Approximate size
+        )
         .add_attribute("method", "send_email")
         .add_attribute("recipient", &recipient_domain)
         .add_attribute("email_id", &email_id)

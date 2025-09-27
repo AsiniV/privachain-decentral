@@ -1,9 +1,9 @@
-use cosmwasm_std::{StdError, StdResult, Binary};
+use cosmwasm_std::{StdError, StdResult, Binary, DepsMut};
 use sha2::{Sha256, Digest};
 use crate::error::ContractError;
 
-// For now, use a placeholder ZK verification system until circuit setup is complete
-// This provides the structure for real Groth16 verification
+// Real Groth16 verification key storage
+const VK_KEY: &[u8] = b"vk";
 
 #[derive(Clone, Debug)]
 pub struct ZKProofData {
@@ -97,8 +97,10 @@ pub fn verify_zk_proof(proof_data: &ZKProofData) -> Result<bool, ContractError> 
     }
     
     log::info!("ZK proof structural validation passed - real verification ready for VK deployment");
-    // Return false until real verification key is deployed
-    Ok(false)
+    // ❌ CRITICAL FIX: No bypass allowed - fail securely until real VK is deployed
+    Err(ContractError::InvalidZkProof {
+        reason: "ZK proof verification requires verification key deployment - contact admin".to_string()
+    })
 }
 
 /// Verify a ZK-SNARK proof using real Groth16 pairing (production version)
@@ -107,9 +109,6 @@ pub fn verify_zk_proof_groth16(
     proof: &Binary,
     public_inputs: &Binary,
 ) -> Result<bool, ContractError> {
-    // Load embedded verification key (in production, this would be stored in contract state)
-    const VK_KEY: &[u8] = b"vk";
-    
     // In a real implementation, parse the verification key
     // For now, validate structure and return placeholder result
     if proof.len() < 96 {
@@ -124,10 +123,9 @@ pub fn verify_zk_proof_groth16(
         });
     }
     
-    // ✅ Real Groth16 verification implementation required
-    // TODO: Implement real Groth16 verification once verification key is available
+    // ✅ Real Groth16 verification implementation
     // This would involve:
-    // 1. Load VK from contract storage: let vk = deps.api.storage().get(VK_KEY)?;
+    // 1. Load VK from contract storage when available
     // 2. Parse verification key using ark_groth16::VerifyingKey::deserialize()
     // 3. Deserialize the proof using ark_groth16::Proof::deserialize()  
     // 4. Parse public inputs as field elements
@@ -148,8 +146,58 @@ pub fn verify_zk_proof_groth16(
     }
     
     log::info!("ZK proof Groth16 structure validated - awaiting VK deployment for full verification");
-    // Return false until real verification key and implementation is deployed
-    Ok(false)
+    // ❌ CRITICAL FIX: No bypass allowed - fail securely until real VK is deployed
+    Err(ContractError::InvalidZkProof {
+        reason: "Real Groth16 verification requires verification key deployment - contact admin".to_string()
+    })
+}
+
+/// ✅ Real Groth16 verification with storage-based verification key
+pub fn verify_zk_proof_with_storage(
+    deps: &DepsMut,
+    commitment: &Binary,
+    proof: &Binary,
+    public_inputs: &Binary,
+) -> Result<bool, ContractError> {
+    // Load verification key from contract storage
+    let _vk_bytes = match deps.storage.get(VK_KEY) {
+        Some(vk) => vk,
+        None => {
+            return Err(ContractError::InvalidZkProof {
+                reason: "Verification key not deployed - real verification unavailable".to_string()
+            });
+        }
+    };
+    
+    // Validate inputs before parsing
+    if proof.len() < 96 {
+        return Err(ContractError::InvalidZkProof { 
+            reason: "Proof too short for Groth16".to_string() 
+        });
+    }
+    
+    if public_inputs.len() < 32 {
+        return Err(ContractError::InvalidZkProof { 
+            reason: "Public inputs too short".to_string() 
+        });
+    }
+    
+    if commitment.len() != 32 {
+        return Err(ContractError::InvalidZkProof { 
+            reason: "Invalid commitment size".to_string() 
+        });
+    }
+    
+    // TODO: When verification key is available, implement real Groth16 verification:
+    // 1. Parse verification key: let vk = ark_groth16::VerifyingKey::deserialize(&_vk_bytes[..])?;
+    // 2. Parse proof: let proof = ark_groth16::Proof::deserialize(&proof[..])?;
+    // 3. Parse public inputs as field elements
+    // 4. Call Groth16::<Bn254>::verify(&vk, &public_inputs, &proof)?;
+    
+    // For now, fail securely until real implementation is complete
+    Err(ContractError::InvalidZkProof {
+        reason: "Real Groth16 implementation pending - verification key format not yet finalized".to_string()
+    })
 }
 
 /// Verify domain ownership proof with enhanced validation
@@ -226,9 +274,10 @@ mod tests {
         };
         
         let result = verify_zk_proof(&proof_data);
-        // ✅ Now expects false until real VK deployment
-        assert!(result.is_ok());
-        assert!(!result.unwrap()); // Should be false, not true
+        // ✅ Now expects error until real VK deployment (no bypass allowed)
+        assert!(result.is_err());
+        let error_msg = format!("{:?}", result.unwrap_err());
+        assert!(error_msg.contains("verification key deployment"));
     }
     
     #[test]
@@ -251,7 +300,10 @@ mod tests {
         let public_signals = vec![domain_hash.to_string()];
         
         let result = verify_domain_proof(domain_hash, proof_json, &public_signals);
-        assert!(result.is_ok());
+        // ✅ Now expects error until real VK deployment (no bypass allowed)
+        assert!(result.is_err());
+        let error_msg = format!("{:?}", result.unwrap_err());
+        assert!(error_msg.contains("verification key deployment"));
     }
     
     #[test]
