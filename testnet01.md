@@ -164,6 +164,26 @@ rustup target list --installed | grep wasm32
 
 **⚠️ Important Note:** The WebAssembly target installation is essential. Without it, smart contract compilation will fail with `can't find crate for 'core'` error.
 
+#### 3.4 Environment Verification
+
+Run the included verification script to ensure your environment is properly configured:
+
+```bash
+# Make verification script executable and run it
+chmod +x verify-testnet01-setup.sh
+./verify-testnet01-setup.sh
+```
+
+This script will check:
+- ✅ System prerequisites (Node.js, npm, Rust, WebAssembly target)
+- ✅ Project setup (correct directory, dependencies installed)
+- ✅ Environment configuration (`.env.local` file and critical variables)
+- ✅ Network connectivity (Cosmos testnet endpoints)
+- ✅ Build capabilities (TypeScript and smart contract compilation)
+- ✅ Deployment tools (scripts and TypeScript executor)
+
+**Target:** Aim for 90%+ pass rate before proceeding with deployment. A 70%+ pass rate may work but could encounter issues.
+
 ---
 
 ## Smart Contract Deployment via Codespace Console
@@ -934,6 +954,39 @@ After following this guide, you should achieve:
 - [ ] **All core features functional** (.prv domains, encrypted email, video calls, IPFS)
 - [ ] **Performance within acceptable limits** (<10s transaction confirmation)
 - [ ] **Security requirements met** (encryption, privacy features working)
+
+### Quick Start Checklist
+
+Use this checklist for rapid deployment:
+
+```bash
+# 1. Verify environment setup
+./verify-testnet01-setup.sh
+
+# 2. Install and configure
+cp .env.example .env.local
+# Edit .env.local with your DEVELOPER_MNEMONIC
+nano .env.local
+
+# 3. Add Rust WebAssembly target
+rustup target add wasm32-unknown-unknown
+
+# 4. Test build
+npm run test:build
+npm run test:contracts
+
+# 5. Deploy to testnet
+cd src/blockchain/deployment
+./deploy.sh quick testnet
+cd ../../..
+
+# 6. Verify deployment
+./src/blockchain/deployment/deploy.sh status testnet
+
+# 7. Test application
+npm run verify-features
+npm run dev
+```
 
 ### Next Steps
 
