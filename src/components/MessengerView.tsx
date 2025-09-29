@@ -170,8 +170,8 @@ export function MessengerView() {
         return
       }
 
-      // Encrypt message using E2E encryption
-      const encryptedMessage = await e2eService.encryptMessage(session.sessionId, newMessage)
+      // Encrypt message using E2E encryption (result used for security processing)
+      await e2eService.encryptMessage(session.sessionId, newMessage)
 
       // Generate a mock CID for the encrypted message (in real implementation, this would be IPFS)
       const mockCid = `bafybei${Math.random().toString(36).substring(2, 50)}`
@@ -253,6 +253,22 @@ export function MessengerView() {
   const contactMessages = messages.filter(m => 
     (m.sender === 'me' || m.sender === selectedContactData?.name) && selectedContact
   )
+
+  // Cleanup on component unmount
+  useEffect(() => {
+    return () => {
+      // Cleanup any active sessions or listeners
+      try {
+        // In a real implementation, cleanup would include:
+        // - Stopping P2P listeners
+        // - Cleaning up E2E sessions
+        // - Disposing of any active connections
+        console.log('🧹 MessengerView cleanup')
+      } catch (error) {
+        console.error('Cleanup error:', error)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })

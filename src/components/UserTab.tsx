@@ -1,12 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from './ui/button'
-import { Input } from './ui/input'
 import { Card } from './ui/card'
 import { Badge } from './ui/badge'
 import { Avatar, AvatarFallback } from './ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
-import { Alert, AlertDescription } from './ui/alert'
 import { UserCodesScreen } from './UserCodesScreen'
 import { RecoveryScreen } from './RecoveryScreen'
 import { 
@@ -16,7 +13,6 @@ import {
   Check,
   Key,
   Shield,
-  RefreshCw,
   CreditCard,
   Star
 } from '@phosphor-icons/react'
@@ -33,10 +29,11 @@ interface UserProfile {
 }
 
 interface UserTabProps {
-  onClose?: () => void
+  // Empty interface for future props
+  placeholder?: never
 }
 
-export function UserTab({ onClose }: UserTabProps) {
+export function UserTab(_props: UserTabProps) {
   const [profile, setProfile] = useKV<UserProfile>('user-profile', {
     address: 'did:priva:alice',
     displayName: 'PrivaChain User',
@@ -69,16 +66,26 @@ export function UserTab({ onClose }: UserTabProps) {
   }
 
   const handleBuyLifetime = async () => {
-    // Simulate lifetime purchase process
-    toast.info('Redirecting to payment system...')
-    
-    // In real implementation, this would integrate with payment processor
-    // For demo purposes, simulate successful purchase after delay
-    setTimeout(() => {
+    try {
+      // Simulate lifetime purchase process
+      toast.info('Redirecting to payment system...')
+      
+      // In real implementation, this would integrate with payment processor
+      // For demo purposes, simulate successful purchase after delay
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Simulate potential payment errors
+      if (Math.random() < 0.1) { // 10% chance of payment error for demo
+        throw new Error('Payment processing failed')
+      }
+      
       setProfile(prev => ({ ...prev, isPremium: true }))
       setShowBuyLifetime(false)
       toast.success('Lifetime subscription activated!')
-    }, 2000)
+    } catch (error) {
+      console.error('Payment error:', error)
+      toast.error(`Payment failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
   }
 
   if (showRecovery) {

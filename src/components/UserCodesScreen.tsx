@@ -52,11 +52,22 @@ export function UserCodesScreen({ onNavigateToRecovery }: UserCodesScreenProps) 
 
   // Generate new OTC pair
   const generateNewCodes = async (): Promise<void> => {
-    setLoading(true);
+    if (loading) return // Prevent multiple simultaneous generations
+    
+    setLoading(true)
     try {
       // Simulate API call to generate new OTC pair
       // In real implementation, this would call messenger::generate_otc_pair()
       await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Validate that we can generate new codes
+      if (otcPair) {
+        const confirmReplace = window.confirm('This will replace your existing recovery codes. Are you sure?')
+        if (!confirmReplace) {
+          setLoading(false)
+          return
+        }
+      }
       
       // Generate mock new codes
       const words = [
@@ -75,6 +86,11 @@ export function UserCodesScreen({ onNavigateToRecovery }: UserCodesScreenProps) 
         code2: generateCode()
       };
       
+      // Validate generated codes
+      if (!newPair.code1 || !newPair.code2) {
+        throw new Error('Failed to generate valid recovery codes')
+      }
+      
       setOtcPair(newPair);
       setShowCodes({ code1: false, code2: false });
       toast.success('New OTC codes generated successfully');
@@ -91,6 +107,13 @@ export function UserCodesScreen({ onNavigateToRecovery }: UserCodesScreenProps) 
     try {
       await navigator.clipboard.writeText(code);
       toast.success(`Code ${codeNumber} copied to clipboard`);
+      
+      // Clear clipboard after 30 seconds for security
+      setTimeout(() => {
+        navigator.clipboard.writeText('').catch(() => {
+          // Silently fail if clipboard clearing doesn't work
+        })
+      }, 30000)
     } catch (error) {
       toast.error('Failed to copy code');
       console.error('Failed to copy to clipboard:', error);
@@ -115,7 +138,12 @@ export function UserCodesScreen({ onNavigateToRecovery }: UserCodesScreenProps) 
 
   useEffect(() => {
     loadOtcPair();
-  }, []);
+    
+    // Cleanup function
+    return () => {
+      console.log('🧹 UserCodesScreen cleanup')
+    }
+  }, []); // Only run on mount/unmount
 
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">

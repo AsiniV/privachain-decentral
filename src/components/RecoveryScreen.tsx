@@ -2,7 +2,7 @@
 //
 // Allows users to input OTC codes to restore premium access via ZK proofs
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -33,13 +33,43 @@ export function RecoveryScreen({ onNavigateToUserCodes, onRecoveryComplete }: Re
   // Validate OTC code format (12 words)
   const isValidCode = (inputCode: string): boolean => {
     const words = inputCode.trim().split(/\s+/);
-    return words.length === 12 && words.every(word => word.length > 0);
+    
+    // Check word count
+    if (words.length !== 12) return false
+    
+    // Check each word is valid (basic validation)
+    return words.every(word => {
+      // Must be alphabetic and between 3-8 characters
+      return /^[a-zA-Z]{3,8}$/.test(word)
+    })
   };
+
+  // Additional validation for security
+  const validateCodeSecurity = (inputCode: string): string | null => {
+    if (inputCode.length < 50) {
+      return 'Recovery code appears too short'
+    }
+    
+    const words = inputCode.trim().split(/\s+/)
+    const uniqueWords = new Set(words)
+    if (uniqueWords.size < 10) {
+      return 'Recovery code must have more unique words'
+    }
+    
+    return null
+  }
 
   // Simulate recovery process
   const processRecovery = async (): Promise<void> => {
     if (!isValidCode(code)) {
       toast.error('Please enter a valid 12-word code');
+      return;
+    }
+    
+    // Additional security validation
+    const securityError = validateCodeSecurity(code)
+    if (securityError) {
+      toast.error(securityError);
       return;
     }
 
@@ -97,9 +127,17 @@ export function RecoveryScreen({ onNavigateToUserCodes, onRecoveryComplete }: Re
 
   // Reset recovery state
   const resetRecovery = (): void => {
-    setRecovery({ step: 'input', progress: 0 });
+    // Securely clear the input
     setCode('');
+    setRecovery({ step: 'input', progress: 0 });
   };
+
+  // Cleanup function for security
+  useEffect(() => {
+    return () => {
+      console.log('🧹 RecoveryScreen cleanup')
+    }
+  }, []) // Only run on mount/unmount
 
   const getStepDescription = (): string => {
     switch (recovery.step) {
