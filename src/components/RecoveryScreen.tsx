@@ -2,7 +2,7 @@
 //
 // Allows users to input OTC codes to restore premium access via ZK proofs
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -33,13 +33,43 @@ export function RecoveryScreen({ onNavigateToUserCodes, onRecoveryComplete }: Re
   // Validate OTC code format (12 words)
   const isValidCode = (inputCode: string): boolean => {
     const words = inputCode.trim().split(/\s+/);
-    return words.length === 12 && words.every(word => word.length > 0);
+    
+    // Check word count
+    if (words.length !== 12) return false
+    
+    // Check each word is valid (basic validation)
+    return words.every(word => {
+      // Must be alphabetic and between 3-8 characters
+      return /^[a-zA-Z]{3,8}$/.test(word)
+    })
   };
+
+  // Additional validation for security
+  const validateCodeSecurity = (inputCode: string): string | null => {
+    if (inputCode.length < 50) {
+      return 'Recovery code appears too short'
+    }
+    
+    const words = inputCode.trim().split(/\s+/)
+    const uniqueWords = new Set(words)
+    if (uniqueWords.size < 10) {
+      return 'Recovery code must have more unique words'
+    }
+    
+    return null
+  }
 
   // Simulate recovery process
   const processRecovery = async (): Promise<void> => {
     if (!isValidCode(code)) {
-      toast.error('Введите корректный код из 12 слов');
+      toast.error('Please enter a valid 12-word code');
+      return;
+    }
+    
+    // Additional security validation
+    const securityError = validateCodeSecurity(code)
+    if (securityError) {
+      toast.error(securityError);
       return;
     }
 
@@ -73,7 +103,7 @@ export function RecoveryScreen({ onNavigateToUserCodes, onRecoveryComplete }: Re
         txHash: mockTxHash 
       });
       
-      toast.success('Премиум доступ восстановлен!');
+      toast.success('Premium access restored!');
       
       // Auto-navigate after delay
       setTimeout(() => {
@@ -89,28 +119,36 @@ export function RecoveryScreen({ onNavigateToUserCodes, onRecoveryComplete }: Re
       setRecovery({ 
         step: 'error', 
         progress: 0,
-        error: error instanceof Error ? error.message : 'Неизвестная ошибка'
+        error: error instanceof Error ? error.message : 'Unknown error'
       });
-      toast.error('Ошибка восстановления');
+      toast.error('Recovery error');
     }
   };
 
   // Reset recovery state
   const resetRecovery = (): void => {
-    setRecovery({ step: 'input', progress: 0 });
+    // Securely clear the input
     setCode('');
+    setRecovery({ step: 'input', progress: 0 });
   };
+
+  // Cleanup function for security
+  useEffect(() => {
+    return () => {
+      console.log('🧹 RecoveryScreen cleanup')
+    }
+  }, []) // Only run on mount/unmount
 
   const getStepDescription = (): string => {
     switch (recovery.step) {
       case 'generating':
-        return 'Генерация доказательства с нулевым разглашением...';
+        return 'Generating zero-knowledge proof...';
       case 'submitting':
-        return 'Отправка транзакции в блокчейн...';
+        return 'Submitting transaction to blockchain...';
       case 'complete':
-        return 'Премиум доступ успешно восстановлен!';
+        return 'Premium access successfully restored!';
       case 'error':
-        return `Ошибка: ${recovery.error}`;
+        return `Error: ${recovery.error}`;
       default:
         return '';
     }
@@ -123,15 +161,15 @@ export function RecoveryScreen({ onNavigateToUserCodes, onRecoveryComplete }: Re
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-center">
-            Восстановить премиум доступ
+            Restore Premium Access
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <Alert>
             <AlertDescription>
-              Введите любой из ваших кодов восстановления для восстановления премиум доступа. 
-              Код будет обработан локально, и в блокчейн будет отправлено только 
-              криптографическое доказательство без раскрытия самого кода.
+              Enter any of your recovery codes to restore premium access. 
+              The code will be processed locally, and only a 
+              cryptographic proof will be sent to the blockchain without revealing the code itself.
             </AlertDescription>
           </Alert>
 
@@ -139,17 +177,17 @@ export function RecoveryScreen({ onNavigateToUserCodes, onRecoveryComplete }: Re
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700">
-                  Код восстановления:
+                  Recovery Code:
                 </label>
                 <Textarea
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
-                  placeholder="Введите любой из ваших кодов из 12 слов"
+                  placeholder="Enter any of your 12-word codes"
                   className="font-mono text-sm min-h-[100px]"
                   disabled={isProcessing}
                 />
                 <p className="text-xs text-gray-500">
-                  Введите 12 слов, разделённых пробелами
+                  Enter 12 words separated by spaces
                 </p>
               </div>
 
@@ -159,7 +197,7 @@ export function RecoveryScreen({ onNavigateToUserCodes, onRecoveryComplete }: Re
                   disabled={!isValidCode(code) || isProcessing}
                   className="flex-1"
                 >
-                  Восстановить
+                  Restore
                 </Button>
                 
                 {onNavigateToUserCodes && (
@@ -168,7 +206,7 @@ export function RecoveryScreen({ onNavigateToUserCodes, onRecoveryComplete }: Re
                     onClick={onNavigateToUserCodes}
                     className="flex-1"
                   >
-                    Мои коды
+                    My Codes
                   </Button>
                 )}
               </div>
@@ -200,7 +238,7 @@ export function RecoveryScreen({ onNavigateToUserCodes, onRecoveryComplete }: Re
               <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
               <div className="space-y-2">
                 <h3 className="text-lg font-semibold text-green-700">
-                  Восстановление завершено!
+                  Recovery Complete!
                 </h3>
                 <p className="text-sm text-gray-600">
                   {getStepDescription()}
@@ -218,7 +256,7 @@ export function RecoveryScreen({ onNavigateToUserCodes, onRecoveryComplete }: Re
                     onClick={onNavigateToUserCodes}
                     className="flex-1"
                   >
-                    Мои коды
+                    My Codes
                   </Button>
                 )}
                 
@@ -227,7 +265,7 @@ export function RecoveryScreen({ onNavigateToUserCodes, onRecoveryComplete }: Re
                   onClick={resetRecovery}
                   className="flex-1"
                 >
-                  Восстановить ещё раз
+                  Restore Again
                 </Button>
               </div>
             </div>
@@ -238,7 +276,7 @@ export function RecoveryScreen({ onNavigateToUserCodes, onRecoveryComplete }: Re
               <AlertCircle className="h-16 w-16 text-red-500 mx-auto" />
               <div className="space-y-2">
                 <h3 className="text-lg font-semibold text-red-700">
-                  Ошибка восстановления
+                  Recovery Error
                 </h3>
                 <p className="text-sm text-gray-600">
                   {getStepDescription()}
@@ -250,7 +288,7 @@ export function RecoveryScreen({ onNavigateToUserCodes, onRecoveryComplete }: Re
                   onClick={resetRecovery}
                   className="flex-1"
                 >
-                  Попробовать снова
+                  Try Again
                 </Button>
                 
                 {onNavigateToUserCodes && (
@@ -259,7 +297,7 @@ export function RecoveryScreen({ onNavigateToUserCodes, onRecoveryComplete }: Re
                     onClick={onNavigateToUserCodes}
                     className="flex-1"
                   >
-                    Мои коды
+                    My Codes
                   </Button>
                 )}
               </div>

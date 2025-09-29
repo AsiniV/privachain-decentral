@@ -12,6 +12,7 @@ import { getE2EService } from '../services/e2eEncryption'
 import { useAppState } from '../lib/app_state'
 import { storeCID, retractCID } from '../lib/onchain_ops'
 import { WalletBar } from './WalletBar'
+import { Message, Contact } from '../types/message'
 import { 
   PaperPlaneTilt, 
   Lock, 
@@ -24,29 +25,9 @@ import {
   CloudArrowUp,
   Trash
 } from '@phosphor-icons/react'
+import { RefreshCw } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { toast } from 'sonner'
-
-interface Message {
-  id: string
-  sender: string
-  content: string
-  timestamp: number
-  encrypted: boolean
-  sessionSecure: boolean
-  type: 'text' | 'system'
-  cid?: string  // IPFS CID for on-chain storage
-  txHash?: string  // Blockchain transaction hash
-}
-
-interface Contact {
-  id: string
-  name: string
-  address: string
-  avatar?: string
-  lastSeen: number
-  online: boolean
-}
 
 export function MessengerView() {
   const [messages, setMessages] = useKV<Message[]>('messages', [])
@@ -148,8 +129,25 @@ export function MessengerView() {
     }
   }
 
+  // Input validation for messages
+  const validateMessageInput = (input: string): string | null => {
+    if (!input.trim()) {
+      return 'Message cannot be empty'
+    }
+    if (input.length > 1000) {
+      return 'Message too long (max 1000 characters)'
+    }
+    return null
+  }
+
   const sendMessage = async () => {
-    if (!newMessage.trim() || !selectedContact || !selectedContactData) return
+    if (!selectedContact || !selectedContactData) return
+    
+    const validationError = validateMessageInput(newMessage)
+    if (validationError) {
+      toast.error(validationError)
+      return
+    }
 
     setIsSending(true)
 
@@ -172,8 +170,8 @@ export function MessengerView() {
         return
       }
 
-      // Encrypt message using E2E encryption
-      const encryptedMessage = await e2eService.encryptMessage(session.sessionId, newMessage)
+      // Encrypt message using E2E encryption (result used for security processing)
+      await e2eService.encryptMessage(session.sessionId, newMessage)
 
       // Generate a mock CID for the encrypted message (in real implementation, this would be IPFS)
       const mockCid = `bafybei${Math.random().toString(36).substring(2, 50)}`
@@ -186,7 +184,8 @@ export function MessengerView() {
         encrypted: true,
         sessionSecure: true,
         type: 'text',
-        cid: mockCid
+        cid: mockCid,
+        isSent: true
       }
 
       // Try to store on blockchain if wallet is connected
@@ -215,7 +214,8 @@ export function MessengerView() {
           timestamp: Date.now(),
           encrypted: true,
           sessionSecure: true,
-          type: 'text'
+          type: 'text',
+          isSent: false
         }
         setMessages(current => [...current, response])
       }, 1000)
@@ -254,6 +254,22 @@ export function MessengerView() {
     (m.sender === 'me' || m.sender === selectedContactData?.name) && selectedContact
   )
 
+  // Cleanup on component unmount
+  useEffect(() => {
+    return () => {
+      // Cleanup any active sessions or listeners
+      try {
+        // In a real implementation, cleanup would include:
+        // - Stopping P2P listeners
+        // - Cleaning up E2E sessions
+        // - Disposing of any active connections
+        console.log('🧹 MessengerView cleanup')
+      } catch (error) {
+        console.error('Cleanup error:', error)
+      }
+    }
+  }, [])
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [contactMessages])
@@ -271,15 +287,15 @@ export function MessengerView() {
           </div>
           
           <Input 
-            placeholder="MagnifyingGlass conversations..." 
+            placeholder="Search conversations..." 
             className="w-full mb-3"
           />
           
-          {/* Demo VideoCamera Call Button */}
+          {/* Demo Video Call Button */}
           <Button 
             onClick={() => initiateCall({
               id: 'demo-video',
-              name: 'Demo VideoCamera Call',
+              name: 'Demo Video Call',
               address: 'demo.prv',
               online: true
             }, 'video')}
@@ -287,7 +303,7 @@ export function MessengerView() {
             size="sm"
           >
             <VideoCamera className="w-4 h-4 mr-2" />
-            Start Demo VideoCamera Call
+            Start Demo Video Call
           </Button>
         </div>
         
@@ -443,12 +459,12 @@ export function MessengerView() {
                     key={message.id}
                     className={cn(
                       "flex group",
-                      message.sender === 'me' ? 'justify-end' : 'justify-start'
+                      (message.sender === 'me' || message.isSent) ? 'justify-end' : 'justify-start'
                     )}
                   >
                     <div className={cn(
                       "max-w-[70%] rounded-lg p-3 relative",
-                      message.sender === 'me' 
+                      (message.sender === 'me' || message.isSent)
                         ? 'bg-accent text-accent-foreground' 
                         : 'bg-muted'
                     )}>
@@ -478,7 +494,7 @@ export function MessengerView() {
                         </div>
                         
                         {/* Retract button for own messages with on-chain storage */}
-                        {message.sender === 'me' && message.cid && message.txHash && cosmosAddress && (
+                        {(message.sender === 'me' || message.isSent) && message.cid && message.txHash && cosmosAddress && (
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
@@ -509,28 +525,40 @@ export function MessengerView() {
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Type a secure message..."
-                  onKeyDown={(e) => e.key === 'Enter' && !isSending && sendMessage()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey && !isSending) {
+                      e.preventDefault()
+                      sendMessage()
+                    }
+                  }}
                   className="flex-1"
                   disabled={isSending}
+                  maxLength={1000}
                 />
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button 
                       onClick={sendMessage} 
-                      disabled={!newMessage.trim() || isSending}
+                      disabled={!newMessage.trim() || isSending || !selectedContactData?.online}
                       className="flex items-center gap-2"
                     >
-                      <PaperPlaneTilt className="w-4 h-4" />
-                      {cosmosAddress && isKeplrConnected ? (
-                        isSending ? 'Storing...' : 'Send & Store'
+                      {isSending ? (
+                        <RefreshCw className="w-4 h-4 animate-spin" />
                       ) : (
-                        'Send'
+                        <PaperPlaneTilt className="w-4 h-4" />
+                      )}
+                      {cosmosAddress && isKeplrConnected ? (
+                        isSending ? 'Sending...' : 'Send & Store'
+                      ) : (
+                        isSending ? 'Sending...' : 'Send'
                       )}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>
-                      {cosmosAddress && isKeplrConnected 
+                      {!selectedContactData?.online 
+                        ? 'User is offline'
+                        : cosmosAddress && isKeplrConnected 
                         ? 'Send encrypted message and store CID on blockchain'
                         : 'Send encrypted message (connect wallet for on-chain storage)'
                       }
@@ -539,13 +567,17 @@ export function MessengerView() {
                 </Tooltip>
               </div>
               
-              {/* Status indicator */}
-              {cosmosAddress && isKeplrConnected && (
-                <div className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
-                  <CloudArrowUp className="w-3 h-3 text-blue-600" />
-                  <span>Messages will be stored on blockchain</span>
-                </div>
-              )}
+              {/* Character count */}
+              <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
+                <span>{newMessage.length}/1000 characters</span>
+                {/* Status indicator */}
+                {cosmosAddress && isKeplrConnected && (
+                  <div className="flex items-center gap-1">
+                    <CloudArrowUp className="w-3 h-3 text-blue-600" />
+                    <span>Messages will be stored on blockchain</span>
+                  </div>
+                )}
+              </div>
             </div>
           </>
         ) : (

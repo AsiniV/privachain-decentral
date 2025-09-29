@@ -52,11 +52,22 @@ export function UserCodesScreen({ onNavigateToRecovery }: UserCodesScreenProps) 
 
   // Generate new OTC pair
   const generateNewCodes = async (): Promise<void> => {
-    setLoading(true);
+    if (loading) return // Prevent multiple simultaneous generations
+    
+    setLoading(true)
     try {
       // Simulate API call to generate new OTC pair
       // In real implementation, this would call messenger::generate_otc_pair()
       await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Validate that we can generate new codes
+      if (otcPair) {
+        const confirmReplace = window.confirm('This will replace your existing recovery codes. Are you sure?')
+        if (!confirmReplace) {
+          setLoading(false)
+          return
+        }
+      }
       
       // Generate mock new codes
       const words = [
@@ -75,6 +86,11 @@ export function UserCodesScreen({ onNavigateToRecovery }: UserCodesScreenProps) 
         code2: generateCode()
       };
       
+      // Validate generated codes
+      if (!newPair.code1 || !newPair.code2) {
+        throw new Error('Failed to generate valid recovery codes')
+      }
+      
       setOtcPair(newPair);
       setShowCodes({ code1: false, code2: false });
       toast.success('New OTC codes generated successfully');
@@ -90,9 +106,16 @@ export function UserCodesScreen({ onNavigateToRecovery }: UserCodesScreenProps) 
   const copyToClipboard = async (code: string, codeNumber: number): Promise<void> => {
     try {
       await navigator.clipboard.writeText(code);
-      toast.success(`Код ${codeNumber} скопирован в буфер обмена`);
+      toast.success(`Code ${codeNumber} copied to clipboard`);
+      
+      // Clear clipboard after 30 seconds for security
+      setTimeout(() => {
+        navigator.clipboard.writeText('').catch(() => {
+          // Silently fail if clipboard clearing doesn't work
+        })
+      }, 30000)
     } catch (error) {
-      toast.error('Не удалось скопировать код');
+      toast.error('Failed to copy code');
       console.error('Failed to copy to clipboard:', error);
     }
   };
@@ -115,36 +138,41 @@ export function UserCodesScreen({ onNavigateToRecovery }: UserCodesScreenProps) 
 
   useEffect(() => {
     loadOtcPair();
-  }, []);
+    
+    // Cleanup function
+    return () => {
+      console.log('🧹 UserCodesScreen cleanup')
+    }
+  }, []); // Only run on mount/unmount
 
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-center">
-            Мои коды восстановления
+            My Recovery Codes
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <Alert>
             <AlertDescription>
-              Сохраните эти коды в безопасном месте. Они необходимы для восстановления 
-              доступа к премиум-функциям. Коды хранятся только локально и никогда не 
-              передаются по сети.
+              Save these codes in a secure place. They are required to recover 
+              access to premium features. Codes are stored only locally and are never 
+              transmitted over the network.
             </AlertDescription>
           </Alert>
 
           {loading ? (
             <div className="flex justify-center items-center py-8">
               <RefreshCw className="h-6 w-6 animate-spin" />
-              <span className="ml-2">Загрузка кодов...</span>
+              <span className="ml-2">Loading codes...</span>
             </div>
           ) : otcPair ? (
             <div className="space-y-4">
               {/* Code 1 */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700">
-                  Код 1:
+                  Code 1:
                 </label>
                 <div className="flex items-center space-x-2">
                   <Input
@@ -173,7 +201,7 @@ export function UserCodesScreen({ onNavigateToRecovery }: UserCodesScreenProps) 
               {/* Code 2 */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700">
-                  Код 2:
+                  Code 2:
                 </label>
                 <div className="flex items-center space-x-2">
                   <Input
@@ -207,7 +235,7 @@ export function UserCodesScreen({ onNavigateToRecovery }: UserCodesScreenProps) 
                   className="flex-1"
                 >
                   <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                  Обновить коды
+                  Refresh Codes
                 </Button>
                 
                 {onNavigateToRecovery && (
@@ -216,17 +244,17 @@ export function UserCodesScreen({ onNavigateToRecovery }: UserCodesScreenProps) 
                     onClick={onNavigateToRecovery}
                     className="flex-1"
                   >
-                    Восстановить премиум
+                    Restore Premium
                   </Button>
                 )}
               </div>
             </div>
           ) : (
             <div className="text-center py-8">
-              <p className="text-gray-500 mb-4">Коды восстановления не найдены</p>
+              <p className="text-gray-500 mb-4">Recovery codes not found</p>
               <Button onClick={generateNewCodes} disabled={loading}>
                 <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                Создать коды
+                Create Codes
               </Button>
             </div>
           )}
