@@ -3,7 +3,7 @@ import './lib/kvStorage' // Initialize KV storage early
 import { VideoCallProvider } from './components/VideoCallProvider'
 import { AppStateProvider } from './lib/app_state'
 import { Sidebar } from './components/Sidebar'
-import { MessengerView } from './components/MessengerView'
+import { EnhancedMessengerView } from './components/EnhancedMessengerView'
 import { EmailView } from './components/EmailView'
 import { SearchView } from './components/SearchView'
 import { ProfileView } from './components/ProfileView'
@@ -60,7 +60,7 @@ function App() {
   const renderView = () => {
     switch (currentView) {
       case 'messenger':
-        return <MessengerView />
+        return <EnhancedMessengerView />
       case 'email':
         return <EmailView />
       case 'search':
@@ -74,7 +74,7 @@ function App() {
       case 'readiness':
         return <ProductReadinessDashboard />
       default:
-        return <MessengerView />
+        return <EnhancedMessengerView />
     }
   }
 

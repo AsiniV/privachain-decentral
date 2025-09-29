@@ -12,6 +12,7 @@ import { ZKAuthPanel } from './ZKAuthPanel'
 import { ImplementationStatus } from './ImplementationStatus'
 import { IPFSStatus } from './IPFSStatus'
 import { PlanView } from './PlanView'
+import { UserTab } from './UserTab'
 import { 
   User,
   Shield,
@@ -184,8 +185,9 @@ export function ProfileView() {
       </div>
 
       <div className="flex-1 p-6">
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-9">
+        <Tabs defaultValue="user" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-10">
+            <TabsTrigger value="user">User</TabsTrigger>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="plan">Plan</TabsTrigger>
             <TabsTrigger value="premium">Premium</TabsTrigger>
@@ -196,6 +198,10 @@ export function ProfileView() {
             <TabsTrigger value="implementation">Implementation</TabsTrigger>
             <TabsTrigger value="status">Status</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="user" className="space-y-6">
+            <UserTab />
+          </TabsContent>
 
           <TabsContent value="overview" className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
