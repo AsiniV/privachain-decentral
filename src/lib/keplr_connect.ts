@@ -21,12 +21,26 @@ interface KeplrWindow extends Window {
 
 declare const window: KeplrWindow
 
+// Type alias for compatibility
+type KeplrWin = Window & { keplr?: any };
+
+// Environment-based configuration
+const CHAIN_ID = import.meta.env.VITE_COSMOS_CHAIN_ID || 'provider';
+const RPC = import.meta.env.VITE_COSMOS_RPC || 'https://cosmoshub-testnet.rpc.kjnodes.com';
+const LCD = import.meta.env.VITE_COSMOS_LCD || 'https://cosmoshub-testnet.api.kjnodes.com';
+const IS_PROD = import.meta.env.PROD;
+const DEV_RELAYER = import.meta.env.VITE_COSMOS_RELAYER_MNEMONIC;
+
+if (IS_PROD && DEV_RELAYER) {
+  throw new Error('Prod build must not include dev relayer mnemonic');
+}
+
 // Chain configuration - matches priva-config.toml
 const CHAIN_CONFIG = {
-  chainId: "provider-testnet",
+  chainId: CHAIN_ID,
   chainName: "Provider Testnet",
-  rpc: "https://rpc.provider-testnet.cosmoshub.strange.love",
-  rest: "https://api.provider-testnet.cosmoshub.strange.love",
+  rpc: RPC,
+  rest: LCD,
   bip44: {
     coinType: 118,
   },
@@ -69,6 +83,23 @@ const CHAIN_CONFIG = {
  */
 export function isKeplrInstalled(): boolean {
   return typeof window !== 'undefined' && !!window.keplr
+}
+
+/**
+ * Enable Keplr for a specific chain
+ * @returns Promise<void>
+ * @throws Error if Keplr is not installed or failed to enable
+ */
+export async function keplrEnable(): Promise<void> {
+  const w = window as KeplrWin;
+  if (!w.keplr) {
+    throw new Error('Keplr not installed');
+  }
+  try {
+    await w.keplr.enable(CHAIN_ID);
+  } catch (error) {
+    throw new Error(`Failed to enable Keplr: ${(error as Error).message}`);
+  }
 }
 
 /**
