@@ -16,7 +16,7 @@ describe('DPI Client - Unified Facade', () => {
         headers: new Headers({ 'content-type': 'text/html' }),
         arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(0))
       })
-      global.fetch = mockFetch as any
+      global.fetch = mockFetch as typeof fetch
 
       const response = await dpiFetch('https://example.com')
       
@@ -34,7 +34,7 @@ describe('DPI Client - Unified Facade', () => {
         headers: new Headers(),
         arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(0))
       })
-      global.fetch = mockFetch as any
+      global.fetch = mockFetch as typeof fetch
 
       await dpiFetch('https://example.com')
       
@@ -59,7 +59,7 @@ describe('DPI Client - Unified Facade', () => {
         headers: new Headers({ 'content-type': 'application/json' }),
         arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(10))
       })
-      global.fetch = mockFetch as any
+      global.fetch = mockFetch as typeof fetch
 
       const response = await dpiFetch('https://api.example.com/data')
       
@@ -79,7 +79,7 @@ describe('DPI Client - Unified Facade', () => {
         headers: new Headers(),
         arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(0))
       })
-      global.fetch = mockFetch as any
+      global.fetch = mockFetch as typeof fetch
 
       const response = await dpiFetch('https://example.com/notfound')
       
@@ -96,7 +96,7 @@ describe('DPI Client - Unified Facade', () => {
         headers: new Headers(),
         arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(0))
       })
-      global.fetch = mockFetch as any
+      global.fetch = mockFetch as typeof fetch
 
       const userAgents = new Set<string>()
       
