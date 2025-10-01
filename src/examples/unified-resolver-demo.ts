@@ -87,17 +87,14 @@ export async function demonstrateDpiBypass() {
   console.log('\n🔐 DPI Bypass Examples')
   
   try {
-    // Check if DPI bypass is available
-    const { isDpiBypassAvailable, getDpiBypassStats } = await import('../services/dpiClient')
-    
-    console.log(`DPI Bypass Available: ${isDpiBypassAvailable()}`)
-    console.log(`DPI Bypass Stats:`, getDpiBypassStats())
-    
     // Try to fetch with DPI bypass
     try {
       const response = await dpiFetch('https://httpbin.org/user-agent')
-      const data = await response.text()
+      const buffer = await response.arrayBuffer()
+      const decoder = new TextDecoder()
+      const data = decoder.decode(buffer)
       console.log('✅ DPI bypass fetch successful')
+      console.log(`   Response status: ${response.status}`)
       console.log(`   Response: ${data.substring(0, 100)}...`)
     } catch (error) {
       console.log(`⚠️ DPI bypass fetch may fail without network: ${error.message}`)
