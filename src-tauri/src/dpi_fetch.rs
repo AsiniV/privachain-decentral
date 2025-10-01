@@ -71,3 +71,57 @@ fn random_ua() -> String {
 fn rand_index(n: usize) -> usize {
     fastrand::usize(..n)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_random_ua_returns_valid_string() {
+        let ua = random_ua();
+        assert!(!ua.is_empty());
+        assert!(ua.starts_with("Mozilla/"));
+    }
+
+    #[test]
+    fn test_random_ua_varies() {
+        // Generate multiple UAs and check we get different ones
+        let mut uas = std::collections::HashSet::new();
+        for _ in 0..20 {
+            uas.insert(random_ua());
+        }
+        // With 5 options and 20 tries, we should get at least 2 different ones
+        assert!(uas.len() >= 2);
+    }
+
+    #[test]
+    fn test_rand_index_bounds() {
+        for _ in 0..100 {
+            let idx = rand_index(5);
+            assert!(idx < 5);
+        }
+    }
+
+    #[test]
+    fn test_build_client_without_tor() {
+        let result = build_client(false);
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_dpi_fetch_invalid_url() {
+        let result = dpi_fetch("not-a-valid-url".to_string(), false).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Invalid URL"));
+    }
+
+    #[tokio::test]
+    async fn test_dpi_fetch_example_dot_com() {
+        let result = dpi_fetch("https://example.com".to_string(), false).await;
+        assert!(result.is_ok());
+        let fetch_result = result.unwrap();
+        assert_eq!(fetch_result.status, 200);
+        assert!(!fetch_result.headers.is_empty());
+        assert!(!fetch_result.body.is_empty());
+    }
+}
