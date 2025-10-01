@@ -1,6 +1,20 @@
 import { createHelia } from 'helia'
 import { createOrbitDB, Identities, type OrbitDB, Documents, type DocStore } from '@orbitdb/core'
 
+// Polyfill for Promise.withResolvers (required for Node < 22)
+if (typeof Promise.withResolvers === 'undefined') {
+  // @ts-expect-error - Polyfill for older Node versions
+  Promise.withResolvers = function <T>() {
+    let resolve: (value: T | PromiseLike<T>) => void
+    let reject: (reason?: unknown) => void
+    const promise = new Promise<T>((res, rej) => {
+      resolve = res
+      reject = rej
+    })
+    return { promise, resolve: resolve!, reject: reject! }
+  }
+}
+
 export interface SearchDoc {
   id: string
   type: 'message' | 'email' | 'file' | 'domain' | 'transaction' | 'video' | 'identity' | string
@@ -28,8 +42,9 @@ export async function initSearch(dbName = 'privachain.search') {
     store = await orbitdb.open<SearchDoc>(dbName, { Database: Documents({ indexBy: 'id' }) })
     await store.load()
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
     console.error('Error initializing search:', error)
-    throw new Error(`Failed to initialize OrbitDB: ${error.message}`)
+    throw new Error(`Failed to initialize OrbitDB: ${errorMessage}`)
   }
 }
 
@@ -40,8 +55,9 @@ export async function index(doc: SearchDoc) {
   try {
     await store.put(doc)
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
     console.error('Error indexing document:', error)
-    throw new Error(`Failed to index document: ${error.message}`)
+    throw new Error(`Failed to index document: ${errorMessage}`)
   }
 }
 
@@ -65,7 +81,8 @@ export async function query(term: string, filters: Partial<Pick<SearchDoc, 'type
     })
     return results.sort((a, b) => b.timestamp - a.timestamp) // Newest first
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
     console.error('Error querying documents:', error)
-    throw new Error(`Failed to query documents: ${error.message}`)
+    throw new Error(`Failed to query documents: ${errorMessage}`)
   }
 }
