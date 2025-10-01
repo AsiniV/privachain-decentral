@@ -10,7 +10,8 @@ export default defineConfig({
       '**/src/tests/**' // Exclude existing Jest tests only
     ],
     include: [
-      'src/test/*.test.ts'
+      'src/test/*.test.ts',
+      'tests/**/*.test.ts'
     ]
   }
 })
