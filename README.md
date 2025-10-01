@@ -50,6 +50,10 @@ Visit `http://localhost:5173` to see the application.
 - **[COSMOS_TESTNET_TESTING.md](./docs/COSMOS_TESTNET_TESTING.md)** - Detailed testing procedures for testnet environment
 - **[NETWORK_CONFIGURATION.md](./docs/NETWORK_CONFIGURATION.md)** - Network endpoints and connectivity troubleshooting
 
+### Search and Indexing
+- **[SIMPLE_SEARCH_API.md](./docs/SIMPLE_SEARCH_API.md)** - Simple OrbitDB-powered search API documentation
+- **[ORBITDB_INTEGRATION.md](./docs/ORBITDB_INTEGRATION.md)** - Advanced hybrid search with privacy features
+
 ### Production Readiness
 - **[PRODUCTION_READINESS_ISSUES.md](./docs/PRODUCTION_READINESS_ISSUES.md)** - Critical issues and limitations for production deployment
 
