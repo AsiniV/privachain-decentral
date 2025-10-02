@@ -1,0 +1,12 @@
+[workspace]
+members = [
+    "src-tauri",
+    "messenger",
+    "contracts/did-registry",
+    "contracts/domain-registry", 
+    "contracts/recovery_code",
+    "contracts/mail",
+    "dpi-bypass",
+    "node"
+]
+resolver = "2"
