@@ -142,10 +142,16 @@ export class IpfsStorage {
       )
 
       // Encrypt the data
-      // Ensure data is a proper BufferSource
-      const dataToEncrypt = data instanceof Uint8Array && data.buffer instanceof ArrayBuffer 
-        ? data 
-        : new Uint8Array(data)
+      // Ensure data is a proper BufferSource with ArrayBuffer (not SharedArrayBuffer)
+      let dataToEncrypt: Uint8Array<ArrayBuffer>
+      if (data instanceof Uint8Array && data.buffer instanceof ArrayBuffer) {
+        dataToEncrypt = data as Uint8Array<ArrayBuffer>
+      } else {
+        // Create a new Uint8Array with a proper ArrayBuffer
+        const tempArray = data instanceof Uint8Array ? data : new Uint8Array(data)
+        dataToEncrypt = new Uint8Array(tempArray.length) as Uint8Array<ArrayBuffer>
+        dataToEncrypt.set(tempArray)
+      }
       const encrypted = await crypto.subtle.encrypt(
         { name: 'AES-GCM', iv: nonce },
         cryptoKey,
@@ -197,10 +203,15 @@ export class IpfsStorage {
       )
 
       // Decrypt the data
-      // Ensure encryptedData is a proper BufferSource
-      const dataToDecrypt = encryptedData.buffer instanceof ArrayBuffer 
-        ? encryptedData 
-        : new Uint8Array(encryptedData)
+      // Ensure encryptedData is a proper BufferSource with ArrayBuffer (not SharedArrayBuffer)
+      let dataToDecrypt: Uint8Array<ArrayBuffer>
+      if (encryptedData.buffer instanceof ArrayBuffer) {
+        dataToDecrypt = encryptedData as Uint8Array<ArrayBuffer>
+      } else {
+        // Create a new Uint8Array with a proper ArrayBuffer
+        dataToDecrypt = new Uint8Array(encryptedData.length) as Uint8Array<ArrayBuffer>
+        dataToDecrypt.set(encryptedData)
+      }
       const decrypted = await crypto.subtle.decrypt(
         { name: 'AES-GCM', iv: nonce },
         cryptoKey,
