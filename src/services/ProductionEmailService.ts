@@ -240,9 +240,11 @@ export class ProductionEmailService {
       id: string;
       from: string;
       subject: string;
+      content?: string;
       timestamp: number;
-      contentCid: string;
-      encrypted: boolean;
+      contentCid?: string;
+      encrypted?: boolean;
+      attachments?: number;
     }>
     error?: string
   }> {
@@ -494,6 +496,7 @@ export class ProductionEmailService {
     content: string;
     from: string;
     timestamp: number;
+    attachments?: any[];
   }> {
     const decryptedBytes = await this.pqDecrypt(encryptedData, privateKey)
     const emailData = JSON.parse(new TextDecoder().decode(decryptedBytes))
@@ -542,7 +545,7 @@ export class ProductionEmailService {
   }
 
   private async generateOwnerHash(zkProof: Uint8Array): Promise<string> {
-    const hashBytes = await crypto.subtle.digest('SHA-256', zkProof)
+    const hashBytes = await crypto.subtle.digest('SHA-256', zkProof.buffer as BufferSource)
     return Array.from(new Uint8Array(hashBytes))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('')

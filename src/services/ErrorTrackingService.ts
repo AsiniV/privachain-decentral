@@ -52,15 +52,15 @@ export class ErrorTrackingService {
         
         // PII scrubbing configuration
         beforeSend: (event) => {
-          return this.scrubSentryEvent(event)
+          return this.scrubSentryEvent(event) as any
         },
 
-        // Configure integrations
+        // Configure integrations using modern Sentry API
         integrations: [
-          new Sentry.Integrations.Http({ tracing: true }),
-          new Sentry.Integrations.Express({ app: undefined }),
-          new Sentry.Integrations.OnUncaughtException(),
-          new Sentry.Integrations.OnUnhandledRejection(),
+          Sentry.httpIntegration(),
+          Sentry.expressIntegration(),
+          Sentry.onUncaughtExceptionIntegration(),
+          Sentry.onUnhandledRejectionIntegration(),
         ],
 
         // Default tags

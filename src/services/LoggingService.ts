@@ -99,8 +99,10 @@ export class LoggingService {
   /**
    * Scrub sensitive data from strings using HMAC for consistent redaction
    */
-  private scrubSensitiveData(data: string): string {
-    if (typeof data !== 'string') return data
+  private scrubSensitiveData(data: unknown): string {
+    if (typeof data !== 'string') {
+      return String(data)
+    }
 
     let scrubbed = data
     for (const pattern of this.sensitivePatterns) {
