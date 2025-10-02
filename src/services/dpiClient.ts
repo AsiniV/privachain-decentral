@@ -35,7 +35,16 @@ async function tauriFetch(url: string): Promise<Resp> {
     ok: res.status >= 200 && res.status < 300,
     status: res.status,
     headers,
-    arrayBuffer: async () => new Uint8Array(res.body).buffer
+    arrayBuffer: async () => {
+      const uint8Array = new Uint8Array(res.body)
+      const buffer = uint8Array.buffer
+      // Narrow type from ArrayBuffer | SharedArrayBuffer to ArrayBuffer
+      if (buffer instanceof ArrayBuffer) {
+        return buffer
+      }
+      // If SharedArrayBuffer, convert to ArrayBuffer
+      return new Uint8Array(buffer).buffer as ArrayBuffer
+    }
   }
 }
 

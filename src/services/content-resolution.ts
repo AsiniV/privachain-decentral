@@ -119,7 +119,9 @@ export class ContentResolver {
       let content: ArrayBuffer
       try {
         const data = await ipfsStorage.retrieveData(cid)
-        content = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
+        const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
+        // Narrow type from ArrayBuffer | SharedArrayBuffer to ArrayBuffer
+        content = buffer instanceof ArrayBuffer ? buffer : new Uint8Array(buffer).buffer as ArrayBuffer
       } catch (localError) {
         console.warn('Local IPFS failed, trying gateway:', localError)
         // Fallback to IPFS gateway
@@ -174,11 +176,15 @@ export class ContentResolver {
         const encryptionKey = this.parseEncryptionKey(domainRecord.encryptionKey)
         const encryptedData = await ipfsStorage.retrieveData(contentHash)
         const decryptedData = await ipfsStorage.retrieveDecrypted(contentHash, encryptionKey)
-        content = decryptedData.buffer.slice(decryptedData.byteOffset, decryptedData.byteOffset + decryptedData.byteLength)
+        const buffer = decryptedData.buffer.slice(decryptedData.byteOffset, decryptedData.byteOffset + decryptedData.byteLength)
+        // Narrow type from ArrayBuffer | SharedArrayBuffer to ArrayBuffer
+        content = buffer instanceof ArrayBuffer ? buffer : new Uint8Array(buffer).buffer as ArrayBuffer
       } else {
         // Plain content
         const data = await ipfsStorage.retrieveData(contentHash)
-        content = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
+        const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
+        // Narrow type from ArrayBuffer | SharedArrayBuffer to ArrayBuffer
+        content = buffer instanceof ArrayBuffer ? buffer : new Uint8Array(buffer).buffer as ArrayBuffer
       }
 
       return {
