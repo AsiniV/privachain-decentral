@@ -357,8 +357,9 @@ class CodecManager {
                                  (window as Record<string, unknown>).msRTCPeerConnection
     }
 
-    if (!navigator.getUserMedia) {
-      navigator.getUserMedia = (navigator as Record<string, unknown>).webkitGetUserMedia || 
+    // Modern browsers use navigator.mediaDevices.getUserMedia instead
+    if (!(navigator as any).getUserMedia && navigator.mediaDevices) {
+      (navigator as any).getUserMedia = (navigator as Record<string, unknown>).webkitGetUserMedia || 
                               (navigator as Record<string, unknown>).mozGetUserMedia || 
                               (navigator as Record<string, unknown>).msGetUserMedia
     }
@@ -375,6 +376,7 @@ class CodecManager {
     if (!('IntersectionObserver' in window)) {
       // Simplified polyfill for basic functionality
       (window as Record<string, unknown>).IntersectionObserver = class {
+        private callback: (entries: unknown[]) => void
         constructor(callback: (entries: unknown[]) => void) {
           this.callback = callback
         }
@@ -389,6 +391,7 @@ class CodecManager {
     if (!('ResizeObserver' in window)) {
       // Simplified polyfill for basic functionality
       (window as Record<string, unknown>).ResizeObserver = class {
+        private callback: (entries: unknown[]) => void
         constructor(callback: (entries: unknown[]) => void) {
           this.callback = callback
         }

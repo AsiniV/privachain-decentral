@@ -335,33 +335,7 @@ class ProxyVPNService {
     return speedScore + loadScore + latencyScore + uptimeScore
   }
 
-  private async connectToNode(node: ProxyNode): Promise<void> {
-    try {
-      // Simulate connection process
-      await this.performHandshake(node)
-      
-      this.activeConnection = {
-        connected: true,
-        nodeId: node.id,
-        publicIP: await this.getPublicIP(),
-        privateIP: this.generatePrivateIP(),
-        dnsSuffix: '.privachain.local',
-        bytesUp: 0,
-        bytesDown: 0,
-        connectionTime: Date.now(),
-        lastPing: Date.now()
-      }
 
-      // Mark node as active
-      this.nodes.forEach(n => n.active = false)
-      node.active = true
-
-      console.log(`Connected to proxy node: ${node.location}`)
-    } catch (error) {
-      console.error('Failed to connect to proxy node:', error)
-      throw error
-    }
-  }
 
   private async performHandshake(): Promise<void> {
     // Simulate secure handshake with encryption key exchange
@@ -402,7 +376,7 @@ class ProxyVPNService {
       await this.disconnect()
     }
 
-    await this.connectToNode(targetNode)
+    await this.connectToNode(nodeId)
   }
 
   async disconnect(): Promise<void> {
@@ -761,43 +735,9 @@ class ProxyVPNService {
     }
   }
 
-  // Traffic obfuscation
-  obfuscateTraffic(data: ArrayBuffer): ArrayBuffer {
-    // Simple XOR obfuscation (in real implementation, use proper encryption)
-    const key = new Uint8Array([0x5A, 0x3C, 0x9F, 0x1E])
-    const obfuscated = new Uint8Array(data)
-    
-    for (let i = 0; i < obfuscated.length; i++) {
-      obfuscated[i] ^= key[i % key.length]
-    }
-    
-    return obfuscated.buffer
-  }
 
-  deobfuscateTraffic(data: ArrayBuffer): ArrayBuffer {
-    // XOR is reversible
-    return this.obfuscateTraffic(data)
-  }
 
-  // Kill switch functionality
-  enableKillSwitch(): void {
-    // Block all network requests if VPN/proxy disconnects
-    const originalFetch = window.fetch
-    
-    window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-      if (!this.activeConnection?.connected) {
-        throw new Error('Network blocked: No secure connection available')
-      }
-      return originalFetch.call(window, input, init)
-    }
-  }
 
-  disableKillSwitch(): void {
-    // Restore original fetch function
-    if ((window.fetch as Record<string, unknown>).original) {
-      window.fetch = (window.fetch as Record<string, unknown>).original
-    }
-  }
 
   // Getters
   getActiveNode(): ProxyNode | undefined {
@@ -812,9 +752,7 @@ class ProxyVPNService {
     return [...this.nodes]
   }
 
-  getProxyChain(): ProxyChain | null {
-    return this.proxyChain
-  }
+
 
   getStats(): TrafficStats & { dpiBypass?: any } {
     return {
@@ -1033,13 +971,13 @@ class ProxyVPNService {
   }
 
   getProxyChain(): ProxyChain | null {
-    if (!this.activeProxyChain || this.activeProxyChain.nodes.length === 0) {
+    if (!this.proxyChain || this.proxyChain.nodes.length === 0) {
       return null
     }
     
     return {
-      ...this.activeProxyChain,
-      agent: this.activeProxyChain.agent || undefined
+      ...this.proxyChain,
+      agent: this.proxyChain.agent || undefined
     }
   }
 }

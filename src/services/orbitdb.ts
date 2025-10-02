@@ -247,6 +247,9 @@ export class OrbitDBHybridIndexing {
       const { yamux } = await import('@chainsafe/libp2p-yamux')
       const { createHelia } = await import('helia')
       const { createOrbitDB } = await import('@orbitdb/core')
+      const { kadDHT } = await import('@libp2p/kad-dht')
+      const { identify } = await import('@libp2p/identify')
+      const { gossipsub } = await import('@chainsafe/libp2p-gossipsub')
 
       // Create libp2p node with enhanced configuration
       this.libp2p = await createLibp2p({
@@ -254,7 +257,7 @@ export class OrbitDBHybridIndexing {
           listen: ['/ip4/0.0.0.0/tcp/0/ws']
         },
         transports: [webSockets()],
-        connectionEncryption: [noise()],
+        connectionEncrypters: [noise()],
         streamMuxers: [yamux()],
         peerDiscovery: [
           // Add bootstrap peers from relay nodes
@@ -262,11 +265,11 @@ export class OrbitDBHybridIndexing {
         ],
         services: {
           // Enable distributed hash table for peer discovery
-          kadDHT: (components: any) => new KadDHT(components),
+          kadDHT: kadDHT(),
           // Enable peer identification
-          identify: (components: any) => new Identify(components),
+          identify: identify(),
           // Enable gossipsub for pub/sub messaging
-          pubsub: (components: any) => new GossipSub(components)
+          pubsub: gossipsub()
         }
       })
 
