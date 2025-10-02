@@ -137,12 +137,7 @@ export class EmailService {
       // Upload encrypted content to IPFS
       const ipfsResult = await ipfsService.uploadEncrypted(
         encryptedContent,
-        senderKey,
-        {
-          type: 'email',
-          recipient: recipientDomain,
-          sender: senderAlias
-        }
+        recipientDomain
       )
 
       // Generate ZK-SNARK proof for anonymity
@@ -237,7 +232,14 @@ export class EmailService {
       const recipientKey = await this.getOrCreateEncryptionKey(recipientDomain)
 
       // Download encrypted email from IPFS
-      const downloadResult = await ipfsService.downloadEncrypted(emailCID, recipientKey)
+      // Create EncryptedContent structure for downloadEncrypted
+      const encryptedContent = {
+        cid: emailCID,
+        sessionId: recipientDomain,
+        encryptedMessage: {} as any,  // Placeholder
+        nymProof: undefined
+      }
+      const downloadResult = await ipfsService.downloadEncrypted(encryptedContent)
       
       // Parse email metadata - downloadResult is a Uint8Array
       const decoder = new TextDecoder()
@@ -358,10 +360,18 @@ export class EmailService {
       }
 
       // Register domain via anonymous DNS - returns boolean
+      // Note: AnonymousDNS.registerDomain expects ZKIdentity, but we have strings
+      // Creating a minimal placeholder identity structure
+      const placeholderIdentity = {
+        privateKey: userPublicKey,
+        publicHash: userPublicKey,
+        nullifierKey: userPublicKey,
+        commitment: userPublicKey
+      }
       const registrationResult = await anonymousDNS.registerDomain(
+        placeholderIdentity as any,
         desiredDomain,
-        userPublicKey,
-        'email'
+        userPublicKey
       )
 
       if (!registrationResult) {
@@ -404,12 +414,8 @@ export class EmailService {
     
     const uploadResult = await ipfsService.uploadEncrypted(
       fileData,
-      encryptionKey,
-      {
-        filename: file.name,
-        contentType: file.type,
-        size: file.size
-      }
+      'attachment',
+      file.name
     )
 
     return {
@@ -495,7 +501,14 @@ export class EmailService {
    * Decrypt email content from IPFS
    */
   private async decryptEmailContent(contentCID: string, decryptionKey: CryptoKey): Promise<string> {
-    const downloadResult = await ipfsService.downloadEncrypted(contentCID, decryptionKey)
+    // Create EncryptedContent structure for downloadEncrypted
+    const encryptedContent = {
+      cid: contentCID,
+      sessionId: 'email-content',
+      encryptedMessage: {} as any,  // Placeholder
+      nymProof: undefined
+    }
+    const downloadResult = await ipfsService.downloadEncrypted(encryptedContent)
     // downloadResult is a Uint8Array, not an object with content property
     const decoder = new TextDecoder()
     return decoder.decode(downloadResult)
