@@ -131,6 +131,9 @@ export class EmailService {
         recipientPublicKey
       )
 
+      // Generate sender alias
+      const senderAlias = await this.generateSenderAlias(senderDomain, recipientDomain)
+
       // Upload encrypted content to IPFS
       const ipfsResult = await ipfsService.uploadEncrypted(
         encryptedContent,
@@ -138,7 +141,7 @@ export class EmailService {
         {
           type: 'email',
           recipient: recipientDomain,
-          sender: this.generateSenderAlias(senderDomain, recipientDomain)
+          sender: senderAlias
         }
       )
 
@@ -147,7 +150,7 @@ export class EmailService {
 
       // Create email metadata
       const email: EncryptedEmail = {
-        sender: this.generateSenderAlias(senderDomain, recipientDomain),
+        sender: senderAlias,
         recipient: recipientDomain,
         subject: await this.encryptSubject(subject, recipientPublicKey),
         contentCID: ipfsResult.cid,
@@ -194,7 +197,7 @@ export class EmailService {
       const emailId = `email_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
 
       console.log(`✅ Email sent successfully:`, {
-        from: this.generateSenderAlias(senderDomain, recipientDomain),
+        from: senderAlias,
         to: recipientDomain,
         size: `${Math.round(ipfsResult.size / 1024)} KB`,
         attachments: attachments.length,
@@ -236,8 +239,9 @@ export class EmailService {
       // Download encrypted email from IPFS
       const downloadResult = await ipfsService.downloadEncrypted(emailCID, recipientKey)
       
-      // Parse email metadata
-      const emailMetadata = JSON.parse(downloadResult.content as string) as EncryptedEmail
+      // Parse email metadata - downloadResult is a Uint8Array
+      const decoder = new TextDecoder()
+      const emailMetadata = JSON.parse(decoder.decode(downloadResult)) as EncryptedEmail
 
       // Decrypt email content
       const decryptedContent = await this.decryptEmailContent(
@@ -353,17 +357,17 @@ export class EmailService {
         desiredDomain += '.prv'
       }
 
-      // Register domain via anonymous DNS
+      // Register domain via anonymous DNS - returns boolean
       const registrationResult = await anonymousDNS.registerDomain(
         desiredDomain,
         userPublicKey,
         'email'
       )
 
-      if (!registrationResult.success) {
+      if (!registrationResult) {
         return {
           success: false,
-          error: registrationResult.error
+          error: 'Domain registration failed'
         }
       }
 
@@ -378,8 +382,7 @@ export class EmailService {
 
       return {
         success: true,
-        domain: desiredDomain,
-        txHash: registrationResult.txHash
+        domain: desiredDomain
       }
 
     } catch (error) {
@@ -396,9 +399,11 @@ export class EmailService {
    */
   private async uploadAttachment(file: File, encryptionKey: CryptoKey): Promise<EmailAttachment> {
     const fileBuffer = await file.arrayBuffer()
+    // Convert ArrayBuffer to Uint8Array
+    const fileData = new Uint8Array(fileBuffer)
     
     const uploadResult = await ipfsService.uploadEncrypted(
-      fileBuffer,
+      fileData,
       encryptionKey,
       {
         filename: file.name,
@@ -418,18 +423,17 @@ export class EmailService {
   /**
    * Generate anonymous sender alias
    */
-  private generateSenderAlias(senderDomain: string, recipientDomain: string): string {
+  private async generateSenderAlias(senderDomain: string, recipientDomain: string): Promise<string> {
     // Create deterministic but anonymous alias
     const combined = senderDomain + recipientDomain + 'privacy_salt'
     const encoder = new TextEncoder()
     const data = encoder.encode(combined)
     
     // Generate hash-based alias
-    return crypto.subtle.digest('SHA-256', data).then(hash => {
-      const hashArray = Array.from(new Uint8Array(hash))
-      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
-      return hashHex.slice(0, 16) + '.prv'
-    })
+    const hash = await crypto.subtle.digest('SHA-256', data)
+    const hashArray = Array.from(new Uint8Array(hash))
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+    return hashHex.slice(0, 16) + '.prv'
   }
 
   /**
@@ -492,7 +496,9 @@ export class EmailService {
    */
   private async decryptEmailContent(contentCID: string, decryptionKey: CryptoKey): Promise<string> {
     const downloadResult = await ipfsService.downloadEncrypted(contentCID, decryptionKey)
-    return downloadResult.content as string
+    // downloadResult is a Uint8Array, not an object with content property
+    const decoder = new TextDecoder()
+    return decoder.decode(downloadResult)
   }
 
   /**

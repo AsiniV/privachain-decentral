@@ -60,7 +60,6 @@ export class MetricsService {
     if (config.enableDefaultMetrics !== false) {
       collectDefaultMetrics({ 
         register,
-        timeout: config.defaultMetricsInterval || 10000,
         prefix: this.prefix
       })
     }

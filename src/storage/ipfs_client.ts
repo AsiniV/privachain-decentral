@@ -35,7 +35,7 @@ export class IpfsStorage {
       // Create libp2p node with basic configuration
       const libp2p = await createLibp2p({
         transports: [webSockets()],
-        connectionEncryption: [noise()],
+        connectionEncrypters: [noise()],
         streamMuxers: [yamux()],
         peerDiscovery: [
           bootstrap({

@@ -358,10 +358,11 @@ export class ProductionIPFS {
 
       const iv = crypto.getRandomValues(new Uint8Array(12))
       
+      // Ensure content is BufferSource compatible
       const encrypted = await crypto.subtle.encrypt(
         { name: 'AES-GCM', iv },
         key,
-        content
+        content.buffer
       )
 
       // Export key for storage

@@ -27,7 +27,7 @@ export async function getHelia(): Promise<Helia> {
 
   const libp2pOptions: Libp2pOptions = {
     transports: [webSockets(), webRTC()],
-    connectionEncryption: [noise()],
+    connectionEncrypters: [noise()],
     streamMuxers: [mplex()],
     datastore,
   }
