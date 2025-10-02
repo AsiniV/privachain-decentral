@@ -1,0 +1,25 @@
+[package]
+name = "privachain-tauri"
+version = "0.1.0"
+description = "Tauri backend for PrivaChain desktop application"
+authors = ["PrivaChain Team <team@privachain.org>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[build-dependencies]
+tauri-build = { version = "1.5", features = [] }
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+reqwest = { version = "0.12", features = ["json"] }
+tauri = { version = "1.6", features = ["api-all"] }
+fastrand = "2.1"
+url = "2.5"
+tokio = { version = "1.0", features = ["full"] }
+
+[features]
+# This feature is used for production builds or when `devPath` points to the filesystem
+# DO NOT REMOVE!!
+custom-protocol = ["tauri/custom-protocol"]
