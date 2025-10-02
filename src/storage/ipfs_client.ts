@@ -142,10 +142,14 @@ export class IpfsStorage {
       )
 
       // Encrypt the data
+      // Ensure data is a proper BufferSource
+      const dataToEncrypt = data instanceof Uint8Array && data.buffer instanceof ArrayBuffer 
+        ? data 
+        : new Uint8Array(data)
       const encrypted = await crypto.subtle.encrypt(
         { name: 'AES-GCM', iv: nonce },
         cryptoKey,
-        data
+        dataToEncrypt
       )
 
       // Combine nonce + encrypted data
@@ -193,10 +197,14 @@ export class IpfsStorage {
       )
 
       // Decrypt the data
+      // Ensure encryptedData is a proper BufferSource
+      const dataToDecrypt = encryptedData.buffer instanceof ArrayBuffer 
+        ? encryptedData 
+        : new Uint8Array(encryptedData)
       const decrypted = await crypto.subtle.decrypt(
         { name: 'AES-GCM', iv: nonce },
         cryptoKey,
-        encryptedData
+        dataToDecrypt
       )
 
       const result = new Uint8Array(decrypted)
