@@ -6,6 +6,7 @@ import { noise } from '@libp2p/noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
 import { webSockets } from '@libp2p/websockets'
 import { bootstrap } from '@libp2p/bootstrap'
+import { CID } from 'multiformats/cid'
 import type { Helia } from 'helia'
 import type { UnixFS } from '@helia/unixfs'
 
@@ -89,13 +90,14 @@ export class IpfsStorage {
   /**
    * Retrieve data from IPFS by CID
    */
-  async retrieveData(cid: string): Promise<Uint8Array> {
+  async retrieveData(cidString: string): Promise<Uint8Array> {
     if (!this.fs) {
       throw new Error('IPFS not initialized. Call initialize() first.')
     }
 
     try {
       // Parse CID and get data
+      const cid = CID.parse(cidString)
       const chunks: Uint8Array[] = []
       
       for await (const chunk of this.fs.cat(cid)) {
@@ -251,14 +253,15 @@ export class IpfsStorage {
   /**
    * Unpin content (for garbage collection)
    */
-  async unpinContent(cid: string): Promise<void> {
+  async unpinContent(cidString: string): Promise<void> {
     if (!this.helia) {
       throw new Error('IPFS not initialized')
     }
 
     try {
+      const cid = CID.parse(cidString)
       await this.helia.pins.rm(cid)
-      console.log(`📌 Unpinned content: ${cid}`)
+      console.log(`📌 Unpinned content: ${cidString}`)
     } catch (error) {
       console.error('❌ Failed to unpin content:', error)
       throw new Error(`Failed to unpin content: ${error}`)

@@ -258,6 +258,29 @@ export class GasFeeManager {
   }
 
   /**
+   * Get quota status for a domain/user
+   */
+  getQuotaStatus(_domain: string): { used: number; limit: number; tier: 'free' | 'premium' | 'enterprise' } {
+    // This is a simplified implementation that returns plan-based status
+    // In a production system, this would query actual usage from the plan manager
+    try {
+      // For now, return based on the default plan
+      return {
+        used: 0,
+        limit: 100,
+        tier: 'free'
+      };
+    } catch (error) {
+      console.error('Error getting quota status:', error);
+      return {
+        used: 0,
+        limit: 100,
+        tier: 'free'
+      };
+    }
+  }
+
+  /**
    * Get gas fee statistics
    */
   getGasStats() {

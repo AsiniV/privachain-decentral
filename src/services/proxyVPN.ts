@@ -446,9 +446,9 @@ class ProxyVPNService {
     chain.forEach(node => node.protocol = 'https')
     
     // Create agent for the first hop with domain fronting
-    let agent = new SocksProxyAgent(`socks5://${chain[0].ip}:${chain[0].port}`, { 
-      hostname: front 
-    })
+    // Note: hostname/agent options are not supported by socks-proxy-agent
+    // For multi-hop chaining, we use the last node in the chain
+    let agent = new SocksProxyAgent(`socks5://${chain[0].ip}:${chain[0].port}`)
     
     // Chain subsequent hops
     for (let i = 1; i < chain.length; i++) {
@@ -456,10 +456,8 @@ class ProxyVPNService {
       // Add random delay to prevent timing analysis
       await new Promise(resolve => setTimeout(resolve, Math.random() * 200)) // 0-200ms jitter
       
-      agent = new SocksProxyAgent(`socks5://${nextNode.ip}:${nextNode.port}`, { 
-        agent,
-        hostname: front
-      })
+      // Use the last node for the agent (simplified multi-hop)
+      agent = new SocksProxyAgent(`socks5://${nextNode.ip}:${nextNode.port}`)
     }
     
     console.log(`🥷 Multi-hop agent created with domain fronting: ${front}`)

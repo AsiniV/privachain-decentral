@@ -7,6 +7,7 @@ import { createHelia } from 'helia'
 import { unixfs } from '@helia/unixfs'
 import type { Helia } from 'helia'
 import type { UnixFS } from '@helia/unixfs'
+import { CID } from 'multiformats/cid'
 
 export interface FilecoinDeal {
   dealId: string
@@ -292,7 +293,7 @@ export class ProductionIPFS {
   /**
    * Retrieve content with automatic failover across nodes
    */
-  async retrieveWithFailover(cid: string, decrypt = true): Promise<Uint8Array> {
+  async retrieveWithFailover(cidString: string, decrypt = true): Promise<Uint8Array> {
     if (!this.fs || !this.initialized) {
       throw new Error('IPFS not initialized')
     }
@@ -305,6 +306,7 @@ export class ProductionIPFS {
         
         if (node === 'local') {
           // Use local Helia node
+          const cid = CID.parse(cidString)
           const chunks: Uint8Array[] = []
           for await (const chunk of this.fs.cat(cid)) {
             chunks.push(chunk)
@@ -317,12 +319,12 @@ export class ProductionIPFS {
           }
         } else if (node === 'filebase-gateway') {
           // Use Filebase gateway
-          const response = await fetch(`${this.filebaseGateway}${cid}`)
+          const response = await fetch(`${this.filebaseGateway}${cidString}`)
           if (!response.ok) throw new Error(`HTTP ${response.status}`)
           content = new Uint8Array(await response.arrayBuffer())
         } else {
           // Use backup node
-          const response = await fetch(`${node}/ipfs/${cid}`)
+          const response = await fetch(`${node}/ipfs/${cidString}`)
           if (!response.ok) throw new Error(`HTTP ${response.status}`)
           content = new Uint8Array(await response.arrayBuffer())
         }
@@ -332,7 +334,7 @@ export class ProductionIPFS {
           content = await this.decryptContent(content)
         }
 
-        console.log(`📥 Retrieved content from ${node}:`, cid)
+        console.log(`📥 Retrieved content from ${node}:`, cidString)
         return content
       } catch (error) {
         console.warn(`Failed to retrieve from ${node}:`, error)
@@ -340,7 +342,7 @@ export class ProductionIPFS {
       }
     }
 
-    throw new Error(`Failed to retrieve content from all nodes: ${cid}`)
+    throw new Error(`Failed to retrieve content from all nodes: ${cidString}`)
   }
 
   /**
