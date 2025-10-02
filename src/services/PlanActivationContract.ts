@@ -3,7 +3,7 @@
  * Handles automatic premium plan activation after ATOM/USDC payment confirmation
  */
 
-import '../lib/kvStorage'; // Initialize KV storage
+import { spark } from '../lib/kvStorage';
 
 export interface PlanActivationTransaction {
   transactionHash: string;
@@ -20,6 +20,20 @@ export interface PaymentWallet {
   address: string;
   currency: 'ATOM' | 'USDC';
   network: string;
+}
+
+interface StoredInvoice {
+  walletAddress: string;
+  amount: number;
+  currency: 'ATOM' | 'USDC';
+  qrCode: string;
+  expiresAt: Date;
+  invoiceId: string;
+  planId: string;
+  status: 'pending' | 'confirmed' | 'expired' | 'failed';
+  createdAt: number;
+  transactionHash?: string;
+  confirmedAt?: number;
 }
 
 class PlanActivationContract {
@@ -163,7 +177,7 @@ class PlanActivationContract {
   private async monitorPayment(invoiceId: string, planId: string, currency: 'ATOM' | 'USDC'): Promise<void> {
     const checkPayment = async () => {
       try {
-        const invoice = await spark.kv.get(`payment_invoice_${invoiceId}`);
+        const invoice = await spark.kv.get<StoredInvoice>(`payment_invoice_${invoiceId}`);
         if (!invoice || invoice.status !== 'pending') {
           return; // Stop monitoring
         }
@@ -331,7 +345,7 @@ class PlanActivationContract {
     confirmedAt?: number;
   } | null> {
     try {
-      const invoice = await spark.kv.get(`payment_invoice_${invoiceId}`);
+      const invoice = await spark.kv.get<StoredInvoice>(`payment_invoice_${invoiceId}`);
       if (!invoice) return null;
 
       return {

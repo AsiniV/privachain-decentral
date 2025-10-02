@@ -4,8 +4,7 @@
  * Plans are bound to device installation and stored locally only
  */
 
-import '../lib/kvStorage'; // Initialize KV storage
-import { useKV } from '../hooks/useKV';
+import { spark } from '../lib/kvStorage';
 
 export type PlanType = 'starter' | 'premium';
 

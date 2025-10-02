@@ -34,7 +34,7 @@ class LocalKVStorage {
 
   async keys(): Promise<string[]> {
     try {
-      const keys = [];
+      const keys: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && key.startsWith(this.prefix)) {
@@ -52,6 +52,11 @@ class LocalKVStorage {
 // Global KV storage instance
 export const kvStorage = new LocalKVStorage();
 
+// Create a spark-like object for compatibility
+export const spark = {
+  kv: kvStorage
+};
+
 // Create a global spark-like object for compatibility
 declare global {
   interface Window {
@@ -63,7 +68,5 @@ declare global {
 
 // Initialize global spark object
 if (typeof window !== 'undefined') {
-  window.spark = {
-    kv: kvStorage
-  };
+  window.spark = spark;
 }
