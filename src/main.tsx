@@ -6,9 +6,13 @@ import { createDID, publishDID } from "./identity/did";
 import { startP2P } from "./p2p/node";
 import { initSignal } from "./messenger/signal";
 import { createIndex } from "./search/indexer";
+import { getHelia } from "./services/heliaBrowser";
 import "./index.css";
 
 (async () => {
+  // 0. Initialize Helia IPFS before anything else (must be before first user click)
+  getHelia().catch(console.error);
+
   // 1. identity
   const { did, pubKey } = await createDID();
   await publishDID(did, pubKey);
