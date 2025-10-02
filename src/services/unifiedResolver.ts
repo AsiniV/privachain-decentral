@@ -1,19 +1,19 @@
 // Unified resolver for web build. Desktop uses Tauri IPC for HTTP and Kubo.
 // Routes ipfs://, *.prv (via off-chain map or contract), and http(s) with DPI feature flags.
 
-import { createHelia, Helia } from 'helia'
-import { unixfs } from '@helia/unixfs'
 import { CID } from 'multiformats/cid'
+import { concat } from 'uint8arrays/concat'
+import { fileTypeFromBuffer } from 'file-type'
+import { getUnixfs } from './heliaBrowser'
 import { resolvePrvDomain } from '../cosmos/src/prv'
 import { dpiFetch } from './dpiClient'
 
 const IS_DESKTOP = typeof window !== 'undefined' && typeof (window as unknown as { __TAURI__?: unknown }).__TAURI__ !== 'undefined'
 
-let helia: Helia | null = null
-
 export async function initResolver() {
-  if (!helia && !IS_DESKTOP) {
-    helia = await createHelia()
+  // Initialize Helia via heliaBrowser singleton
+  if (!IS_DESKTOP) {
+    await getUnixfs()
   }
 }
 
@@ -32,19 +32,17 @@ export async function resolveUrl(url: string): Promise<{ bytes: Uint8Array; cont
 }
 
 async function resolveIpfs(cidStr: string) {
-  if (helia) {
-    const fs = unixfs(helia)
-    const cid = CID.parse(cidStr)
-    const chunks: Uint8Array[] = []
-    for await (const chunk of fs.cat(cid)) chunks.push(chunk)
-    const bytes = concat(chunks)
-    return { bytes, contentType: detect(bytes), source: 'ipfs' as const }
+  const cid = CID.parse(cidStr)
+  const fs = await getUnixfs()
+
+  const chunks: Uint8Array[] = []
+  for await (const chunk of fs.cat(cid)) {
+    chunks.push(chunk)
   }
-  // Desktop or no Helia: use public gateway for first cut; desktop should use Kubo HTTP API.
-  const r = await fetch(`https://ipfs.io/ipfs/${encodeURIComponent(cidStr)}`, { cache: 'no-store' })
-  if (!r.ok) throw new Error(`IPFS gateway ${r.status}`)
-  const buf = new Uint8Array(await r.arrayBuffer())
-  return { bytes: buf, contentType: r.headers.get('content-type') || detect(buf), source: 'ipfs' as const }
+
+  const bytes = concat(chunks)
+  const fileType = await fileTypeFromBuffer(bytes)
+  return { bytes, contentType: fileType?.mime ?? 'application/octet-stream', source: 'ipfs' as const }
 }
 
 async function resolveHttp(url: string) {
@@ -53,13 +51,6 @@ async function resolveHttp(url: string) {
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const buf = new Uint8Array(await res.arrayBuffer())
   return { bytes: buf, contentType: res.headers.get('content-type') || detect(buf), source: 'http' as const }
-}
-
-function concat(chunks: Uint8Array[]) {
-  const len = chunks.reduce((s, c) => s + c.length, 0)
-  const out = new Uint8Array(len)
-  let o = 0; for (const c of chunks) { out.set(c, o); o += c.length }
-  return out
 }
 
 function detect(data: Uint8Array): string {
