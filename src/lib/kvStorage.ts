@@ -52,6 +52,11 @@ class LocalKVStorage {
 // Global KV storage instance
 export const kvStorage = new LocalKVStorage();
 
+// Create a spark-like object for compatibility
+export const spark = {
+  kv: kvStorage
+};
+
 // Create a global spark-like object for compatibility
 declare global {
   interface Window {
@@ -63,7 +68,5 @@ declare global {
 
 // Initialize global spark object
 if (typeof window !== 'undefined') {
-  window.spark = {
-    kv: kvStorage
-  };
+  window.spark = spark;
 }
