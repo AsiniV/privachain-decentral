@@ -60,14 +60,15 @@ export class ZKCryptography {
   async generateZKIdentity(): Promise<ZKIdentity> {
     // Generate random private key
     const privateKey = this.generateSecureRandom(32);
+    const privateKeyHex = this.bytesToHex(privateKey);
     
     // Derive public components using Poseidon hash (simplified)
-    const publicHash = await this.poseidonHash([privateKey]);
-    const nullifierKey = await this.poseidonHash([privateKey, 'nullifier']);
+    const publicHash = await this.poseidonHash([privateKeyHex]);
+    const nullifierKey = await this.poseidonHash([privateKeyHex, 'nullifier']);
     const commitment = await this.poseidonHash([publicHash, nullifierKey]);
 
     const identity: ZKIdentity = {
-      privateKey: this.bytesToHex(privateKey),
+      privateKey: privateKeyHex,
       publicHash: publicHash,
       nullifierKey: nullifierKey,
       commitment: commitment

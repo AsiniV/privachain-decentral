@@ -381,7 +381,7 @@ export class E2EEncryptionService {
     const encrypted = await crypto.subtle.encrypt(
       { name: 'AES-GCM', iv },
       cryptoKey,
-      data
+      data as BufferSource
     );
     
     // Combine IV and encrypted data
