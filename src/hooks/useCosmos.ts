@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react'
 import { cosmosClient, CosmosAccount, COSMOS_CONFIG } from '@/lib/cosmos'
 import { toast } from 'sonner'
 import * as sodium from 'libsodium-wrappers'
+import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing'
+import { GasPrice, StargateClient } from '@cosmjs/stargate'
+import { SigningStargateClient } from '@cosmjs/stargate'
 
 export interface CosmosState {
   isConnected: boolean
@@ -187,7 +190,7 @@ export function useCosmos() {
           isConnected: false 
         }))
         
-        const config = getCurrentConfig()
+        const config = COSMOS_CONFIG
         
         // Connect to read-only client
         const client = await StargateClient.connect(config.rpcEndpoint)
@@ -199,7 +202,7 @@ export function useCosmos() {
           try {
             const decryptedMnemonic = await SecureMnemonicStorage.decryptMnemonic(encryptedMnemonic, userPassphrase)
             const wallet = await DirectSecp256k1HdWallet.fromMnemonic(decryptedMnemonic, {
-              prefix: config.addressPrefix
+              prefix: config.prefix
             })
             
             const [firstAccount] = await wallet.getAccounts()
@@ -208,7 +211,7 @@ export function useCosmos() {
             const signingClient = await SigningStargateClient.connectWithSigner(
               config.rpcEndpoint,
               wallet,
-              { gasPrice: GasPrice.fromString(`0.025${config.feeToken}`) }
+              { gasPrice: GasPrice.fromString(`0.025${config.denom}`) }
             )
             
             setState(prev => ({

@@ -3,6 +3,7 @@ import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { GasPrice } from "@cosmjs/stargate";
 
 let client: SigningCosmWasmClient | null = null;
+let wallet: DirectSecp256k1HdWallet | null = null;
 
 export async function getSigningClient() {
   if (client) return client;
@@ -16,7 +17,7 @@ export async function getSigningClient() {
     return null;
   }
   
-  const wallet = await DirectSecp256k1HdWallet.fromMnemonic(
+  wallet = await DirectSecp256k1HdWallet.fromMnemonic(
     mnemonic,
     { prefix: "cosmos" }
   );
@@ -30,11 +31,11 @@ export async function getSigningClient() {
 
 export async function relay(contract: string, msg: any, funds?: any[]) {
   const c = await getSigningClient();
-  if (!c) {
+  if (!c || !wallet) {
     console.warn('No signing client available for relay');
     return null;
   }
-  const [account] = await c.getAccounts();
+  const [account] = await wallet.getAccounts();
   return c.execute(account.address, contract, msg, "auto", "", funds);
 }
 
@@ -61,6 +62,13 @@ export const cosmosClient = {
   connect: async () => true,
   getAccount: async () => null as CosmosAccount | null,
   disconnect: async () => {},
-  createWallet: async () => "",
-  getAddress: () => null as string | null
+  createWallet: async (mnemonic?: string) => "",
+  getAddress: () => null as string | null,
+  connectWallet: async () => null as any,
+  getMnemonic: () => null as string | null,
+  registerZKIdentity: async (publicHash: string, zkProof: string, ephemeralKey: string) => null as string | null,
+  registerDomain: async (domainName: string, zkProofHash: string, publicKey: string) => null as string | null,
+  startVideoSession: async (receiver: string, stunTurnServer: string) => null as string | null,
+  queryDomain: async (domainName: string) => null as any,
+  getFaucetInfo: () => ({ url: COSMOS_CONFIG.faucetUrl, address: null as string | null })
 };

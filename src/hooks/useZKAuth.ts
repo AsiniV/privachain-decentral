@@ -18,7 +18,8 @@ export function useZKAuth() {
       if (SessionManager.validateSession()) {
         const sessionData = SessionManager.getSessionData()
         if (sessionData) {
-          setSession(sessionData)
+          setIdentity(sessionData as unknown as CryptoIdentity)
+          setIsAuthenticated(true)
         }
       }
       

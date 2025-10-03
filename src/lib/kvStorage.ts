@@ -32,6 +32,10 @@ class LocalKVStorage {
     }
   }
 
+  async remove(key: string): Promise<void> {
+    return this.delete(key);
+  }
+
   async keys(): Promise<string[]> {
     try {
       const keys: string[] = [];

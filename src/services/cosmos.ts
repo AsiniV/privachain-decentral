@@ -1,6 +1,6 @@
 // PrivaChain WebRTC signaling integration with Cosmos blockchain
 
-import { SigningCosmWasmClient, CosmWasmClient } from '@cosmjs/cosmwasm-stargate'
+import { SigningCosmWasmClient, CosmWasmClient, ExecuteResult } from '@cosmjs/cosmwasm-stargate'
 import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing'
 import { GasPrice } from '@cosmjs/stargate'
 
@@ -372,7 +372,7 @@ export class CosmosBlockchainService {
     return '0'.repeat(96) // Fallback for demo
   }
 
-  private extractSessionId(result: { events: Array<{ attributes: Array<{ key: string; value: string }> }> }): string {
+  private extractSessionId(result: ExecuteResult): string {
     // Extract session ID from transaction events
     for (const event of result.events) {
       if (event.type === 'wasm') {
@@ -386,7 +386,7 @@ export class CosmosBlockchainService {
     return Math.random().toString(36).substring(7)
   }
 
-  private extractEmailId(result: { events: Array<{ attributes: Array<{ key: string; value: string }> }> }): string {
+  private extractEmailId(result: ExecuteResult): string {
     // Extract email ID from transaction events
     for (const event of result.events) {
       if (event.type === 'wasm') {
