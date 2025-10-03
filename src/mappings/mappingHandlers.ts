@@ -1,6 +1,9 @@
 import { MsgSwapExactAmountInMessage } from "../types/CosmosMessageTypes";
 import { Pool, Swap, SwapRoute } from "../types";
 
+// Logger instance for mapping handlers
+const logger = console;
+
 async function checkGetPool(id: string): Promise<Pool> {
   // Check that the pool exists and create new ones if now
   let pool = await Pool.get(id);

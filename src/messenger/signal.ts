@@ -41,7 +41,7 @@ export async function decrypt(store: SignalStore, theirDid: string, ctJson: stri
 }
 
 export async function uploadBundle(node: any, did: string) {
-  const identity = await store.getIdentityKeyPair ? await store.getIdentityKeyPair() : { pubKey: store.identityKey };
+  const identity = { pubKey: store.identityKey };
   // Mock key generation - in production use proper Signal Protocol
   const preKey = { keyId: 0, keyPair: { pubKey: randomBytes(32) } };
   const signed = { keyId: 0, keyPair: { pubKey: randomBytes(32) }, signature: randomBytes(64) };

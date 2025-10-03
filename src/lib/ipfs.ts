@@ -6,7 +6,7 @@ import { createHelia } from "helia";
  */
 
 export async function createPersistentNode() {
-  const node = await createHelia({ repo: "./ipfs-repo" });
+  const node = await createHelia();
   // Note: Pinning functionality may vary by Helia version
   return { node, pin: node };
 }

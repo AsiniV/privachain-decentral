@@ -217,9 +217,14 @@ export class ZKIdentity {
   private validateIdentity(identity: unknown): identity is CryptoIdentity {
     return (
       typeof identity === 'object' &&
+      identity !== null &&
+      'privateKey' in identity &&
       typeof identity.privateKey === 'string' &&
+      'publicHash' in identity &&
       typeof identity.publicHash === 'string' &&
+      'zkProof' in identity &&
       typeof identity.zkProof === 'string' &&
+      'timestamp' in identity &&
       typeof identity.timestamp === 'number'
     )
   }
