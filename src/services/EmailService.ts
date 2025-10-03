@@ -186,8 +186,8 @@ export class EmailService {
       senderEmails.push(email)
       this.sentEmails.set(senderDomain, senderEmails)
 
-      // MapPin content to ensure availability
-      await ipfsService.pinContent(ipfsResult.cid)
+      // Index content to ensure availability
+      await ipfsService.indexContent(ipfsResult.cid, [])
 
       const emailId = `email_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
 
@@ -237,7 +237,8 @@ export class EmailService {
         cid: emailCID,
         sessionId: recipientDomain,
         encryptedMessage: {} as any,  // Placeholder
-        nymProof: undefined
+        nymProof: undefined,
+        size: 0  // Unknown size for downloaded content
       }
       const downloadResult = await ipfsService.downloadEncrypted(encryptedContent)
       
@@ -506,7 +507,8 @@ export class EmailService {
       cid: contentCID,
       sessionId: 'email-content',
       encryptedMessage: {} as any,  // Placeholder
-      nymProof: undefined
+      nymProof: undefined,
+      size: 0  // Unknown size for downloaded content
     }
     const downloadResult = await ipfsService.downloadEncrypted(encryptedContent)
     // downloadResult is a Uint8Array, not an object with content property

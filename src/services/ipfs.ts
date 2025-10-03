@@ -63,6 +63,7 @@ export interface EncryptedContent {
   sessionId: string
   encryptedMessage: E2EMessage
   nymProof?: string
+  size: number
 }
 
 export interface StorageQuota {
@@ -286,7 +287,8 @@ export class PrivaChainIPFSService {
         cid: cid.toString(),
         sessionId: session.sessionId,
         encryptedMessage,
-        nymProof
+        nymProof,
+        size: messageBytes.length
       }
     } catch (error) {
       console.error('❌ Failed to upload encrypted content:', error)

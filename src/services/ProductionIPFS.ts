@@ -362,7 +362,7 @@ export class ProductionIPFS {
       const encrypted = await crypto.subtle.encrypt(
         { name: 'AES-GCM', iv },
         key,
-        content
+        content as BufferSource
       )
 
       // Export key for storage

@@ -731,12 +731,12 @@ export class PostQuantumCrypto {
       // Check if kyber implementation is available
       const kyberModule = await import('kyber-crystals').catch(() => null)
       
-      if (!kyberModule) {
+      if (!kyberModule || !kyberModule.kyber) {
         throw new Error('Kyber cryptography library not available. Install kyber-crystals package for production use.')
       }
 
       // Use real Kyber implementation when available
-      return kyberModule.generateKeyPair()
+      return kyberModule.kyber.keyPair()
     } catch (error) {
       console.error('❌ Kyber key generation failed:', error)
       throw new Error(`Post-quantum key generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
