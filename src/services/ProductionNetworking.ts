@@ -256,7 +256,7 @@ export class ProductionNetworking {
       const testUrl = 'https://check.torproject.org/api/ip'
       const response = await fetch(testUrl, { 
         ...(this.torProxy && { agent: this.torProxy } as any),
-        ...(10000 && { timeout: 10000 } as any)
+        ...({ timeout: 10000 } as any)
       })
       
       if (response.ok) {
@@ -1527,7 +1527,7 @@ export class ProductionNetworking {
         },
         body: data,
         ...(agent && { agent } as any),
-        ...(10000 && { timeout: 10000 } as any)
+        ...({ timeout: 10000 } as any)
       })
 
       if (!response.ok) {

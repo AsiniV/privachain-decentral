@@ -370,7 +370,7 @@ export class E2EEncryptionService {
     // Import key for AES-GCM encryption
     const cryptoKey = await crypto.subtle.importKey(
       'raw',
-      key,
+      key as BufferSource,
       { name: 'AES-GCM' },
       false,
       ['encrypt']
@@ -381,7 +381,7 @@ export class E2EEncryptionService {
     const encrypted = await crypto.subtle.encrypt(
       { name: 'AES-GCM', iv },
       cryptoKey,
-      data
+      data as BufferSource
     );
     
     // Combine IV and encrypted data
@@ -401,7 +401,7 @@ export class E2EEncryptionService {
     
     const cryptoKey = await crypto.subtle.importKey(
       'raw',
-      key,
+      key as BufferSource,
       { name: 'AES-GCM' },
       false,
       ['decrypt']
@@ -410,7 +410,7 @@ export class E2EEncryptionService {
     const decrypted = await crypto.subtle.decrypt(
       { name: 'AES-GCM', iv },
       cryptoKey,
-      ciphertext
+      ciphertext as BufferSource
     );
     
     return new Uint8Array(decrypted);
