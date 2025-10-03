@@ -255,10 +255,8 @@ export class ProductionNetworking {
       // Test Tor connectivity
       const testUrl = 'https://check.torproject.org/api/ip'
       const response = await fetch(testUrl, { 
-        // @ts-expect-error - agent may not be in fetch types
-        agent: this.torProxy,
-        // @ts-expect-error - timeout may not be in fetch types
-        timeout: 10000
+        ...(this.torProxy && { agent: this.torProxy } as any),
+        ...(10000 && { timeout: 10000 } as any)
       })
       
       if (response.ok) {
@@ -1527,11 +1525,9 @@ export class ProductionNetworking {
           'Content-Type': 'application/octet-stream',
           'X-Circuit-Protocol': 'privachain-onion-v1'
         },
-        body: data.buffer, // Convert Uint8Array to ArrayBuffer
-        // @ts-expect-error - agent may not be in fetch types
-        agent,
-        // @ts-expect-error - timeout may not be in fetch types
-        timeout: 10000
+        body: data,
+        ...(agent && { agent } as any),
+        ...(10000 && { timeout: 10000 } as any)
       })
 
       if (!response.ok) {
