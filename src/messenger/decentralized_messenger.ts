@@ -316,7 +316,7 @@ export async function createMessenger(): Promise<Messenger> {
         id: crypto.randomUUID(),
         from: _newId,
         to: peerId,
-        ciphertext: ciphertextObj.body,
+        ciphertext: ciphertextObj.body!,
         timestamp: Date.now(),
       };
 

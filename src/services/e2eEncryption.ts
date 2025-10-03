@@ -5,7 +5,7 @@
  * of the Double Ratchet algorithm with X25519 key exchange.
  */
 
-import { x25519 } from '@noble/curves/ed25519';
+import { x25519 } from '@noble/curves/ed25519.js';
 import { sha256 } from '@noble/hashes/sha256';
 import { hkdf } from '@noble/hashes/hkdf';
 import { randomBytes } from '@noble/hashes/utils';
@@ -379,7 +379,7 @@ export class E2EEncryptionService {
     const iv = randomBytes(12); // 96-bit IV for AES-GCM
     
     const encrypted = await crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv },
+      { name: 'AES-GCM', iv: iv as BufferSource },
       cryptoKey,
       data as BufferSource
     );

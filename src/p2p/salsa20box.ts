@@ -1,4 +1,4 @@
-import { box, randomBytes } from "tweetnacl";
+import { secretbox, randomBytes } from "tweetnacl";
 
 const nonceLen = 24;
 
@@ -7,7 +7,7 @@ export function createBoxStream(stream: any, key: Uint8Array) {
     ...stream,
     write: (chunk: Uint8Array) => {
       const nonce = randomBytes(nonceLen);
-      const encrypted = box(chunk, nonce, key);
+      const encrypted = secretbox(chunk, nonce, key);
       return stream.write(Buffer.concat([nonce, encrypted]));
     }
   };
@@ -21,7 +21,7 @@ export function createUnboxStream(stream: any, key: Uint8Array) {
       if (!buf) return buf;
       const nonce = buf.subarray(0, nonceLen);
       const ct = buf.subarray(nonceLen);
-      const pt = box.open(ct, nonce, key);
+      const pt = secretbox.open(ct, nonce, key);
       if (!pt) throw new Error("decrypt failed");
       return pt;
     }

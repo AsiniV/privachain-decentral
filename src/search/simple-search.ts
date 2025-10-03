@@ -3,7 +3,6 @@ import { createOrbitDB, Identities, type OrbitDB, Documents, type DocStore } fro
 
 // Polyfill for Promise.withResolvers (required for Node < 22)
 if (typeof Promise.withResolvers === 'undefined') {
-  // @ts-expect-error - Polyfill for older Node versions
   Promise.withResolvers = function <T>() {
     let resolve: (value: T | PromiseLike<T>) => void
     let reject: (reason?: unknown) => void

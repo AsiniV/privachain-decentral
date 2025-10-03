@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
  * Custom hook for persistent key-value storage using localStorage
  * Replaces @github/spark/hooks useKV functionality
  */
-export function useKV<T>(key: string, defaultValue: T): [T, (value: T) => void] {
+export function useKV<T>(key: string, defaultValue: T): [T, (value: T | ((prev: T) => T)) => void] {
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
       const item = window.localStorage.getItem(key)
@@ -15,10 +15,11 @@ export function useKV<T>(key: string, defaultValue: T): [T, (value: T) => void] 
     }
   })
 
-  const setValue = (value: T) => {
+  const setValue = (value: T | ((prev: T) => T)) => {
     try {
-      setStoredValue(value)
-      window.localStorage.setItem(key, JSON.stringify(value))
+      const newValue = typeof value === 'function' ? (value as (prev: T) => T)(storedValue) : value
+      setStoredValue(newValue)
+      window.localStorage.setItem(key, JSON.stringify(newValue))
     } catch (error) {
       console.error(`Error setting localStorage key "${key}":`, error)
     }
