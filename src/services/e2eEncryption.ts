@@ -379,7 +379,7 @@ export class E2EEncryptionService {
     const iv = randomBytes(12); // 96-bit IV for AES-GCM
     
     const encrypted = await crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv },
+      { name: 'AES-GCM', iv: iv as BufferSource },
       cryptoKey,
       data as BufferSource
     );

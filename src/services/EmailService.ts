@@ -187,7 +187,7 @@ export class EmailService {
       this.sentEmails.set(senderDomain, senderEmails)
 
       // Index content to ensure availability
-      await ipfsService.indexContent(ipfsResult.cid)
+      await ipfsService.indexContent(ipfsResult.cid, [])
 
       const emailId = `email_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
 
