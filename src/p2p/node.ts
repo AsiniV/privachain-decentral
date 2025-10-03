@@ -15,13 +15,13 @@ export async function startP2P(did: string) {
     transports: [
       webSockets()
     ],
-    connectionEncryption: [noise()],
+    connectionEncrypters: [noise()],
     streamMuxers: [yamux()],
     services: {
       identify: identify(),
       ping: ping(),
       dht: kadDHT(),
-      pubsub: gossipsub({ allowPublishToZeroPeers: true })
+      pubsub: gossipsub({ allowPublishToZeroTopicPeers: true })
     }
   });
   await node.start();

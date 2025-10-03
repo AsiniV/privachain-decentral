@@ -694,7 +694,7 @@ export class DecentralizedSearchBackend {
       const { zkIdentityManager } = await import('../services/zkCrypto')
       
       // Generate query hash and encrypted query
-      const queryHash = this.hashQuery(query)
+      const queryHash = await this.hashQuery(query)
       const encryptedQuery = await this.encryptQuery(query)
       
       // Generate a search inclusion proof for the query
@@ -1076,18 +1076,19 @@ export class DecentralizedSearchBackend {
   /**
    * Hash query for ZK proof generation
    */
-  private hashQuery(query: string): string {
+  private async hashQuery(query: string): Promise<string> {
     // Use Web Crypto API for consistent hashing
     const encoder = new TextEncoder()
     const data = encoder.encode(query)
     
-    return crypto.subtle.digest('SHA-256', data).then(hashBuffer => {
+    try {
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data)
       const hashArray = Array.from(new Uint8Array(hashBuffer))
       return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
-    }).catch(() => {
+    } catch {
       // Fallback for environments without crypto.subtle
       return btoa(query).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32)
-    })
+    }
   }
 
   /**

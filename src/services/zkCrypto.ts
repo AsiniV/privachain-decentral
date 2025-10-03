@@ -35,8 +35,8 @@ export class ZKIdentityManager {
 
   constructor() {
     // Initialize with placeholder circuit paths - in production these would be real circuit files
-    this.circuitWasm = process.env.ZK_CIRCUIT_WASM || null
-    this.circuitZkey = process.env.ZK_CIRCUIT_ZKEY || null
+    this.circuitWasm = process.env.ZK_CIRCUIT_WASM ?? null
+    this.circuitZkey = process.env.ZK_CIRCUIT_ZKEY ?? null
   }
 
   /**
@@ -46,9 +46,9 @@ export class ZKIdentityManager {
   async initializeCircuits(wasmPath?: string, zkeyPath?: string, vkeyPath?: string): Promise<void> {
     try {
       // Require circuit paths for production - no fallback to mock implementations
-      this.circuitWasm = wasmPath || process.env.ZK_CIRCUIT_WASM || process.env.VITE_ZK_CIRCUIT_WASM
-      this.circuitZkey = zkeyPath || process.env.ZK_CIRCUIT_ZKEY || process.env.VITE_ZK_CIRCUIT_ZKEY
-      const vkeyPathFinal = vkeyPath || process.env.ZK_VERIFICATION_KEY || process.env.VITE_ZK_VERIFICATION_KEY
+      this.circuitWasm = wasmPath ?? process.env.ZK_CIRCUIT_WASM ?? process.env.VITE_ZK_CIRCUIT_WASM ?? null
+      this.circuitZkey = zkeyPath ?? process.env.ZK_CIRCUIT_ZKEY ?? process.env.VITE_ZK_CIRCUIT_ZKEY ?? null
+      const vkeyPathFinal = vkeyPath ?? process.env.ZK_VERIFICATION_KEY ?? process.env.VITE_ZK_VERIFICATION_KEY ?? null
       
       if (!this.circuitWasm || !this.circuitZkey || !vkeyPathFinal) {
         throw new ZKError(
