@@ -26,7 +26,7 @@ export interface HealthCheck {
   message: string
   remediation?: string
   responseTime?: number
-  details?: any
+  details?: unknown
 }
 
 export interface DependencyStatus {

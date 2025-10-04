@@ -14,7 +14,7 @@ export interface LogContext {
   userId?: string
   action?: string
   component?: string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export class LoggingService {
@@ -121,7 +121,7 @@ export class LoggingService {
   /**
    * Recursively scrub sensitive data from objects
    */
-  private scrubObjectSensitiveData(obj: any): any {
+  private scrubObjectSensitiveData(obj: unknown): unknown {
     if (obj === null || typeof obj !== 'object') {
       if (typeof obj === 'string') {
         return this.scrubSensitiveData(obj)
@@ -133,7 +133,7 @@ export class LoggingService {
       return obj.map(item => this.scrubObjectSensitiveData(item))
     }
 
-    const scrubbed: any = {}
+    const scrubbed: Record<string, unknown> = {}
     for (const [key, value] of Object.entries(obj)) {
       // Scrub sensitive keys
       if (this.sensitivePatterns.some(pattern => pattern.test(key))) {
@@ -212,7 +212,7 @@ export class LoggingService {
   /**
    * Log structured event for monitoring
    */
-  public logEvent(event: string, details: any, context?: LogContext): void {
+  public logEvent(event: string, details: unknown, context?: LogContext): void {
     this.info(`Event: ${event}`, {
       event,
       details: this.scrubObjectSensitiveData(details),
