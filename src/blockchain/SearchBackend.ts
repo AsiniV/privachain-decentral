@@ -437,7 +437,7 @@ export class DecentralizedSearchBackend {
       const [localResults, subqueryResults, composeDbResults] = await Promise.all([
         this.searchLocalIndex(query, filters),
         this.searchSubQuery(query, filters),
-        this.searchComposeDB(query, filters)
+        this.searchComposeDB(query)
       ])
 
       // Merge and deduplicate results

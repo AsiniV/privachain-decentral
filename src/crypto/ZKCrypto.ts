@@ -8,6 +8,7 @@ export interface ZKProof {
   proof: string;
   publicSignals: string[];
   verificationKey: string;
+  nullifierHash?: string;
 }
 
 export interface ZKIdentity {

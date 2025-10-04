@@ -125,11 +125,7 @@ export function ZKAuthPanel() {
         setBlockchainRegistrationTx(txHash)
         
         // Also register in local simulation for UI feedback
-        const result = await BlockchainUtils.registerDomain(
-          domain.domain,
-          domain.zkProofHash,
-          domain.publicKey
-        )
+        const result = await BlockchainUtils.registerDomain(domain.domain)
         
         if (result.success) {
           setRegistrationStatus('success')
