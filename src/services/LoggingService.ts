@@ -51,11 +51,12 @@ export class LoggingService {
         winston.format.errors({ stack: true }),
         winston.format.json(),
         winston.format.printf(({ timestamp, level, message, ...meta }) => {
+          const scrubbedMeta = this.scrubObjectSensitiveData(meta) as Record<string, unknown>
           const logEntry = {
             timestamp,
             level,
             message: this.scrubSensitiveData(message),
-            ...this.scrubObjectSensitiveData(meta)
+            ...scrubbedMeta
           }
           return JSON.stringify(logEntry)
         })

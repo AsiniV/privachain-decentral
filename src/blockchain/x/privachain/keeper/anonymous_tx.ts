@@ -153,7 +153,7 @@ export class AnonymousTransactionKeeper {
       return []
     }
     
-    const members: string[] = this.cdc.unmarshal(data, [] as string[])
+    const members = this.cdc.unmarshal(data, [] as string[]) as string[]
     
     // Return all members or up to the requested size
     if (members.length <= size) {
@@ -173,7 +173,7 @@ export class AnonymousTransactionKeeper {
     let currentMembers: string[] = []
     const data = await store.get(key)
     if (data) {
-      currentMembers = this.cdc.unmarshal(data, [] as string[])
+      currentMembers = this.cdc.unmarshal(data, [] as string[]) as string[]
     }
     
     // Add new members (avoid duplicates)
@@ -347,8 +347,8 @@ class DefaultCodec implements Codec {
   }
 
   private convertHexToUint8Arrays(obj: unknown): unknown {
-    if (obj && typeof obj === 'object' && obj.__type === 'Uint8Array') {
-      return this.hexToBytes(obj.data)
+    if (obj && typeof obj === 'object' && '__type' in obj && (obj as { __type: string }).__type === 'Uint8Array' && 'data' in obj) {
+      return this.hexToBytes((obj as { data: string }).data)
     }
     if (Array.isArray(obj)) {
       return obj.map(item => this.convertHexToUint8Arrays(item))
