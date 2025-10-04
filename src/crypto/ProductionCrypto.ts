@@ -113,11 +113,11 @@ export class ProductionCryptography {
       const verification = await this.formallyVerifyProof(circuit, proof)
 
       return {
-        proof: new Uint8Array(proof.proof),
+        proof: new Uint8Array(proof.proof as number[]),
         publicInputs: Object.values(publicInputs).map(v => new TextEncoder().encode(v)),
         circuit,
-        verificationKey: new Uint8Array(proof.verificationKey),
-        formalVerification: verification
+        verificationKey: new Uint8Array(proof.verificationKey as number[]),
+        formalVerification: verification as { proofPath: string; theoremProved: string; verificationStatus: boolean }
       }
     } catch (error) {
       console.error('❌ ZK proof generation failed:', error)
@@ -413,7 +413,8 @@ export class ProductionCryptography {
     
     // Check for suspicious network patterns
     for (const activity of activities) {
-      const { networkData } = activity
+      const activityData = activity as any
+      const { networkData } = activityData
       
       // Rate limiting violations
       if (this.isRateLimitViolation(networkData)) {
@@ -498,11 +499,12 @@ export class ProductionCryptography {
   
   private extractActivityPattern(activities: unknown[]): number[] {
     // Extract numerical features from activities
+    const typedActivities = activities as any[]
     return [
-      activities.length,
-      activities.filter(a => a.action === 'login').length,
-      activities.filter(a => a.action === 'send_email').length,
-      activities.reduce((sum, a) => sum + (a.networkData?.requestSize || 0), 0) / activities.length
+      typedActivities.length,
+      typedActivities.filter(a => a.action === 'login').length,
+      typedActivities.filter(a => a.action === 'send_email').length,
+      typedActivities.reduce((sum, a) => sum + (a.networkData?.requestSize || 0), 0) / typedActivities.length
     ]
   }
 
@@ -540,11 +542,12 @@ export class ProductionCryptography {
 
   private extractMLFeatures(activities: unknown[]): number[] {
     // Extract features for ML model
+    const typedActivities = activities as any[]
     return [
-      activities.length,
-      new Set(activities.map((a: any) => a.action)).size,
-      activities.filter((a: any) => a.timestamp > Date.now() - 3600000).length,
-      activities.reduce((sum: number, a: any) => sum + (typeof a.networkData?.requestSize === 'number' ? a.networkData.requestSize : 0), 0)
+      typedActivities.length,
+      new Set(typedActivities.map((a: any) => a.action)).size,
+      typedActivities.filter((a: any) => a.timestamp > Date.now() - 3600000).length,
+      typedActivities.reduce((sum: number, a: any) => sum + (typeof a.networkData?.requestSize === 'number' ? a.networkData.requestSize : 0), 0)
     ]
   }
 

@@ -37,6 +37,9 @@ export function BlockchainDashboard() {
   
   const [transferTo, setTransferTo] = useState('')
   const [transferAmount, setTransferAmount] = useState('')
+  
+  // Calculate gas estimate for display
+  const gasEstimate = calculateGasFees('transfer', 0.025, 'medium')
 
   const handleTransfer = async () => {
     try {
@@ -99,7 +102,7 @@ export function BlockchainDashboard() {
               </div>
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Gas Price</p>
-                <p className="font-semibold">{gasEstimate?.current?.toFixed(4) || '0.0010'} PRIV</p>
+                <p className="font-semibold">{gasEstimate.gasPrice.toFixed(4)} ATOM</p>
               </div>
             </div>
           </CardContent>

@@ -72,6 +72,7 @@ export function ExtensionManager() {
   const [privacyAnalysis, setPrivacyAnalysis] = useState<PrivacyAnalysis | null>(null)
   const [installProgress, setInstallProgress] = useState(0)
   const [isInstalling, setIsInstalling] = useState(false)
+  const [showPrivacyWarnings, setShowPrivacyWarnings] = useState(true)
 
   // Mock extensions data for demonstration
   const mockExtensions: Extension[] = useMemo(() => [
