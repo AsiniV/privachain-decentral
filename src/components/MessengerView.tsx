@@ -383,7 +383,7 @@ export function MessengerView() {
                   <div>
                     <h3 className="font-semibold">{selectedContactData.name}</h3>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      {sessionStatus[selectedContact] ? (
+                      {selectedContact && sessionStatus[selectedContact] ? (
                         <>
                           <ShieldCheck className="w-3 h-3 text-green-600" />
                           <span>End-to-end encrypted • Session active</span>

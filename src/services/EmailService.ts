@@ -161,7 +161,7 @@ export class EmailService {
       // Submit to blockchain with gas fee management
       const gasResult = await gasFeeManager.executeSponsoredOperation(
         senderDomain,
-        'send_email',
+        'email',
         {
           operation: 'sendEmail',
           recipient: recipientDomain,
@@ -177,7 +177,7 @@ export class EmailService {
       if (!gasResult.success) {
         return {
           success: false,
-          error: gasResult.error || 'Blockchain transaction failed'
+          error: gasResult.errorReason || 'Blockchain transaction failed'
         }
       }
 
@@ -197,14 +197,14 @@ export class EmailService {
         size: `${Math.round(ipfsResult.size / 1024)} KB`,
         attachments: attachments.length,
         ipfsCID: ipfsResult.cid,
-        txHash: gasResult.txHash
+        transactionId: gasResult.id
       })
 
       return {
         success: true,
         emailId,
         ipfsCID: ipfsResult.cid,
-        txHash: gasResult.txHash
+        txHash: gasResult.id
       }
 
     } catch (error) {

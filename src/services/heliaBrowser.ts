@@ -1,7 +1,7 @@
 // packages/resolver/src/heliaBrowser.ts
 import { createHelia, type Helia } from 'helia'
 import { unixfs, type UnixFS } from '@helia/unixfs'
-import { verifiedFetch, type VerifiedFetch } from '@helia/verified-fetch'
+import { createVerifiedFetch, type VerifiedFetch } from '@helia/verified-fetch'
 import { IDBBlockstore } from 'blockstore-idb'
 import { IDBDatastore } from 'datastore-idb'
 import { webSockets } from '@libp2p/websockets'
@@ -47,6 +47,6 @@ export async function getUnixfs(): Promise<UnixFS> {
 }
 
 export async function getVerifiedFetch(): Promise<VerifiedFetch> {
-  if (!fetchInstance) fetchInstance = await verifiedFetch(await getHelia())
+  if (!fetchInstance) fetchInstance = await createVerifiedFetch(await getHelia())
   return fetchInstance
 }

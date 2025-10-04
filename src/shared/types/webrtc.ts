@@ -11,7 +11,7 @@ export interface IceServerEntry {
 
 export interface IceResponse {
   iceServers: IceServerEntry[]
-  source: 'dynamic' | 'cache' | 'fallback'
+  source: 'dynamic' | 'cache' | 'cache-wait' | 'fallback'
   expiresAt?: number
 }
 

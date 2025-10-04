@@ -270,12 +270,19 @@ export class ErrorTrackingService {
    */
   public captureMessage(message: string, level: Sentry.SeverityLevel = 'info', context?: ErrorContext): void {
     // Always log to our logging service
-    const logLevel = level === 'fatal' ? 'fatal' : level === 'error' ? 'error' : level === 'warning' ? 'warn' : 'info'
-    loggingService[logLevel as keyof typeof loggingService](message, {
+    const logContext = {
       correlationId: context?.correlationId,
       component: context?.component,
       action: context?.action
-    } as any)
+    }
+    
+    if (level === 'fatal' || level === 'error') {
+      loggingService.error(message, undefined, logContext)
+    } else if (level === 'warning') {
+      loggingService.warn(message, logContext)
+    } else {
+      loggingService.info(message, logContext)
+    }
 
     if (!this.initialized) return
 

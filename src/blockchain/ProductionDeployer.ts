@@ -516,7 +516,7 @@ export class ProductionDeployer {
     codeId: number,
     msg: Record<string, unknown>,
     label: string,
-    funds: string | 'auto'
+    funds: 'auto' | number
   ): Promise<{ contractAddress: string; transactionHash: string }> {
     if (!this.client) throw new Error('Client not initialized')
 

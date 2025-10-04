@@ -4,7 +4,8 @@
  */
 
 // Import ZKProof type from services to ensure consistency
-export type { ZKProof } from '../services/zkCrypto'
+import type { ZKProof } from '../services/zkCrypto'
+export type { ZKProof }
 
 export interface ZKIdentity {
   privateKey: string;

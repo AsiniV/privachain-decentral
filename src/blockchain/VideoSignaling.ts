@@ -157,7 +157,7 @@ export class VideoSignalingContract {
       }
 
       // Store session on blockchain
-      await this.executeBlockchainTransaction('startSession', session)
+      await this.executeBlockchainTransaction('startSession', session as unknown as Record<string, unknown>)
       
       this.sessions.set(sessionId, session)
       

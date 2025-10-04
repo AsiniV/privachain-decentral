@@ -35,7 +35,7 @@ export class IpfsStorage {
       // Create libp2p node with basic configuration
       const libp2p = await createLibp2p({
         transports: [webSockets()],
-        connectionEncrypters: [noise()],
+        connectionEncrypters: [noise() as any],
         streamMuxers: [yamux()],
         peerDiscovery: [
           bootstrap({
@@ -134,8 +134,8 @@ export class IpfsStorage {
       // Generate random nonce (12 bytes for GCM)
       const nonce = crypto.getRandomValues(new Uint8Array(12))
       
-      // Ensure key has proper ArrayBuffer
-      const keyBuffer = key.buffer instanceof ArrayBuffer ? key : new Uint8Array(key)
+      // Ensure key has proper ArrayBuffer (not SharedArrayBuffer)
+      const keyBuffer = new Uint8Array(key).buffer
       
       // Import the key for Web Crypto API
       const cryptoKey = await crypto.subtle.importKey(
@@ -198,8 +198,8 @@ export class IpfsStorage {
       const nonce = combined.slice(0, 12)
       const encryptedData = combined.slice(12)
 
-      // Ensure key has proper ArrayBuffer
-      const keyBuffer = key.buffer instanceof ArrayBuffer ? key : new Uint8Array(key)
+      // Ensure key has proper ArrayBuffer (not SharedArrayBuffer)
+      const keyBuffer = new Uint8Array(key).buffer
 
       // Import the key for Web Crypto API
       const cryptoKey = await crypto.subtle.importKey(

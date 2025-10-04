@@ -257,7 +257,7 @@ export class OrbitDBHybridIndexing {
           listen: ['/ip4/0.0.0.0/tcp/0/ws']
         },
         transports: [webSockets()],
-        connectionEncrypters: [noise()],
+        connectionEncrypters: [noise() as any],
         streamMuxers: [yamux()],
         peerDiscovery: [
           // Add bootstrap peers from relay nodes
@@ -265,13 +265,13 @@ export class OrbitDBHybridIndexing {
         ],
         services: {
           // Enable distributed hash table for peer discovery
-          kadDHT: kadDHT(),
+          kadDHT: kadDHT() as any,
           // Enable peer identification
           identify: identify(),
           // Enable gossipsub for pub/sub messaging
           pubsub: gossipsub()
         }
-      })
+      } as any)
 
       // Create Helia IPFS node
       const helia = await createHelia({ libp2p: this.libp2p })

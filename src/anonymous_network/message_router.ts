@@ -5,9 +5,7 @@
 
 import { randomBytes } from '@noble/hashes/utils'
 import { sha256 } from '@noble/hashes/sha256'
-// @ts-expect-error - libsodium-wrappers types may not be perfect
 import * as sodium from 'libsodium-wrappers'
-// @ts-expect-error - uuid types may not be available
 import { v4 as uuidv4 } from 'uuid'
 
 export interface AnonymousMessage {

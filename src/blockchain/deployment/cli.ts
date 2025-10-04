@@ -111,7 +111,8 @@ async function statusCommand(network: 'testnet' | 'mainnet' | 'local') {
 async function estimateCommand(network: 'testnet' | 'mainnet' | 'local') {
   console.log(`💰 Estimating deployment costs for ${network}...`)
   
-  const { estimateDeploymentCosts, getConfig } = await import('../deployment/utils')
+  const { estimateDeploymentCosts } = await import('../deployment/utils')
+  const { getConfig } = await import('../deployment/config')
   const config = getConfig(network)
   const costs = estimateDeploymentCosts(config.gasPrice)
   

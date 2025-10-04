@@ -204,7 +204,7 @@ export function ImplementationStatus() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-semibold">Overall Implementation Progress</h3>
-            <Badge variant="accent" className="text-lg px-3 py-1">
+            <Badge variant="secondary" className="text-lg px-3 py-1">
               {overallProgress}% Complete
             </Badge>
           </div>

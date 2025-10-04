@@ -327,6 +327,30 @@ export class GasFeeManager {
       throw new Error('Failed to subscribe to premium plan');
     }
   }
+
+  /**
+   * Execute a sponsored operation with gas fee management
+   * Wrapper around processGasFee for better API compatibility
+   */
+  async executeSponsoredOperation(
+    userAddress: string,
+    operation: keyof typeof this.gasCosts,
+    operationData: Record<string, unknown>,
+    metadata?: Record<string, unknown>
+  ): Promise<GasTransaction> {
+    // Process the gas fee for this operation
+    const transaction = await this.processGasFee(userAddress, operation);
+    
+    // Log the operation for tracking
+    console.log(`Executed sponsored operation: ${operation}`, {
+      user: userAddress,
+      transactionId: transaction.id,
+      success: transaction.success,
+      metadata
+    });
+    
+    return transaction;
+  }
 }
 
 // Singleton instance

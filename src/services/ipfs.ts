@@ -117,14 +117,11 @@ export class PrivaChainIPFSService {
         },
         transports: [
           // Use obfs4-wrapped websockets for DPI bypass
-          obfs4(webSockets({ 
-            // Integrate with obfuscated proxy if available
-            ...(proxyChain?.agent && { agent: proxyChain.agent })
-          }))
+          obfs4(webSockets()) as any
         ],
         connectionEncrypters: [
           // Masquerade noise as TLS for DPI evasion
-          noise({ /* masquerade: true */ })
+          noise() as any
         ],
         streamMuxers: [yamux()],
         peerDiscovery: [
