@@ -144,6 +144,110 @@ class PaymentService {
   getPaymentWallets() {
     return planActivationContract.getPaymentWallets();
   }
+
+  /**
+   * Create a premium order
+   */
+  async createOrder(planType: 'monthly' | 'yearly'): Promise<PremiumOrder> {
+    const orderId = `order_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+    const amount = planType === 'monthly' ? 10 : 100;
+    
+    return {
+      id: orderId,
+      planType,
+      amount,
+      currency: 'USD',
+      status: 'pending',
+      createdAt: new Date()
+    };
+  }
+
+  /**
+   * Create crypto payment invoice
+   */
+  async createCryptoInvoice(options: {
+    orderId: string;
+    planType: 'monthly' | 'yearly';
+    selectedCrypto: CryptoCurrency;
+  }): Promise<PaymentInvoice> {
+    const planId = options.planType === 'monthly' ? 'premium-monthly' : 'premium-yearly';
+    
+    return await this.createPlanUpgradeInvoice({
+      planId,
+      selectedCrypto: options.selectedCrypto
+    });
+  }
+
+  /**
+   * Process card payment
+   */
+  async processCardPayment(options: {
+    orderId: string;
+    planType: 'monthly' | 'yearly';
+    cardDetails: {
+      number: string;
+      expiry: string;
+      cvv: string;
+      name: string;
+    };
+  }): Promise<{ success: boolean; message?: string }> {
+    // Simulate payment processing
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          success: true,
+          message: 'Payment processed successfully'
+        });
+      }, 2000);
+    });
+  }
+
+  /**
+   * Get invoice by ID
+   */
+  async getInvoice(invoiceId: string): Promise<PaymentInvoice | null> {
+    try {
+      const status = await this.getPaymentStatus(invoiceId);
+      if (!status) return null;
+      
+      // Return a minimal invoice object
+      return {
+        id: invoiceId,
+        planId: 'premium',
+        amount: this.PREMIUM_COST_USD,
+        currency: SUPPORTED_CRYPTOS[0],
+        walletAddress: '',
+        qrCode: '',
+        expiresAt: new Date(Date.now() + 3600000),
+        status: status.status,
+        confirmations: 0,
+        requiredConfirmations: 1,
+        transactionHash: status.transactionHash,
+        createdAt: new Date()
+      };
+    } catch (error) {
+      console.error('Error getting invoice:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Premium pricing information
+   */
+  readonly PREMIUM_PRICES = {
+    monthly: { usd: 10, atom: 2.5 },
+    yearly: { usd: 100, atom: 25 }
+  };
+}
+
+// Premium Order type
+export interface PremiumOrder {
+  id: string;
+  planType: 'monthly' | 'yearly';
+  amount: number;
+  currency: string;
+  status: 'pending' | 'completed' | 'failed';
+  createdAt: Date;
 }
 
 export const paymentService = new PaymentService();

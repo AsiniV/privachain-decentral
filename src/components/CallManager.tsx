@@ -44,6 +44,29 @@ export function CallManager({ contacts, onCallStatusChange }: CallManagerProps) 
   
   const [incomingCallTimer, setIncomingCallTimer] = useState(0)
 
+  // Define callback functions first before using them in effects
+  const initiateIncomingCall = useCallback((contact: Contact, type: 'video' | 'audio') => {
+    setCallState({
+      type,
+      contact,
+      isIncoming: true,
+      status: 'ringing'
+    })
+
+    // Play notification sound (simulated)
+    toast.info(`Incoming ${type} call from ${contact.name}`)
+  }, [setCallState])
+
+  const declineCall = useCallback(() => {
+    setCallState({
+      type: null,
+      isIncoming: false,
+      status: 'idle'
+    })
+    
+    toast.info('Call declined')
+  }, [setCallState])
+
   // Simulate incoming calls for demo
   useEffect(() => {
     if (callState.status === 'idle') {
@@ -103,18 +126,6 @@ export function CallManager({ contacts, onCallStatusChange }: CallManagerProps) 
     toast.info(`Starting ${type} call with ${contact.name}`)
   }
 
-  const initiateIncomingCall = useCallback((contact: Contact, type: 'video' | 'audio') => {
-    setCallState({
-      type,
-      contact,
-      isIncoming: true,
-      status: 'ringing'
-    })
-
-    // Play notification sound (simulated)
-    toast.info(`Incoming ${type} call from ${contact.name}`)
-  }, [setCallState])
-
   const acceptCall = () => {
     setCallState(prev => ({
       ...prev,
@@ -123,16 +134,6 @@ export function CallManager({ contacts, onCallStatusChange }: CallManagerProps) 
     
     toast.success('Call accepted')
   }
-
-  const declineCall = useCallback(() => {
-    setCallState({
-      type: null,
-      isIncoming: false,
-      status: 'idle'
-    })
-    
-    toast.info('Call declined')
-  }, [setCallState])
 
   const endCall = () => {
     setCallState({

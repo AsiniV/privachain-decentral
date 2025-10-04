@@ -309,6 +309,24 @@ export class GasFeeManager {
   private generateTransactionId(): string {
     return `gas_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
+
+  /**
+   * Subscribe user to premium plan
+   * @param userAddress - User's address
+   * @param durationDays - Duration in days (e.g., 30 for monthly, 365 for yearly)
+   * @param autoRefill - Whether to enable auto-refill
+   */
+  async subscribeToPremium(userAddress: string, durationDays: number, autoRefill: boolean): Promise<void> {
+    try {
+      // Upgrade to premium plan via plan manager
+      await planManager.upgradeToPremium();
+      
+      console.log(`User ${userAddress} subscribed to premium for ${durationDays} days (auto-refill: ${autoRefill})`);
+    } catch (error) {
+      console.error('Failed to subscribe to premium:', error);
+      throw new Error('Failed to subscribe to premium plan');
+    }
+  }
 }
 
 // Singleton instance

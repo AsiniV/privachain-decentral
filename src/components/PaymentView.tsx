@@ -15,6 +15,14 @@ interface PaymentViewProps {
   onBack: () => void
 }
 
+interface Plan {
+  name: string
+  price: number
+  period: string
+  savings?: string
+  features: string[]
+}
+
 export function PaymentView({ onBack }: PaymentViewProps) {
   const [step, setStep] = useState<'plan' | 'method' | 'crypto' | 'card' | 'processing'>('plan')
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly')
@@ -30,7 +38,7 @@ export function PaymentView({ onBack }: PaymentViewProps) {
   })
   const [processing, setProcessing] = useState(false)
 
-  const plans = {
+  const plans: Record<'monthly' | 'yearly', Plan> = {
     monthly: {
       name: 'Premium Monthly',
       price: 10,

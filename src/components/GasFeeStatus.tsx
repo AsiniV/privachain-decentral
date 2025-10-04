@@ -48,10 +48,6 @@ export function GasFeeStatus() {
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const { wallet } = useTestWallet();
 
-  useEffect(() => {
-    loadPaymentStatus();
-  }, [userAddress, loadPaymentStatus]);
-
   const loadPaymentStatus = useCallback(() => {
     try {
       const status = gasFeeManager.getPaymentStatus(userAddress);
@@ -61,6 +57,10 @@ export function GasFeeStatus() {
       toast.error('Failed to load payment status');
     }
   }, [userAddress]);
+
+  useEffect(() => {
+    loadPaymentStatus();
+  }, [userAddress, loadPaymentStatus]);
 
   const handleUpgradeToPremium = async () => {
     setIsLoading(true);
