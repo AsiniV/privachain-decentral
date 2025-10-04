@@ -16,7 +16,7 @@ export class VideoQualityError extends Error {
   }
 }
 
-export interface VideoQualityContract {
+export interface IVideoQualityContract {
   // Desktop registration and management
   registerTurnServer: (url: string, region: string, stake: number) => Promise<string>
   updateServerMetrics: (serverId: string, latency: number, reliability: number) => Promise<void>
@@ -104,7 +104,7 @@ export interface OptimizationEvent {
  * Production implementation of the video quality smart contract
  * Interacts with actual Cosmos blockchain for TURN server management
  */
-export class VideoQualityContract implements VideoQualityContract {
+export class VideoQualityContract implements IVideoQualityContract {
   private client: SigningCosmWasmClient | null = null
   private contractAddr: string
   private wallet: DirectSecp256k1HdWallet | null = null
@@ -451,6 +451,10 @@ export class VideoQualityContract implements VideoQualityContract {
   }
 
   async getGlobalQualityMetrics(): Promise<GlobalMetrics> {
+    if (!this.client) {
+      throw new VideoQualityError('Contract client not initialized')
+    }
+
     try {
       const query = { get_global_metrics: {} }
       const result = await this.client.queryContractSmart(this.contractAddr, query)
@@ -469,9 +473,13 @@ export class VideoQualityContract implements VideoQualityContract {
     }
   }
 
-  async getUserOptimizationHistory(): Promise<OptimizationEvent[]> {
+  async getUserOptimizationHistory(userAddress: string): Promise<OptimizationEvent[]> {
+    if (!this.client) {
+      throw new VideoQualityError('Contract client not initialized')
+    }
+
     try {
-      const query = { get_user_optimization_history: { user_address: this.userAddress } }
+      const query = { get_user_optimization_history: { user_address: userAddress } }
       const result = await this.client.queryContractSmart(this.contractAddr, query)
       
       return result.events || []
@@ -511,7 +519,7 @@ export class VideoQualityContract implements VideoQualityContract {
  * Mock implementation of the video quality smart contract
  * FOR TESTING PURPOSES ONLY - NOT USED IN PRODUCTION
  */
-export class MockVideoQualityContract implements VideoQualityContract {
+export class MockVideoQualityContract implements IVideoQualityContract {
   private servers: Map<string, TurnServerInfo> = new Map()
   private sessions: Map<string, QualityReport[]> = new Map()
   private optimizationHistory: OptimizationEvent[] = []
@@ -793,11 +801,11 @@ export class MockVideoQualityContract implements VideoQualityContract {
     console.log(`Penalized server ${serverId}: ${penalty} PRIV slashed`)
   }
 
-  async reportServerIssue(serverId: string, issueType: string): Promise<void> {
+  async reportServerIssue(serverId: string, issueType: string, evidence: string): Promise<void> {
     const server = this.servers.get(serverId)
     if (!server) throw new Error('Desktop not found')
 
-    console.log(`Issue reported for server ${serverId}: ${issueType}`)
+    console.log(`Issue reported for server ${serverId}: ${issueType} (Evidence: ${evidence})`)
     
     // Automatically reduce reputation for reported issues
     server.reputation = Math.max(0, server.reputation - 1)
@@ -860,8 +868,9 @@ export class MockVideoQualityContract implements VideoQualityContract {
     }
   }
 
-  async getUserOptimizationHistory(): Promise<OptimizationEvent[]> {
+  async getUserOptimizationHistory(userAddress: string): Promise<OptimizationEvent[]> {
     // Return recent optimization events (in production, filter by user)
+    console.log(`Getting optimization history for user: ${userAddress}`)
     return this.optimizationHistory.slice(-10)
   }
 }

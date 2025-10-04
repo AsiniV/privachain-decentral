@@ -328,7 +328,7 @@ export function SearchView({ onNavigateToBrowser }: SearchViewProps = {}) {
                                       </Badge>
                                     )}
                                     {result.zkProof && (
-                                      <Badge variant="accent" className="gap-1">
+                                      <Badge variant="outline" className="gap-1">
                                         <Brain className="w-3 h-3" />
                                         ZK-Proof
                                       </Badge>

@@ -1293,6 +1293,8 @@ interface SearchStats {
   encryptedEntries: number
   queryHistory: number
   lastIndexed: number
+  orbitDBConnected: boolean
+  peerConnections: number
 }
 
 export function useDecentralizedSearch() {
