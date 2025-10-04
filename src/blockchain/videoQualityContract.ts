@@ -21,11 +21,13 @@ export interface VideoQualityContract {
   registerTurnServer: (url: string, region: string, stake: number) => Promise<string>
   updateServerMetrics: (serverId: string, latency: number, reliability: number) => Promise<void>
   deactivateServer: (serverId: string) => Promise<void>
+  getRegisteredServers: () => Promise<TurnServerInfo[]>
   
   // Quality optimization
   requestOptimalServer: (userLocation: string, qualityRequirement: string) => Promise<TurnServerInfo>
   reportQualityMetrics: (sessionId: string, metrics: QualityReport) => Promise<void>
   requestServerFailover: (sessionId: string, currentServerId: string) => Promise<TurnServerInfo>
+  getSessionQualityMetrics: (sessionId: string) => Promise<QualityReport>
   
   // Economic functions
   stakeForServer: (serverId: string, amount: number) => Promise<void>
@@ -240,6 +242,35 @@ export class VideoQualityContract implements VideoQualityContract {
     }
   }
 
+  /** @throws {VideoQualityError} If server query fails */
+  async getRegisteredServers(): Promise<TurnServerInfo[]> {
+    if (!this.client) {
+      throw new VideoQualityError('Contract client not initialized')
+    }
+
+    try {
+      const query = { get_registered_servers: {} }
+      const result = await this.client.queryContractSmart(this.contractAddr, query)
+      
+      return (result.servers || []).map((s: any) => ({
+        id: s.id,
+        url: s.url,
+        region: s.region,
+        latency: parseFloat(s.latency || '50'),
+        reliability: parseFloat(s.reliability || '95'),
+        cost: parseFloat(s.cost || '0.001'),
+        reputation: parseFloat(s.reputation || '90'),
+        stake: parseFloat(s.stake || '0'),
+        isActive: s.is_active !== false,
+        supportedQualities: s.supported_qualities || ['HD', 'SD'],
+        operatorAddress: s.operator_address || ''
+      }))
+    } catch (error) {
+      console.error('❌ Failed to get registered servers from chain:', error)
+      throw new VideoQualityError(`Failed to get registered servers: ${error instanceof Error ? error.message : 'Unknown error'}`, 'SERVER_QUERY_FAILED')
+    }
+  }
+
   /** @throws {VideoQualityError} If server request fails */
   async requestOptimalServer(userLocation: string, qualityRequirement: string): Promise<TurnServerInfo> {
     if (!this.client) {
@@ -340,6 +371,34 @@ export class VideoQualityContract implements VideoQualityContract {
     } catch (error) {
       console.error('Failover failed:', error)
       throw new VideoQualityError(`Failed to perform server failover: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
+  /** @throws {VideoQualityError} If quality metrics query fails */
+  async getSessionQualityMetrics(sessionId: string): Promise<QualityReport> {
+    if (!this.client) {
+      throw new VideoQualityError('Contract client not initialized')
+    }
+
+    try {
+      const query = { get_session_quality_metrics: { session_id: sessionId } }
+      const result = await this.client.queryContractSmart(this.contractAddr, query)
+      
+      return {
+        sessionId: result.session_id || sessionId,
+        serverId: result.server_id || '',
+        bandwidth: parseFloat(result.bandwidth || '1000'),
+        latency: parseFloat(result.latency || '50'),
+        packetLoss: parseFloat(result.packet_loss || '0.01'),
+        jitter: parseFloat(result.jitter || '5'),
+        videoQuality: result.video_quality || 'HD',
+        duration: parseFloat(result.duration || '0'),
+        dataTransferred: parseFloat(result.data_transferred || '0'),
+        userSatisfaction: parseFloat(result.user_satisfaction || '8')
+      }
+    } catch (error) {
+      console.error('❌ Failed to get session quality metrics from chain:', error)
+      throw new VideoQualityError(`Failed to get session quality metrics: ${error instanceof Error ? error.message : 'Unknown error'}`, 'METRICS_QUERY_FAILED')
     }
   }
 
@@ -556,6 +615,10 @@ export class MockVideoQualityContract implements VideoQualityContract {
     console.log(`Deactivated server ${serverId}`)
   }
 
+  async getRegisteredServers(): Promise<TurnServerInfo[]> {
+    return Array.from(this.servers.values())
+  }
+
   async requestOptimalServer(userLocation: string, qualityRequirement: string): Promise<TurnServerInfo> {
     const activeServers = Array.from(this.servers.values()).filter(s => s.isActive)
     
@@ -668,6 +731,29 @@ export class MockVideoQualityContract implements VideoQualityContract {
 
     console.log(`Failover completed: switched to ${failoverServer.id}`)
     return failoverServer
+  }
+
+  async getSessionQualityMetrics(sessionId: string): Promise<QualityReport> {
+    const sessionMetrics = this.sessions.get(sessionId)
+    
+    if (!sessionMetrics || sessionMetrics.length === 0) {
+      // Return default metrics if session not found
+      return {
+        sessionId,
+        serverId: '',
+        bandwidth: 1000,
+        latency: 50,
+        packetLoss: 0.01,
+        jitter: 5,
+        videoQuality: 'HD',
+        duration: 0,
+        dataTransferred: 0,
+        userSatisfaction: 8
+      }
+    }
+
+    // Return the most recent metrics for this session
+    return sessionMetrics[sessionMetrics.length - 1]
   }
 
   async stakeForServer(serverId: string, amount: number): Promise<void> {

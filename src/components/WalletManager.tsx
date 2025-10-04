@@ -99,8 +99,9 @@ export function WalletManager() {
     }
   };
 
-  const connectWallet = async () => {
+  const connectWallet = async (walletType: string) => {
     // Simulate wallet connection
+    console.log(`Connecting to ${walletType} wallet...`);
     setWalletConnected(true);
     setWalletBalance({
       priv: '0.0',

@@ -330,24 +330,27 @@ export class ProductionCryptography {
     return new Uint8Array(1024) // Placeholder
   }
 
-  private async generateWitness(): Promise<Uint8Array> {
+  private async generateWitness(circuitWasm: Uint8Array, inputs: Record<string, unknown>): Promise<Uint8Array> {
     // Generate witness using snarkjs
     // This would use actual snarkjs library
+    console.log('Generating witness with circuit', circuitWasm.length, 'bytes and inputs', Object.keys(inputs))
     return new Uint8Array(512) // Placeholder
   }
 
-  private async groth16Prove(): Promise<Record<string, unknown>> {
+  private async groth16Prove(circuit: string, witness: Uint8Array): Promise<Record<string, unknown>> {
     // Generate Groth16 proof using snarkjs
     // This would use actual snarkjs library
+    console.log('Generating Groth16 proof for circuit', circuit, 'with witness', witness.length, 'bytes')
     return {
       proof: Array.from(randomBytes(256)),
       verificationKey: Array.from(randomBytes(128))
     }
   }
 
-  private async formallyVerifyProof(circuit: string): Promise<Record<string, unknown>> {
+  private async formallyVerifyProof(circuit: string, proof: Record<string, unknown>): Promise<Record<string, unknown>> {
     // Formal verification using Lean or Coq
     // This would interface with theorem provers
+    console.log('Formally verifying proof for circuit', circuit, proof)
     return {
       proofPath: `/formal_proofs/${circuit}.lean`,
       theoremProved: `circuit_${circuit}_correctness`,
@@ -518,7 +521,9 @@ export class ProductionCryptography {
 
   private isRateLimitViolation(networkData: Record<string, unknown>): boolean {
     // Check if request rate exceeds limits
-    return networkData.requestSize > 10000 || networkData.responseTime < 10
+    const requestSize = typeof networkData.requestSize === 'number' ? networkData.requestSize : 0
+    const responseTime = typeof networkData.responseTime === 'number' ? networkData.responseTime : 1000
+    return requestSize > 10000 || responseTime < 10
   }
 
   private isSuspiciousUserAgent(userAgent: string): boolean {
@@ -537,9 +542,9 @@ export class ProductionCryptography {
     // Extract features for ML model
     return [
       activities.length,
-      new Set(activities.map(a => a.action)).size,
-      activities.filter(a => a.timestamp > Date.now() - 3600000).length,
-      activities.reduce((sum, a) => sum + (a.networkData?.requestSize || 0), 0)
+      new Set(activities.map((a: any) => a.action)).size,
+      activities.filter((a: any) => a.timestamp > Date.now() - 3600000).length,
+      activities.reduce((sum: number, a: any) => sum + (typeof a.networkData?.requestSize === 'number' ? a.networkData.requestSize : 0), 0)
     ]
   }
 
@@ -558,18 +563,19 @@ export class ProductionCryptography {
 
   // Cryptographic implementations (simplified)
   
-  private async sealKeyInTEE(): Promise<void> {
+  private async sealKeyInTEE(privateKey: Uint8Array): Promise<void> {
     // Seal key using TEE
-    console.log('🔒 Key sealed in TEE')
+    console.log('🔒 Key sealed in TEE', privateKey.length, 'bytes')
   }
 
-  private async storeKeyInHSM(): Promise<void> {
+  private async storeKeyInHSM(privateKey: Uint8Array): Promise<void> {
     // Store key in HSM
-    console.log('🔐 Key stored in HSM')
+    console.log('🔐 Key stored in HSM', privateKey.length, 'bytes')
   }
 
-  private async generateKeyInTEE(): Promise<{ publicKey: Uint8Array; privateKey: Uint8Array }> {
+  private async generateKeyInTEE(purpose?: string): Promise<{ publicKey: Uint8Array; privateKey: Uint8Array }> {
     // Generate key inside TEE
+    console.log('🔑 Generating key in TEE for purpose:', purpose || 'general')
     return {
       publicKey: randomBytes(65),
       privateKey: randomBytes(32)
@@ -583,7 +589,7 @@ export class ProductionCryptography {
 
   private async generateKeyId(publicKey: Uint8Array, purpose: string): Promise<string> {
     const hash = sha256(new Uint8Array([...publicKey, ...new TextEncoder().encode(purpose)]))
-    return Array.from(hash).map(b => b.toString(16).padStart(2, '0')).join('')
+    return Array.from(hash).map((b: number) => b.toString(16).padStart(2, '0')).join('')
   }
 
   private async dilithiumSign(message: Uint8Array, privateKey: Uint8Array): Promise<Uint8Array> {

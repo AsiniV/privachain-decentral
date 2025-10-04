@@ -165,7 +165,7 @@ export function EnhancedMessengerView() {
       if (cosmosAddress && isKeplrConnected) {
         // Store on IPFS and blockchain
         const cid = `Qm${Math.random().toString(36).substr(2, 44)}`
-        const txHash = await storeCID(cid, newMessage.length)
+        const txHash = await storeCID(cid)
         newMsg.cid = cid
         newMsg.txHash = txHash
       }

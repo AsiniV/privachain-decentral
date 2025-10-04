@@ -33,13 +33,6 @@ export function VideoQualityDashboard({ onServerSelected, currentSessionId }: Vi
   const [isOptimizing, setIsOptimizing] = useState(false)
   const [qualityMetrics, setQualityMetrics] = useState<QualityReport | null>(null)
 
-  useEffect(() => {
-    loadServers()
-    if (currentSessionId) {
-      simulateQualityMetrics()
-    }
-  }, [currentSessionId, simulateQualityMetrics])
-
   const loadServers = async () => {
     try {
       // Query real TURN servers from blockchain contract
@@ -81,6 +74,13 @@ export function VideoQualityDashboard({ onServerSelected, currentSessionId }: Vi
 
     return () => clearInterval(interval)
   }, [currentSessionId, optimalServer, qualityRequirement])
+
+  useEffect(() => {
+    loadServers()
+    if (currentSessionId) {
+      simulateQualityMetrics()
+    }
+  }, [currentSessionId, simulateQualityMetrics])
 
   const handleOptimizeConnection = async () => {
     setIsOptimizing(true)
