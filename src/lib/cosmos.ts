@@ -70,5 +70,6 @@ export const cosmosClient = {
   registerDomain: async (domainName: string, zkProofHash: string, publicKey: string) => null as string | null,
   startVideoSession: async (receiver: string, stunTurnServer: string) => null as string | null,
   queryDomain: async (domainName: string) => null as any,
+  queryRelays: async () => [] as any[],
   getFaucetInfo: () => ({ url: COSMOS_CONFIG.faucetUrl, address: null as string | null })
 };

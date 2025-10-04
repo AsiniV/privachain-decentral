@@ -610,6 +610,41 @@ export class PrivaChainIPFSService {
       nodeId: this.helia?.libp2p?.peerId?.toString()
     }
   }
+
+  /**
+   * Alias for initIpfs - for backwards compatibility
+   */
+  async initialize(): Promise<boolean> {
+    const result = await this.initIpfs()
+    return !!result
+  }
+
+  /**
+   * Upload method for simple file uploads without encryption
+   * @param file - File or Blob to upload
+   * @param filename - Optional filename
+   */
+  async upload(file: Blob | File, filename?: string): Promise<{ cid: string; size: number }> {
+    if (!this.initialized || !this.fs) {
+      throw new IPFSError('IPFS service not initialized')
+    }
+
+    try {
+      await this.checkStorageQuota()
+      
+      const fileBuffer = await file.arrayBuffer()
+      const bytes = new Uint8Array(fileBuffer)
+      const cid = await this.fs.addBytes(bytes)
+      
+      return {
+        cid: cid.toString(),
+        size: bytes.length
+      }
+    } catch (error) {
+      console.error('❌ Failed to upload file:', error)
+      throw new IPFSError(`Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
 }
 
 // Email-specific IPFS utilities
