@@ -537,9 +537,9 @@ export class ProductionCryptography {
     // Extract features for ML model
     return [
       activities.length,
-      new Set(activities.map(a => a.action)).size,
-      activities.filter(a => a.timestamp > Date.now() - 3600000).length,
-      activities.reduce((sum, a) => sum + (a.networkData?.requestSize || 0), 0)
+      new Set(activities.map((a: any) => a.action)).size,
+      activities.filter((a: any) => a.timestamp > Date.now() - 3600000).length,
+      activities.reduce((sum, a: any) => sum + (typeof a.networkData?.requestSize === 'number' ? a.networkData.requestSize : 0), 0)
     ]
   }
 
@@ -558,18 +558,19 @@ export class ProductionCryptography {
 
   // Cryptographic implementations (simplified)
   
-  private async sealKeyInTEE(): Promise<void> {
+  private async sealKeyInTEE(privateKey: Uint8Array): Promise<void> {
     // Seal key using TEE
-    console.log('🔒 Key sealed in TEE')
+    console.log('🔒 Key sealed in TEE', privateKey.length, 'bytes')
   }
 
-  private async storeKeyInHSM(): Promise<void> {
+  private async storeKeyInHSM(privateKey: Uint8Array): Promise<void> {
     // Store key in HSM
-    console.log('🔐 Key stored in HSM')
+    console.log('🔐 Key stored in HSM', privateKey.length, 'bytes')
   }
 
-  private async generateKeyInTEE(): Promise<{ publicKey: Uint8Array; privateKey: Uint8Array }> {
+  private async generateKeyInTEE(purpose?: string): Promise<{ publicKey: Uint8Array; privateKey: Uint8Array }> {
     // Generate key inside TEE
+    console.log('🔑 Generating key in TEE for purpose:', purpose || 'general')
     return {
       publicKey: randomBytes(65),
       privateKey: randomBytes(32)

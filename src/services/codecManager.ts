@@ -352,16 +352,16 @@ class CodecManager {
 
   private addWebRTCPolyfill(): void {
     if (!window.RTCPeerConnection) {
-      window.RTCPeerConnection = (window as Record<string, unknown>).webkitRTCPeerConnection || 
-                                 (window as Record<string, unknown>).mozRTCPeerConnection || 
-                                 (window as Record<string, unknown>).msRTCPeerConnection
+      window.RTCPeerConnection = ((window as any).webkitRTCPeerConnection || 
+                                 (window as any).mozRTCPeerConnection || 
+                                 (window as any).msRTCPeerConnection) as typeof RTCPeerConnection
     }
 
     // Modern browsers use navigator.mediaDevices.getUserMedia instead
     if (!(navigator as any).getUserMedia && navigator.mediaDevices) {
-      (navigator as any).getUserMedia = (navigator as Record<string, unknown>).webkitGetUserMedia || 
-                              (navigator as Record<string, unknown>).mozGetUserMedia || 
-                              (navigator as Record<string, unknown>).msGetUserMedia
+      (navigator as any).getUserMedia = (navigator as any).webkitGetUserMedia || 
+                              (navigator as any).mozGetUserMedia || 
+                              (navigator as any).msGetUserMedia
     }
   }
 
