@@ -276,7 +276,7 @@ export const useCosmos = () => {
 }
 
 // Export interfaces for use by other modules
-export type { DomainRecord }
+export type { DomainRecord, BlockchainState, Validator, Transaction, ConsensusState }
 
 // Helper functions
 function generateValidators(): Validator[] {

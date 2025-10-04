@@ -45,7 +45,6 @@ export type {
   TokenState, 
   TokenHolder, 
   StakingPool, 
-  GasEstimate,
   GasFeeEstimate 
 } from './PrivToken'
 export { calculateGasFees } from './PrivToken'

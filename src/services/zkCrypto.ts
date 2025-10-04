@@ -24,7 +24,8 @@ export interface ZKIdentity {
 export interface ZKProof {
   proof: string
   publicSignals: string[]
-  nullifierHash: string
+  nullifierHash?: string
+  verificationKey?: string
 }
 
 export class ZKIdentityManager {
@@ -598,7 +599,7 @@ export class ZKIdentityManager {
       }
       
       // Verify proof structure
-      return proof.proof.length === 64 && proof.nullifierHash.length === 64
+      return proof.proof.length === 64 && (proof.nullifierHash?.length === 64 || !proof.nullifierHash)
     } catch (error) {
       console.error('❌ Failed to verify proof:', error)
       return false
@@ -753,8 +754,8 @@ export class PostQuantumCrypto {
         throw new Error('Dilithium cryptography library not available. Install dilithium-crystals package for production use.')
       }
 
-      // Use real Dilithium implementation when available
-      return dilithiumModule.sign(message, privateKey)
+      // Use real Dilithium implementation when available - use signDetached to get just signature
+      return dilithiumModule.dilithium.signDetached(message, privateKey)
     } catch (error) {
       console.error('❌ Dilithium signing failed:', error)
       throw new Error(`Post-quantum signing failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -772,7 +773,7 @@ export class PostQuantumCrypto {
       }
 
       // Use real Dilithium implementation when available
-      return dilithiumModule.verify(message, signature, publicKey)
+      return dilithiumModule.dilithium.verifyDetached(signature, message, publicKey)
     } catch (error) {
       console.error('❌ Dilithium verification failed:', error)
       throw new Error(`Post-quantum verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`)

@@ -24,8 +24,8 @@ function Menubar({
 
 function MenubarMenu({
   ...props
-}: ComponentProps<typeof MenubarPrimitive.List>) {
-  return <MenubarPrimitive.List data-slot="menubar-menu" {...props} />
+}: ComponentProps<typeof MenubarPrimitive.Menu>) {
+  return <MenubarPrimitive.Menu data-slot="menubar-menu" {...props} />
 }
 
 function MenubarGroup({

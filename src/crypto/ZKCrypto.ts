@@ -3,13 +3,8 @@
  * Implementation of ZK-SNARKs, Post-Quantum Cryptography, and Anonymous Authentication
  */
 
-// Simulated ZK-SNARK implementation (in production would use circom/snarkjs)
-export interface ZKProof {
-  proof: string;
-  publicSignals: string[];
-  verificationKey: string;
-  nullifierHash?: string;
-}
+// Import ZKProof type from services to ensure consistency
+export type { ZKProof } from '../services/zkCrypto'
 
 export interface ZKIdentity {
   privateKey: string;

@@ -65,6 +65,22 @@ export function PrivTokenDeprecationNotice() {
   )
 }
 
+// Legacy types for backward compatibility - PRIV token is deprecated
+export interface TokenState {
+  deprecated: boolean
+  message: string
+}
+
+export interface TokenHolder {
+  address: string
+  balance: string
+}
+
+export interface StakingPool {
+  name: string
+  totalStaked: string
+}
+
 // Legacy gas fee calculation for backward compatibility - now returns ATOM values
 export interface GasFeeEstimate {
   gasLimit: number
