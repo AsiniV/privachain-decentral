@@ -1,4 +1,5 @@
 import { useCosmos } from './CosmosBlockchain'
+import type { Transaction } from './CosmosBlockchain'
 import { videoQualityContract } from './videoQualityContract'
 import { relay } from '../lib/cosmos'
 

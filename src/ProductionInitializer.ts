@@ -319,18 +319,21 @@ export class ProductionInitializer {
       try {
         const healthStatus = await this.performHealthCheck()
         
-        // Update internal status
-        this.status.health_status = healthStatus.overall ? 'healthy' : 'degraded'
+        // Calculate new health status
+        const newHealthStatus = healthStatus.overall ? 'healthy' : 'degraded'
         
         // Log health status changes
-        if (this.status.health_status !== healthStatus.health_status) {
+        if (this.status.health_status !== newHealthStatus) {
           loggingService.info('Health status changed', {
             correlationId,
             from: this.status.health_status,
-            to: healthStatus.health_status,
+            to: newHealthStatus,
             checks: healthStatus
           })
         }
+        
+        // Update internal status
+        this.status.health_status = newHealthStatus
         
         // Record health check metrics
         metricsService.recordOperation('health_check', 'production_initializer', 0, 'success')
@@ -625,12 +628,12 @@ export class ProductionInitializer {
       
       if (this.status.email) {
         console.log('Shutting down email service...')
-        await productionEmailService.shutdown?.()
+        await (productionEmailService as any).shutdown?.()
       }
       
       if (this.status.economic) {
         console.log('Shutting down economic system...')
-        await productionEconomicSystem.shutdown?.()
+        await (productionEconomicSystem as any).shutdown?.()
       }
       
       if (this.status.networking) {

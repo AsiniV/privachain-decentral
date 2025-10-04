@@ -511,22 +511,35 @@ export class DecentralizedSearchBackend {
         encrypted: filters.encrypted || null
       }
 
-      const result = await this.subqueryClient.request(searchQuery, variables)
+      const result: any = await this.subqueryClient.request(searchQuery, variables)
       
-      const entries: SearchIndexEntry[] = result.searchEntries.nodes.map((node: { id: string; type: string; contentHash: string; title: string; description?: string; url?: string; timestamp: number }) => ({
+      const entries: SearchIndexEntry[] = result.searchEntries.nodes.map((node: { 
+        id: string; 
+        type: string; 
+        contentHash: string; 
+        title: string; 
+        description?: string; 
+        url?: string; 
+        timestamp: number;
+        tags?: string[];
+        source?: string;
+        encrypted?: boolean;
+        zkProof?: string;
+        relevanceScore?: number;
+      }) => ({
         id: node.id,
         type: node.type,
         contentHash: node.contentHash,
         metadata: {
           title: node.title,
-          description: node.description,
-          tags: node.tags,
+          description: node.description || '',
+          tags: node.tags || [],
           timestamp: node.timestamp,
-          source: node.source,
-          encrypted: node.encrypted
+          source: node.source || '',
+          encrypted: node.encrypted || false
         },
         zkProof: node.zkProof,
-        relevanceScore: node.relevanceScore
+        relevanceScore: node.relevanceScore || 0
       }))
 
       console.log(`🔍 SubQuery search results: ${entries.length} entries`)
@@ -551,7 +564,7 @@ export class DecentralizedSearchBackend {
       const mockComposeResults: SearchIndexEntry[] = [
         {
           id: 'compose_001',
-          type: 'file',
+          type: 'file' as const,
           contentHash: 'ceramic:k2t6wz...',
           metadata: {
             title: 'Decentralized File Storage',
@@ -742,8 +755,9 @@ export class DecentralizedSearchBackend {
       if (filters.encrypted !== undefined && entry.metadata.encrypted !== filters.encrypted) continue
       if (filters.source && entry.metadata.source !== filters.source) continue
       if (filters.timeRange) {
-        if (entry.metadata.timestamp < filters.timeRange.start || 
-            entry.metadata.timestamp > filters.timeRange.end) continue
+        const timeRange = filters.timeRange as { start: number; end: number }
+        if (entry.metadata.timestamp < timeRange.start || 
+            entry.metadata.timestamp > timeRange.end) continue
       }
       
       // MagnifyingGlass in title, description, and tags
@@ -908,7 +922,7 @@ export class DecentralizedSearchBackend {
         relevanceScore: entry.relevanceScore
       }
 
-      const result = await this.subqueryClient.request(indexMutation, { input })
+      const result: any = await this.subqueryClient.request(indexMutation, { input })
       
       console.log(`📊 SubQuery Cosmos Indexing:`, {
         id: entry.id,
@@ -1232,7 +1246,7 @@ export class DecentralizedSearchBackend {
         blockEnd: filters.blockRange?.end ? BigInt(filters.blockRange.end) : null,
       }
 
-      const result = await this.subqueryClient.request(swapQuery, variables)
+      const result: any = await this.subqueryClient.request(swapQuery, variables)
       
       console.log(`🔄 Found ${result.swaps.nodes.length} Osmosis swaps`)
       return result.swaps.nodes
@@ -1263,7 +1277,7 @@ export class DecentralizedSearchBackend {
         }
       `
 
-      const result = await this.subqueryClient.request(statsQuery)
+      const result: any = await this.subqueryClient.request(statsQuery)
       
       return {
         totalSwaps: result.swaps.totalCount,
@@ -1325,7 +1339,15 @@ export function useDecentralizedSearch() {
     return results
   }
 
-  const indexContent = async (content: Record<string, unknown>): Promise<string> => {
+  const indexContent = async (content: {
+    type: 'message' | 'email' | 'contact' | 'file' | 'domain' | 'video' | 'identity'
+    title: string
+    description: string
+    tags: string[]
+    source: string
+    encrypted: boolean
+    ipfsHash?: string
+  }): Promise<string> => {
     const id = await searchBackend.indexContent(content)
     
     // Update stats
