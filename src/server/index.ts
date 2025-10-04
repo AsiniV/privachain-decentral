@@ -9,6 +9,7 @@ import { healthCheckService } from '../services/HealthCheckService'
 import { metricsService } from '../services/MetricsService'
 import { loggingService } from '../services/LoggingService'
 import { errorTrackingService } from '../services/ErrorTrackingService'
+import { expressIceHandler, nextIceHandler } from './routes/ice'
 
 /**
  * Initialize TURN provider with environment configuration
@@ -71,8 +72,6 @@ export function initializeServerServices(): void {
  * Express.js server setup example
  */
 export function setupExpressServer(app: any): void {
-  const { expressIceHandler } = require('./routes/ice')
-  
   // Add ICE endpoint
   app.get('/api/ice', expressIceHandler)
   
@@ -84,7 +83,6 @@ export function setupExpressServer(app: any): void {
  * Next.js API setup example
  */
 export function getNextApiHandler() {
-  const { nextIceHandler } = require('./routes/ice')
   return nextIceHandler
 }
 

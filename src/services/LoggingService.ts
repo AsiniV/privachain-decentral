@@ -6,6 +6,8 @@
 
 import winston from 'winston'
 import { createHash } from 'crypto'
+import fs from 'fs'
+import path from 'path'
 
 export interface LogContext {
   correlationId?: string
@@ -80,8 +82,6 @@ export class LoggingService {
 
     // Create logs directory if it doesn't exist
     if (typeof process !== 'undefined') {
-      const fs = require('fs')
-      const path = require('path')
       const logsDir = path.join(process.cwd(), 'logs')
       if (!fs.existsSync(logsDir)) {
         fs.mkdirSync(logsDir, { recursive: true })
