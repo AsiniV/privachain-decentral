@@ -640,7 +640,7 @@ export class ProductionInitializer {
       
       if (this.status.ipfs) {
         console.log('Shutting down IPFS storage...')
-        await productionIPFS.shutdown?.()
+        await (productionIPFS as any).shutdown?.()
       }
       
       this.initialized = false

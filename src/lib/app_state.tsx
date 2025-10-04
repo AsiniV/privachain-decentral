@@ -36,8 +36,8 @@ export function AppStateProvider({ children }: AppStateProviderProps) {
   useEffect(() => {
     const loadSavedAddress = async () => {
       try {
-        const savedAddress = await kvStorage.get('cosmos_address')
-        const savedConnectionState = await kvStorage.get('keplr_connected')
+        const savedAddress = await kvStorage.get<string>('cosmos_address')
+        const savedConnectionState = await kvStorage.get<string>('keplr_connected')
         
         if (savedAddress) {
           setCosmosAddress(savedAddress)

@@ -5,9 +5,7 @@
 
 import { randomBytes } from '@noble/hashes/utils'
 import { sha256 } from '@noble/hashes/sha256'
-// @ts-expect-error - libsodium-wrappers types may not be perfect
 import * as sodium from 'libsodium-wrappers'
-// @ts-expect-error - socks-proxy-agent types may not be available
 import { SocksProxyAgent } from 'socks-proxy-agent'
 
 // Import new anonymous network components
@@ -1554,7 +1552,6 @@ export class ProductionNetworking {
     return new Promise((resolve, reject) => {
       // Use a conditional WebSocket check for browser/node compatibility
       const WebSocketClass = typeof WebSocket !== 'undefined' ? WebSocket : 
-        // @ts-expect-error - Dynamic import for Node.js environments
         require('ws')
       
       const ws = new WebSocketClass(node.endpoint)

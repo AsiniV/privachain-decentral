@@ -7,6 +7,7 @@ import { createHelia } from 'helia'
 import { unixfs } from '@helia/unixfs'
 import type { Helia } from 'helia'
 import type { UnixFS } from '@helia/unixfs'
+import type { Pin } from '@helia/interface/pins'
 import { CID } from 'multiformats/cid'
 
 export interface FilecoinDeal {
@@ -272,7 +273,7 @@ export class ProductionIPFS {
       const peers = this.helia.libp2p.getPeers()
       
       // Get pinned content
-      const pins = []
+      const pins: Pin[] = []
       for await (const pin of this.helia.pins.ls()) {
         pins.push(pin)
       }
