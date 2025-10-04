@@ -5,7 +5,6 @@
 
 import { randomBytes } from '@noble/hashes/utils'
 import { sha256 } from '@noble/hashes/sha256'
-// @ts-expect-error - libsodium-wrappers types may not be perfect
 import * as sodium from 'libsodium-wrappers'
 
 export interface OnionNode {

@@ -36,7 +36,7 @@ export class TurnProvider {
    */
   async getIceServers(force = false): Promise<{ 
     iceServers: IceServerEntry[]
-    source: 'dynamic' | 'cache' | 'fallback'
+    source: 'dynamic' | 'cache' | 'cache-wait' | 'fallback'
     expiresAt?: number 
   }> {
     const now = Date.now()

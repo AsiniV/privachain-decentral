@@ -110,7 +110,10 @@ export async function healthCheck(): Promise<{
     const healthData = await healthCheckService.performHealthCheck()
     
     // Get TURN provider status
-    let turnProviderStatus = {
+    let turnProviderStatus: {
+      initialized: boolean
+      cache: null | { hasCache: boolean; expiresAt?: number; remainingMs?: number; ttl?: number }
+    } = {
       initialized: false,
       cache: null
     }

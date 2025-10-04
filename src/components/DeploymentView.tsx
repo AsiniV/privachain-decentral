@@ -38,7 +38,7 @@ interface NetworkStats {
 
 export function DeploymentView() {
   const [activeTab, setActiveTab] = useKV('deployment-tab', 'overview')
-  // const [deploymentStatus, setDeploymentStatus] = React.useState<'idle' | 'deploying' | 'deployed' | 'error'>('idle')
+  const [deploymentStatus, setDeploymentStatus] = React.useState<'idle' | 'deploying' | 'deployed' | 'error'>('idle')
   const [cosmosConnected, setCosmosConnected] = useState(false)
   const [zkIdentityLoaded, setZkIdentityLoaded] = useState(false)
   const [ipfsInitialized, setIpfsInitialized] = useState(false)
@@ -125,7 +125,7 @@ export function DeploymentView() {
       const proof = await zkIdentityManager.generateMembershipProof('test-group')
       
       // Verify the proof
-      const isValid = await zkIdentityManager.verifyProof(proof, ['test-group', proof.nullifierHash])
+      const isValid = await zkIdentityManager.verifyProof(proof, ['test-group', proof.nullifierHash ?? ''])
       
       if (isValid) {
         toast.success('ZK proof generation and verification successful')

@@ -48,9 +48,9 @@ export function GasFeeStatus() {
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const { wallet } = useTestWallet();
 
-  const loadPaymentStatus = useCallback(() => {
+  const loadPaymentStatus = useCallback(async () => {
     try {
-      const status = gasFeeManager.getPaymentStatus(userAddress);
+      const status = await gasFeeManager.getPaymentStatus(userAddress);
       setPaymentStatus(status);
     } catch (error) {
       console.error('Failed to load payment status:', error);
