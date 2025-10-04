@@ -2,7 +2,7 @@
  * Tests for End-to-End Encrypted Messaging
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { E2EMessaging, e2eMessaging } from '../messenger/e2e_encryption'
+import { E2EMessaging, e2eMessaging } from '../src/messenger/e2e_encryption'
 
 // Mock crypto API for testing
 const mockCrypto = {
