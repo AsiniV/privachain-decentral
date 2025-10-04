@@ -521,7 +521,9 @@ export class ProductionCryptography {
 
   private isRateLimitViolation(networkData: Record<string, unknown>): boolean {
     // Check if request rate exceeds limits
-    return networkData.requestSize > 10000 || networkData.responseTime < 10
+    const requestSize = typeof networkData.requestSize === 'number' ? networkData.requestSize : 0
+    const responseTime = typeof networkData.responseTime === 'number' ? networkData.responseTime : 1000
+    return requestSize > 10000 || responseTime < 10
   }
 
   private isSuspiciousUserAgent(userAgent: string): boolean {
@@ -587,7 +589,7 @@ export class ProductionCryptography {
 
   private async generateKeyId(publicKey: Uint8Array, purpose: string): Promise<string> {
     const hash = sha256(new Uint8Array([...publicKey, ...new TextEncoder().encode(purpose)]))
-    return Array.from(hash).map(b => b.toString(16).padStart(2, '0')).join('')
+    return Array.from(hash).map((b: number) => b.toString(16).padStart(2, '0')).join('')
   }
 
   private async dilithiumSign(message: Uint8Array, privateKey: Uint8Array): Promise<Uint8Array> {
