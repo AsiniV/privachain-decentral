@@ -39,8 +39,23 @@ export function ZKAuthPanel() {
   const [importIdentity, setImportIdentity] = useState('')
   const [testDomain, setTestDomain] = useState('journalist.prv')
   const [registrationStatus, setRegistrationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
-  const [powStatus] = useState<'idle' | 'loading' | 'success'>('idle')
+  const [powStatus, setPowStatus] = useState<'idle' | 'loading' | 'success'>('idle')
   const [blockchainRegistrationTx, setBlockchainRegistrationTx] = useState<string | null>(null)
+
+  const handleGeneratePoW = async () => {
+    setPowStatus('loading')
+    try {
+      const challenge = `challenge_${Date.now()}`
+      const proof = await BlockchainUtils.generateProofOfWork(challenge, 4)
+      console.log('Generated PoW:', proof)
+      setPowStatus('success')
+      toast.success('Proof of Work generated successfully!')
+    } catch (error) {
+      setPowStatus('idle')
+      toast.error('Failed to generate Proof of Work')
+      console.error(error)
+    }
+  }
 
   const handleGenerateIdentity = async () => {
     try {
