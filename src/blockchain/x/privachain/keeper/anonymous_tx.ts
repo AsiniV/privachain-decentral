@@ -49,8 +49,8 @@ interface Account {
 
 // Mock codec interface for serialization
 interface Codec {
-  marshal(obj: any): Uint8Array
-  unmarshal(data: Uint8Array, obj: any): any
+  marshal(obj: unknown): Uint8Array
+  unmarshal(data: Uint8Array, obj: unknown): unknown
 }
 
 export class AnonymousTransactionKeeper {
@@ -153,7 +153,7 @@ export class AnonymousTransactionKeeper {
       return []
     }
     
-    const members: string[] = this.cdc.unmarshal(data, [] as string[])
+    const members = this.cdc.unmarshal(data, [] as string[]) as string[]
     
     // Return all members or up to the requested size
     if (members.length <= size) {
@@ -173,7 +173,7 @@ export class AnonymousTransactionKeeper {
     let currentMembers: string[] = []
     const data = await store.get(key)
     if (data) {
-      currentMembers = this.cdc.unmarshal(data, [] as string[])
+      currentMembers = this.cdc.unmarshal(data, [] as string[]) as string[]
     }
     
     // Add new members (avoid duplicates)
@@ -316,20 +316,20 @@ export class AnonymousTransactionKeeper {
  * Default codec implementation with proper Uint8Array handling
  */
 class DefaultCodec implements Codec {
-  marshal(obj: any): Uint8Array {
+  marshal(obj: unknown): Uint8Array {
     // Convert Uint8Arrays to hex strings for JSON serialization
     const serializable = this.convertUint8ArraysToHex(obj)
     return new TextEncoder().encode(JSON.stringify(serializable))
   }
 
-  unmarshal(data: Uint8Array, _obj: any): any {
+  unmarshal(data: Uint8Array, _obj: unknown): unknown {
     const str = new TextDecoder().decode(data)
     const parsed = JSON.parse(str)
     // Convert hex strings back to Uint8Arrays
     return this.convertHexToUint8Arrays(parsed)
   }
 
-  private convertUint8ArraysToHex(obj: any): any {
+  private convertUint8ArraysToHex(obj: unknown): unknown {
     if (obj instanceof Uint8Array) {
       return { __type: 'Uint8Array', data: this.bytesToHex(obj) }
     }
@@ -337,7 +337,7 @@ class DefaultCodec implements Codec {
       return obj.map(item => this.convertUint8ArraysToHex(item))
     }
     if (obj && typeof obj === 'object') {
-      const result: any = {}
+      const result: Record<string, unknown> = {}
       for (const [key, value] of Object.entries(obj)) {
         result[key] = this.convertUint8ArraysToHex(value)
       }
@@ -346,15 +346,15 @@ class DefaultCodec implements Codec {
     return obj
   }
 
-  private convertHexToUint8Arrays(obj: any): any {
-    if (obj && typeof obj === 'object' && obj.__type === 'Uint8Array') {
-      return this.hexToBytes(obj.data)
+  private convertHexToUint8Arrays(obj: unknown): unknown {
+    if (obj && typeof obj === 'object' && '__type' in obj && (obj as { __type: string }).__type === 'Uint8Array' && 'data' in obj) {
+      return this.hexToBytes((obj as { data: string }).data)
     }
     if (Array.isArray(obj)) {
       return obj.map(item => this.convertHexToUint8Arrays(item))
     }
     if (obj && typeof obj === 'object') {
-      const result: any = {}
+      const result: Record<string, unknown> = {}
       for (const [key, value] of Object.entries(obj)) {
         result[key] = this.convertHexToUint8Arrays(value)
       }

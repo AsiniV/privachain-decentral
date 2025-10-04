@@ -6,6 +6,7 @@
 
 import * as Sentry from '@sentry/node'
 import { loggingService } from './LoggingService'
+import crypto from 'crypto'
 
 export interface ErrorContext {
   correlationId?: string
@@ -224,7 +225,6 @@ export class ErrorTrackingService {
    * Hash email for privacy while maintaining some tracking capability
    */
   private hashEmail(email: string): string {
-    const crypto = require('crypto')
     return crypto.createHash('sha256').update(email + 'privachain-salt').digest('hex').substring(0, 16)
   }
 

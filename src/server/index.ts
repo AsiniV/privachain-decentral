@@ -5,10 +5,11 @@
 
 import { initializeTurnProvider } from './services/turnProvider'
 import type { IceServerEntry } from '../shared/types/webrtc'
-import { healthCheckService } from '../services/HealthCheckService'
+import { healthCheckService, HealthCheck, DependencyStatus } from '../services/HealthCheckService'
 import { metricsService } from '../services/MetricsService'
 import { loggingService } from '../services/LoggingService'
 import { errorTrackingService } from '../services/ErrorTrackingService'
+import { expressIceHandler, nextIceHandler } from './routes/ice'
 
 /**
  * Initialize TURN provider with environment configuration
@@ -70,9 +71,8 @@ export function initializeServerServices(): void {
 /**
  * Express.js server setup example
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function setupExpressServer(app: any): void {
-  const { expressIceHandler } = require('./routes/ice')
-  
   // Add ICE endpoint
   app.get('/api/ice', expressIceHandler)
   
@@ -84,7 +84,6 @@ export function setupExpressServer(app: any): void {
  * Next.js API setup example
  */
 export function getNextApiHandler() {
-  const { nextIceHandler } = require('./routes/ice')
   return nextIceHandler
 }
 
@@ -99,11 +98,11 @@ export async function healthCheck(): Promise<{
   services: {
     turnProvider: {
       initialized: boolean
-      cache: any
+      cache: unknown
     }
   }
-  checks: any[]
-  dependencies: any[]
+  checks: HealthCheck[]
+  dependencies: DependencyStatus[]
 }> {
   try {
     // Get comprehensive health check
@@ -187,7 +186,7 @@ export async function getStatus(): Promise<{
   uptime: number
   environment: string
   features: string[]
-  dependencies: any[]
+  dependencies: DependencyStatus[]
 }> {
   try {
     const healthData = await healthCheckService.performHealthCheck()

@@ -7,6 +7,7 @@ import { randomBytes } from '@noble/hashes/utils'
 import { sha256 } from '@noble/hashes/sha256'
 import * as sodium from 'libsodium-wrappers'
 import { SocksProxyAgent } from 'socks-proxy-agent'
+import WebSocket from 'ws'
 
 // Import new anonymous network components
 import { 
@@ -1551,8 +1552,8 @@ export class ProductionNetworking {
   private async sendViaWebSocket(node: MixnetNode, data: Uint8Array): Promise<void> {
     return new Promise((resolve, reject) => {
       // Use a conditional WebSocket check for browser/node compatibility
-      const WebSocketClass = typeof WebSocket !== 'undefined' ? WebSocket : 
-        require('ws')
+      const WebSocketClass = typeof globalThis.WebSocket !== 'undefined' ? globalThis.WebSocket : 
+        WebSocket
       
       const ws = new WebSocketClass(node.endpoint)
       

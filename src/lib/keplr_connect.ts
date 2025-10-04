@@ -12,17 +12,17 @@ interface KeplrWindow extends Window {
     }
     signAndBroadcast: (
       chainId: string,
-      msgs: any[],
+      msgs: unknown[],
       fee: { amount: Array<{ denom: string; amount: string }>; gas: string }
     ) => Promise<{ transactionHash: string }>
-    experimentalSuggestChain: (chainInfo: any) => Promise<void>
+    experimentalSuggestChain: (chainInfo: Record<string, unknown>) => Promise<void>
   }
 }
 
 declare const window: KeplrWindow
 
 // Type alias for compatibility
-type KeplrWin = Window & { keplr?: any };
+type KeplrWin = Window & { keplr?: KeplrWindow['keplr'] };
 
 // Environment-based configuration
 const CHAIN_ID = import.meta.env.VITE_COSMOS_CHAIN_ID || 'provider';
@@ -162,7 +162,7 @@ export async function getCurrentKeplrAddress(): Promise<string | null> {
  * @param memo - Optional memo for the transaction
  * @returns Promise<string> - Transaction hash
  */
-export async function signAndBroadcastKeplr(msgs: any[], memo: string = ""): Promise<string> {
+export async function signAndBroadcastKeplr(msgs: unknown[], memo: string = ""): Promise<string> {
   if (!isKeplrInstalled()) {
     throw new Error("Keplr extension not found")
   }

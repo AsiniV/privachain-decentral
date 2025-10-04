@@ -26,7 +26,7 @@ export interface HealthCheck {
   message: string
   remediation?: string
   responseTime?: number
-  details?: any
+  details?: unknown
 }
 
 export interface DependencyStatus {
@@ -749,12 +749,14 @@ export class HealthCheckService {
     switch (status) {
       case 'healthy':
         return 'All systems operational'
-      case 'degraded':
+      case 'degraded': {
         const warnings = checks.filter(c => c.status === 'warn')
         return `System operational with ${warnings.length} non-critical issue(s)`
-      case 'unhealthy':
+      }
+      case 'unhealthy': {
         const failures = checks.filter(c => c.status === 'fail')
         return `System unavailable due to ${failures.length} critical failure(s)`
+      }
     }
   }
 

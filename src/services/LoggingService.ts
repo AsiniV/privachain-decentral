@@ -6,13 +6,15 @@
 
 import winston from 'winston'
 import { createHash } from 'crypto'
+import fs from 'fs'
+import path from 'path'
 
 export interface LogContext {
   correlationId?: string
   userId?: string
   action?: string
   component?: string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export class LoggingService {
@@ -49,11 +51,12 @@ export class LoggingService {
         winston.format.errors({ stack: true }),
         winston.format.json(),
         winston.format.printf(({ timestamp, level, message, ...meta }) => {
+          const scrubbedMeta = this.scrubObjectSensitiveData(meta) as Record<string, unknown>
           const logEntry = {
             timestamp,
             level,
             message: this.scrubSensitiveData(message),
-            ...this.scrubObjectSensitiveData(meta)
+            ...scrubbedMeta
           }
           return JSON.stringify(logEntry)
         })
@@ -80,8 +83,6 @@ export class LoggingService {
 
     // Create logs directory if it doesn't exist
     if (typeof process !== 'undefined') {
-      const fs = require('fs')
-      const path = require('path')
       const logsDir = path.join(process.cwd(), 'logs')
       if (!fs.existsSync(logsDir)) {
         fs.mkdirSync(logsDir, { recursive: true })
@@ -121,7 +122,7 @@ export class LoggingService {
   /**
    * Recursively scrub sensitive data from objects
    */
-  private scrubObjectSensitiveData(obj: any): any {
+  private scrubObjectSensitiveData(obj: unknown): unknown {
     if (obj === null || typeof obj !== 'object') {
       if (typeof obj === 'string') {
         return this.scrubSensitiveData(obj)
@@ -133,7 +134,7 @@ export class LoggingService {
       return obj.map(item => this.scrubObjectSensitiveData(item))
     }
 
-    const scrubbed: any = {}
+    const scrubbed: Record<string, unknown> = {}
     for (const [key, value] of Object.entries(obj)) {
       // Scrub sensitive keys
       if (this.sensitivePatterns.some(pattern => pattern.test(key))) {
@@ -212,7 +213,7 @@ export class LoggingService {
   /**
    * Log structured event for monitoring
    */
-  public logEvent(event: string, details: any, context?: LogContext): void {
+  public logEvent(event: string, details: unknown, context?: LogContext): void {
     this.info(`Event: ${event}`, {
       event,
       details: this.scrubObjectSensitiveData(details),
