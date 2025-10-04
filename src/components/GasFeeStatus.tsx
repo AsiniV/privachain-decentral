@@ -43,7 +43,7 @@ interface PaymentStatus {
 
 export function GasFeeStatus() {
   const [userAddress] = useKV('user-address', TEST_WALLET_ADDRESS);
-  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const { wallet } = useTestWallet();
