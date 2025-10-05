@@ -53,7 +53,7 @@ To build the Tauri application:
 
 ```bash
 # Install system dependencies (Ubuntu/Debian)
-sudo apt-get install libwebkit2gtk-4.0-dev \
+sudo apt-get install libwebkit2gtk-4.1-dev \
     build-essential \
     curl \
     wget \
