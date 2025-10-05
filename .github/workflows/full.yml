@@ -22,7 +22,7 @@ jobs:
       - run: npm run lint
 
   rust:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Update apt-get
@@ -60,7 +60,7 @@ jobs:
 
   build-desktop:
     needs: [ts, rust]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Update apt-get
