@@ -6,7 +6,7 @@ use serde::Serialize;
 use tauri::command;
 use url::Url;
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct FetchResult {
     status: u16,
     headers: Vec<(String, String)>,
