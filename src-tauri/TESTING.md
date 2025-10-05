@@ -9,7 +9,7 @@ Before testing, ensure you have:
 1. **System Dependencies** (Ubuntu/Debian):
    ```bash
    sudo apt-get update
-   sudo apt-get install libwebkit2gtk-4.0-dev \
+   sudo apt-get install libwebkit2gtk-4.1-dev \
        build-essential \
        curl \
        wget \
@@ -240,7 +240,7 @@ To test in the actual application:
 
 **Solution:**
 ```bash
-sudo apt-get install libgtk-3-dev libwebkit2gtk-4.0-dev
+sudo apt-get install libgtk-3-dev libwebkit2gtk-4.1-dev
 ```
 
 ### Tor Connection Fails
