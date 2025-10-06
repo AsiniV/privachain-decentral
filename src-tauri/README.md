@@ -70,6 +70,12 @@ sudo ln -sf /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.1.pc \
 sudo ln -sf /usr/lib/x86_64-linux-gnu/pkgconfig/javascriptcoregtk-4.1.pc \
     /usr/lib/x86_64-linux-gnu/pkgconfig/javascriptcoregtk-4.0.pc
 
+# Create library symlinks for webkit2gtk 4.0 compatibility
+sudo ln -sf /usr/lib/x86_64-linux-gnu/libwebkit2gtk-4.1.so \
+    /usr/lib/x86_64-linux-gnu/libwebkit2gtk-4.0.so
+sudo ln -sf /usr/lib/x86_64-linux-gnu/libjavascriptcoregtk-4.1.so \
+    /usr/lib/x86_64-linux-gnu/libjavascriptcoregtk-4.0.so
+
 # Build the application
 npm run tauri build
 
