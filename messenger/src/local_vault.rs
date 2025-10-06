@@ -166,25 +166,19 @@ pub fn has_otc_pair() -> bool {
 mod tests {
     use super::*;
     use crate::otc_generator::generate_otc_pair;
-    use std::fs;
-
-    // Clean up test database after each test
-    fn cleanup_test_db() {
-        let _ = fs::remove_file("test_vault.db");
-    }
+    use tempfile::tempdir;
 
     #[test]
     fn test_vault_initialization() {
-        cleanup_test_db();
+        let dir = tempdir().unwrap();
+        let db_path = dir.path().join("test_vault.db");
         
-        let result = initialize_vault_test();
+        let result = initialize_vault_test(&db_path);
         assert!(result.is_ok());
-        
-        cleanup_test_db();
     }
 
-    fn initialize_vault_test() -> MessengerResult<Connection> {
-        let conn = Connection::open("test_vault.db")
+    fn initialize_vault_test(db_path: &std::path::Path) -> MessengerResult<Connection> {
+        let conn = Connection::open(db_path)
             .map_err(|e| MessengerError::CryptoError(format!("Failed to open vault: {}", e)))?;
         
         // Create OTC table if it doesn't exist
@@ -202,8 +196,8 @@ mod tests {
         Ok(conn)
     }
 
-    fn save_otc_pair_test(otc1: &str, otc2: &str) -> MessengerResult<()> {
-        let conn = initialize_vault_test()?;
+    fn save_otc_pair_test(db_path: &std::path::Path, otc1: &str, otc2: &str) -> MessengerResult<()> {
+        let conn = initialize_vault_test(db_path)?;
         
         let now = chrono::Utc::now().timestamp();
         let encrypted_otc1 = encrypt_data(otc1)?;
@@ -217,8 +211,8 @@ mod tests {
         Ok(())
     }
 
-    fn load_otc_pair_test() -> MessengerResult<(String, String)> {
-        let conn = initialize_vault_test()?;
+    fn load_otc_pair_test(db_path: &std::path::Path) -> MessengerResult<(String, String)> {
+        let conn = initialize_vault_test(db_path)?;
         
         let mut stmt = conn.prepare("SELECT code1, code2 FROM otc WHERE id = 1")
             .map_err(|e| MessengerError::CryptoError(format!("Failed to prepare statement: {}", e)))?;
@@ -242,8 +236,8 @@ mod tests {
         }
     }
 
-    fn burn_otc_pair_test() -> MessengerResult<()> {
-        let conn = initialize_vault_test()?;
+    fn burn_otc_pair_test(db_path: &std::path::Path) -> MessengerResult<()> {
+        let conn = initialize_vault_test(db_path)?;
         
         // Generate random data to overwrite old codes
         let mut rng = OsRng;
@@ -268,8 +262,8 @@ mod tests {
         Ok(())
     }
 
-    fn has_otc_pair_test() -> bool {
-        load_otc_pair_test().is_ok()
+    fn has_otc_pair_test(db_path: &std::path::Path) -> bool {
+        load_otc_pair_test(db_path).is_ok()
     }
 
     #[test]
@@ -284,59 +278,56 @@ mod tests {
 
     #[test]
     fn test_save_and_load_otc_pair() {
-        cleanup_test_db();
+        let dir = tempdir().unwrap();
+        let db_path = dir.path().join("test_vault.db");
         
         let (otc1, otc2) = generate_otc_pair().unwrap();
         
         // Save the pair
-        let save_result = save_otc_pair_test(&otc1, &otc2);
+        let save_result = save_otc_pair_test(&db_path, &otc1, &otc2);
         assert!(save_result.is_ok());
         
         // Load the pair back
-        let load_result = load_otc_pair_test();
+        let load_result = load_otc_pair_test(&db_path);
         assert!(load_result.is_ok());
         
         let (loaded_otc1, loaded_otc2) = load_result.unwrap();
         assert_eq!(otc1, loaded_otc1);
         assert_eq!(otc2, loaded_otc2);
-        
-        cleanup_test_db();
     }
 
     #[test]
     fn test_has_otc_pair() {
-        cleanup_test_db();
+        let dir = tempdir().unwrap();
+        let db_path = dir.path().join("test_vault.db");
         
         // Should return false when no pair exists
-        assert!(!has_otc_pair_test());
+        assert!(!has_otc_pair_test(&db_path));
         
         // Save a pair
         let (otc1, otc2) = generate_otc_pair().unwrap();
-        save_otc_pair_test(&otc1, &otc2).unwrap();
+        save_otc_pair_test(&db_path, &otc1, &otc2).unwrap();
         
         // Should return true when pair exists
-        assert!(has_otc_pair_test());
-        
-        cleanup_test_db();
+        assert!(has_otc_pair_test(&db_path));
     }
 
     #[test]
     fn test_burn_otc_pair() {
-        cleanup_test_db();
+        let dir = tempdir().unwrap();
+        let db_path = dir.path().join("test_vault.db");
         
         let (otc1, otc2) = generate_otc_pair().unwrap();
-        save_otc_pair_test(&otc1, &otc2).unwrap();
+        save_otc_pair_test(&db_path, &otc1, &otc2).unwrap();
         
         // Burn the pair
-        let burn_result = burn_otc_pair_test();
+        let burn_result = burn_otc_pair_test(&db_path);
         assert!(burn_result.is_ok());
         
         // Load the pair - should be different (burned)
-        let (burned_otc1, burned_otc2) = load_otc_pair_test().unwrap();
+        let (burned_otc1, burned_otc2) = load_otc_pair_test(&db_path).unwrap();
         assert_ne!(otc1, burned_otc1);
         assert_ne!(otc2, burned_otc2);
-        
-        cleanup_test_db();
     }
 
     #[test]
