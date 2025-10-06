@@ -152,7 +152,7 @@ impl DoubleRatchet {
     pub async fn send(&mut self, message_type: MessageType) -> MessengerResult<EncryptedMessage> {
         // Serialize the message type
         let plaintext = serde_json::to_vec(&message_type)
-            .map_err(|e| MessengerError::EncryptionFailed(format!("Serialization failed: {}", e)))?;
+            .map_err(|e| MessengerError::EncryptionFailed(format!("Serialization failed: {e}")))?;
         
         // Encrypt using the double ratchet
         let ratchet_message = self.encrypt(&plaintext)?;

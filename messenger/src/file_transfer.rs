@@ -100,11 +100,11 @@ impl FileTransfer {
         F: FnMut(u32),
     {
         let file = tokio::fs::File::open(path).await
-            .map_err(|e| MessengerError::NetworkError(format!("Failed to open file: {}", e)))?;
+            .map_err(|e| MessengerError::NetworkError(format!("Failed to open file: {e}")))?;
         
         // Get file size for progress calculation
         let file_size = file.metadata().await
-            .map_err(|e| MessengerError::NetworkError(format!("Failed to get file metadata: {}", e)))?
+            .map_err(|e| MessengerError::NetworkError(format!("Failed to get file metadata: {e}")))?
             .len();
         
         let mut stream = ReaderStream::new(file);
@@ -117,11 +117,11 @@ impl FileTransfer {
         
         while let Some(chunk_result) = stream.next().await {
             let chunk = chunk_result
-                .map_err(|e| MessengerError::NetworkError(format!("Failed to read chunk: {}", e)))?;
+                .map_err(|e| MessengerError::NetworkError(format!("Failed to read chunk: {e}")))?;
             
             let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
             let ct = cipher.encrypt(&nonce, chunk.as_ref())
-                .map_err(|e| MessengerError::EncryptionFailed(format!("Chunk encryption failed: {}", e)))?;
+                .map_err(|e| MessengerError::EncryptionFailed(format!("Chunk encryption failed: {e}")))?;
             
             let mut block = Vec::with_capacity(12 + ct.len()); // 12 bytes for nonce
             block.extend_from_slice(&nonce);
