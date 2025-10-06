@@ -22,11 +22,11 @@ pub async fn retract(cid: Cid, ratchet: &mut DoubleRatchet) -> MessengerResult<(
     
     // Unpin from IPFS
     ipfs.pin_rm(&cid.0).await
-        .map_err(|e| MessengerError::NetworkError(format!("Failed to unpin IPFS content: {}", e)))?;
+        .map_err(|e| MessengerError::NetworkError(format!("Failed to unpin IPFS content: {e}")))?;
     
     // Stop providing via DHT
     ipfs.dht_provide_stop(&cid.0).await
-        .map_err(|e| MessengerError::NetworkError(format!("Failed to stop DHT providing: {}", e)))?;
+        .map_err(|e| MessengerError::NetworkError(format!("Failed to stop DHT providing: {e}")))?;
     
     // Create retract message
     let msg_type = crate::double_ratchet::MessageType::Retract(cid.0);
@@ -57,11 +57,11 @@ impl MessageRetractor {
     pub async fn retract_message(&self, _message_id: &str, cid: &str) -> MessengerResult<RetractionNotice> {
         // Unpin the content from IPFS
         self.ipfs_client.pin_rm(cid).await
-            .map_err(|e| MessengerError::NetworkError(format!("Failed to unpin IPFS content: {}", e)))?;
+            .map_err(|e| MessengerError::NetworkError(format!("Failed to unpin IPFS content: {e}")))?;
         
         // Stop providing via DHT
         self.ipfs_client.dht_provide_stop(cid).await
-            .map_err(|e| MessengerError::NetworkError(format!("Failed to stop DHT providing: {}", e)))?;
+            .map_err(|e| MessengerError::NetworkError(format!("Failed to stop DHT providing: {e}")))?;
         
         Ok(RetractionNotice {
             message_id: _message_id.to_string(),
@@ -78,11 +78,11 @@ impl MessageRetractor {
     pub async fn process_retraction(&self, notice: &RetractionNotice) -> MessengerResult<()> {
         // When we receive a retraction notice, we should also unpin the content
         self.ipfs_client.pin_rm(&notice.cid).await
-            .map_err(|e| MessengerError::NetworkError(format!("Failed to unpin retracted content: {}", e)))?;
+            .map_err(|e| MessengerError::NetworkError(format!("Failed to unpin retracted content: {e}")))?;
         
         // Stop providing the retracted content
         self.ipfs_client.dht_provide_stop(&notice.cid).await
-            .map_err(|e| MessengerError::NetworkError(format!("Failed to stop providing retracted content: {}", e)))?;
+            .map_err(|e| MessengerError::NetworkError(format!("Failed to stop providing retracted content: {e}")))?;
         
         // In a real implementation, this would also:
         // - Remove from local content database
