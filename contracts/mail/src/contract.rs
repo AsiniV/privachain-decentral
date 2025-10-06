@@ -680,7 +680,7 @@ pub fn query_relay(deps: Deps, address: String) -> StdResult<RelayResponse> {
         relay.successful_deliveries
             .checked_mul(100)
             .and_then(|result| result.checked_div(relay.emails_relayed))
-            .unwrap_or(0) as u32
+            .unwrap_or(0)
     } else {
         0
     };
@@ -721,7 +721,7 @@ pub fn query_relays(
                     relay.successful_deliveries
                         .checked_mul(100)
                         .and_then(|result| result.checked_div(relay.emails_relayed))
-                        .unwrap_or(0) as u32
+                        .unwrap_or(0)
                 } else {
                     0
                 };
@@ -750,7 +750,7 @@ pub fn query_relays(
                     relay.successful_deliveries
                         .checked_mul(100)
                         .and_then(|result| result.checked_div(relay.emails_relayed))
-                        .unwrap_or(0) as u32
+                        .unwrap_or(0)
                 } else {
                     0
                 };

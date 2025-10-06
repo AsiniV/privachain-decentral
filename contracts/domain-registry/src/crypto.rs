@@ -1,7 +1,5 @@
-/**
- * Cryptographic functions for domain registry
- * NO STUB / NO SIMULATION - Real cryptographic verification only
- */
+// Cryptographic functions for domain registry
+// NO STUB / NO SIMULATION - Real cryptographic verification only
 
 use cosmwasm_std::{Binary, StdResult};
 use sha2::{Digest, Sha256};
