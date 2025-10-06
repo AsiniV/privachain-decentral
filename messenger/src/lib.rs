@@ -46,14 +46,14 @@ pub enum MessengerError {
 impl std::fmt::Display for MessengerError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            MessengerError::KeyGenerationFailed(msg) => write!(f, "Key generation failed: {}", msg),
-            MessengerError::EncryptionFailed(msg) => write!(f, "Encryption failed: {}", msg),
-            MessengerError::DecryptionFailed(msg) => write!(f, "Decryption failed: {}", msg),
-            MessengerError::InvalidSignature(msg) => write!(f, "Invalid signature: {}", msg),
-            MessengerError::NetworkError(msg) => write!(f, "Network error: {}", msg),
-            MessengerError::ZkProofError(msg) => write!(f, "ZK proof error: {}", msg),
-            MessengerError::CryptoError(msg) => write!(f, "Crypto error: {}", msg),
-            MessengerError::InvalidInput(msg) => write!(f, "Invalid input: {}", msg),
+            MessengerError::KeyGenerationFailed(msg) => write!(f, "Key generation failed: {msg}"),
+            MessengerError::EncryptionFailed(msg) => write!(f, "Encryption failed: {msg}"),
+            MessengerError::DecryptionFailed(msg) => write!(f, "Decryption failed: {msg}"),
+            MessengerError::InvalidSignature(msg) => write!(f, "Invalid signature: {msg}"),
+            MessengerError::NetworkError(msg) => write!(f, "Network error: {msg}"),
+            MessengerError::ZkProofError(msg) => write!(f, "ZK proof error: {msg}"),
+            MessengerError::CryptoError(msg) => write!(f, "Crypto error: {msg}"),
+            MessengerError::InvalidInput(msg) => write!(f, "Invalid input: {msg}"),
         }
     }
 }

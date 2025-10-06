@@ -71,7 +71,7 @@ fn decrypt_data(encrypted_hex: &str) -> MessengerResult<String> {
 /// Initialize the vault database
 pub fn initialize_vault() -> MessengerResult<Connection> {
     let conn = Connection::open("vault.db")
-        .map_err(|e| MessengerError::CryptoError(format!("Failed to open vault: {}", e)))?;
+        .map_err(|e| MessengerError::CryptoError(format!("Failed to open vault: {e}")))?;
     
     // Create OTC table if it doesn't exist
     conn.execute(
@@ -83,7 +83,7 @@ pub fn initialize_vault() -> MessengerResult<Connection> {
             used_at INTEGER
         )",
         [],
-    ).map_err(|e| MessengerError::CryptoError(format!("Failed to create table: {}", e)))?;
+    ).map_err(|e| MessengerError::CryptoError(format!("Failed to create table: {e}")))?;
     
     Ok(conn)
 }
@@ -99,7 +99,7 @@ pub fn save_otc_pair(otc1: &str, otc2: &str) -> MessengerResult<()> {
     conn.execute(
         "INSERT OR REPLACE INTO otc (id, code1, code2, created_at) VALUES (1, ?, ?, ?)",
         params![encrypted_otc1, encrypted_otc2, now],
-    ).map_err(|e| MessengerError::CryptoError(format!("Failed to save OTC pair: {}", e)))?;
+    ).map_err(|e| MessengerError::CryptoError(format!("Failed to save OTC pair: {e}")))?;
     
     Ok(())
 }
@@ -109,17 +109,17 @@ pub fn load_otc_pair() -> MessengerResult<(String, String)> {
     let conn = initialize_vault()?;
     
     let mut stmt = conn.prepare("SELECT code1, code2 FROM otc WHERE id = 1")
-        .map_err(|e| MessengerError::CryptoError(format!("Failed to prepare statement: {}", e)))?;
+        .map_err(|e| MessengerError::CryptoError(format!("Failed to prepare statement: {e}")))?;
     
     let mut rows = stmt.query_map([], |row| {
         Ok((
             row.get::<_, String>(0)?,
             row.get::<_, String>(1)?,
         ))
-    }).map_err(|e| MessengerError::CryptoError(format!("Failed to query OTC pair: {}", e)))?;
+    }).map_err(|e| MessengerError::CryptoError(format!("Failed to query OTC pair: {e}")))?;
     
     if let Some(row) = rows.next() {
-        let (encrypted_code1, encrypted_code2) = row.map_err(|e| MessengerError::CryptoError(format!("Failed to read row: {}", e)))?;
+        let (encrypted_code1, encrypted_code2) = row.map_err(|e| MessengerError::CryptoError(format!("Failed to read row: {e}")))?;
         
         let code1 = decrypt_data(&encrypted_code1)?;
         let code2 = decrypt_data(&encrypted_code2)?;
@@ -152,7 +152,7 @@ pub fn burn_otc_pair() -> MessengerResult<()> {
     conn.execute(
         "UPDATE otc SET code1 = ?, code2 = ?, used_at = ? WHERE id = 1",
         params![encrypted_burn1, encrypted_burn2, now],
-    ).map_err(|e| MessengerError::CryptoError(format!("Failed to burn OTC pair: {}", e)))?;
+    ).map_err(|e| MessengerError::CryptoError(format!("Failed to burn OTC pair: {e}")))?;
     
     Ok(())
 }
@@ -179,7 +179,7 @@ mod tests {
 
     fn initialize_vault_test(db_path: &std::path::Path) -> MessengerResult<Connection> {
         let conn = Connection::open(db_path)
-            .map_err(|e| MessengerError::CryptoError(format!("Failed to open vault: {}", e)))?;
+            .map_err(|e| MessengerError::CryptoError(format!("Failed to open vault: {e}")))?;
         
         // Create OTC table if it doesn't exist
         conn.execute(
@@ -191,7 +191,7 @@ mod tests {
                 used_at INTEGER
             )",
             [],
-        ).map_err(|e| MessengerError::CryptoError(format!("Failed to create table: {}", e)))?;
+        ).map_err(|e| MessengerError::CryptoError(format!("Failed to create table: {e}")))?;
         
         Ok(conn)
     }
@@ -206,7 +206,7 @@ mod tests {
         conn.execute(
             "INSERT OR REPLACE INTO otc (id, code1, code2, created_at) VALUES (1, ?, ?, ?)",
             params![encrypted_otc1, encrypted_otc2, now],
-        ).map_err(|e| MessengerError::CryptoError(format!("Failed to save OTC pair: {}", e)))?;
+        ).map_err(|e| MessengerError::CryptoError(format!("Failed to save OTC pair: {e}")))?;
         
         Ok(())
     }
@@ -215,17 +215,17 @@ mod tests {
         let conn = initialize_vault_test(db_path)?;
         
         let mut stmt = conn.prepare("SELECT code1, code2 FROM otc WHERE id = 1")
-            .map_err(|e| MessengerError::CryptoError(format!("Failed to prepare statement: {}", e)))?;
+            .map_err(|e| MessengerError::CryptoError(format!("Failed to prepare statement: {e}")))?;
         
         let mut rows = stmt.query_map([], |row| {
             Ok((
                 row.get::<_, String>(0)?,
                 row.get::<_, String>(1)?,
             ))
-        }).map_err(|e| MessengerError::CryptoError(format!("Failed to query OTC pair: {}", e)))?;
+        }).map_err(|e| MessengerError::CryptoError(format!("Failed to query OTC pair: {e}")))?;
         
         if let Some(row) = rows.next() {
-            let (encrypted_code1, encrypted_code2) = row.map_err(|e| MessengerError::CryptoError(format!("Failed to read row: {}", e)))?;
+            let (encrypted_code1, encrypted_code2) = row.map_err(|e| MessengerError::CryptoError(format!("Failed to read row: {e}")))?;
             
             let code1 = decrypt_data(&encrypted_code1)?;
             let code2 = decrypt_data(&encrypted_code2)?;
@@ -257,7 +257,7 @@ mod tests {
         conn.execute(
             "UPDATE otc SET code1 = ?, code2 = ?, used_at = ? WHERE id = 1",
             params![encrypted_burn1, encrypted_burn2, now],
-        ).map_err(|e| MessengerError::CryptoError(format!("Failed to burn OTC pair: {}", e)))?;
+        ).map_err(|e| MessengerError::CryptoError(format!("Failed to burn OTC pair: {e}")))?;
         
         Ok(())
     }
