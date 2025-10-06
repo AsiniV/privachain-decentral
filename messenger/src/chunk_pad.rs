@@ -46,7 +46,7 @@ pub fn unpad_chunk(padded_data: &[u8]) -> MessengerResult<Vec<u8>> {
     
     if original_len >= CHUNK_SIZE {
         return Err(MessengerError::DecryptionFailed(
-            format!("Invalid original length: {} bytes", original_len)
+            format!("Invalid original length: {original_len} bytes")
         ));
     }
     

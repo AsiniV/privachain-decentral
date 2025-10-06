@@ -2,7 +2,7 @@
 //
 // Provides intelligent bitrate adaptation based on network conditions
 
-use crate::{MessengerError, MessengerResult};
+use crate::MessengerResult;
 
 /// Calculate target bitrate based on network conditions
 /// 

@@ -3,7 +3,6 @@
 // Provides secure code refresh that burns old codes and generates new ones
 
 use crate::{MessengerError, MessengerResult, local_vault, otc_generator};
-use rusqlite::Connection;
 use rand::{RngCore, rngs::OsRng};
 
 /// Refresh OTC codes by burning old pair and generating new ones

@@ -10,7 +10,6 @@ use bellman::{
 };
 use bls12_381::{Bls12, Scalar};
 use rand::rngs::OsRng;
-use std::io::Write;
 
 /// ZK proof for message metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -233,5 +232,5 @@ pub fn verify(proof: &[u8], commitment: &[u8; 32]) -> Result<bool, MessengerErro
     // In a real implementation, this would be loaded from the trusted setup
     
     // Placeholder implementation - in production would deserialize proof and verify
-    Ok(proof.len() > 0 && commitment.len() == 32)
+    Ok(!proof.is_empty() && commitment.len() == 32)
 }

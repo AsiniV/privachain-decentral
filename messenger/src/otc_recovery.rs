@@ -16,7 +16,7 @@ use rand::rngs::OsRng;
 /// Convert OTC code to private key (never leaves device)
 pub fn code_to_private_key(code: &str) -> MessengerResult<[u8; 32]> {
     let mnemonic = Mnemonic::parse_in_normalized(Language::English, code)
-        .map_err(|e| MessengerError::CryptoError(format!("Invalid mnemonic: {}", e)))?;
+        .map_err(|e| MessengerError::CryptoError(format!("Invalid mnemonic: {e}")))?;
     
     let seed = mnemonic.to_seed("");
     let mut private_key = [0u8; 32];
@@ -50,7 +50,7 @@ impl Circuit<Scalar> for RecoveryCircuit {
         let private_key_bits: Vec<_> = (0..256)
             .map(|i| {
                 cs.alloc(
-                    || format!("private_key_bit_{}", i),
+                    || format!("private_key_bit_{i}"),
                     || {
                         if let Some(pk) = self.private_key {
                             let byte_idx = i / 8;
@@ -69,7 +69,7 @@ impl Circuit<Scalar> for RecoveryCircuit {
         let did_hash_bits: Vec<_> = (0..256)
             .map(|i| {
                 cs.alloc_input(
-                    || format!("did_hash_bit_{}", i),
+                    || format!("did_hash_bit_{i}"),
                     || {
                         if let Some(did) = self.did_hash {
                             let byte_idx = i / 8;
@@ -149,7 +149,7 @@ pub fn verify_recovery_proof(proof_bytes: &[u8], did: &str) -> MessengerResult<b
     
     // For testing, we'll simulate verification
     // In production, this would use the actual verification key and Groth16 verification
-    Ok(proof_bytes.len() > 0 && !did.is_empty())
+    Ok(!proof_bytes.is_empty() && !did.is_empty())
 }
 
 #[cfg(test)]

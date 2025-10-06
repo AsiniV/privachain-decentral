@@ -2,7 +2,7 @@
 //
 // Tests for Deep Packet Inspection resistance by generating and analyzing traffic patterns
 
-use crate::{MessengerError, MessengerResult, chunk_pad::pad_to_chunk_size};
+use crate::{MessengerResult, chunk_pad::pad_to_chunk_size};
 use rand::{thread_rng, Rng};
 
 /// DPI test results
