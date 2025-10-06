@@ -37,10 +37,10 @@ pub enum DPIBypassError {
 impl fmt::Display for DPIBypassError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            DPIBypassError::Obfs5Error(msg) => write!(f, "Obfs5 error: {}", msg),
-            DPIBypassError::DomainFrontingError(msg) => write!(f, "Domain fronting error: {}", msg),
-            DPIBypassError::NetworkError(msg) => write!(f, "Network error: {}", msg),
-            DPIBypassError::ConfigError(msg) => write!(f, "Configuration error: {}", msg),
+            DPIBypassError::Obfs5Error(msg) => write!(f, "Obfs5 error: {msg}"),
+            DPIBypassError::DomainFrontingError(msg) => write!(f, "Domain fronting error: {msg}"),
+            DPIBypassError::NetworkError(msg) => write!(f, "Network error: {msg}"),
+            DPIBypassError::ConfigError(msg) => write!(f, "Configuration error: {msg}"),
         }
     }
 }
@@ -75,7 +75,7 @@ impl DPIBypass {
         // First try domain fronting
         match self.domain_fronting.bypass_request(url, "").await {
             Ok(data) => Ok(data),
-            Err(e) => {
+            Err(_e) => {
                 // Fallback to UDP hole punching if needed
                 self.udp_puncher.establish_connection(url).await
                     .map_err(|e| DPIBypassError::NetworkError(e.to_string()))?;

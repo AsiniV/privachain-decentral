@@ -3,12 +3,13 @@
 // Simplified placeholder implementation
 
 use rand::thread_rng;
-use crate::{MessengerError, MessengerResult};
+use crate::MessengerResult;
 use serde::{Deserialize, Serialize};
 
 /// Post-quantum digital signature implementation (placeholder)
 #[derive(Debug, Clone)]
 pub struct DilithiumSigner {
+    #[allow(dead_code)]
     id: u64,
 }
 

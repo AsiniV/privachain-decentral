@@ -25,9 +25,6 @@ impl ECHConfig {
         // for when the feature becomes available. For now, we implement
         // basic TLS 1.3 with additional obfuscation.
         
-        // Enable TLS 1.3 only for better privacy
-        let mut config = config;
-        
         Ok(config)
     }
     
@@ -65,8 +62,16 @@ impl ECHConfig {
 /// TLS fingerprint obfuscation
 pub struct TLSFingerprintResistance {
     cipher_suites: Vec<u16>,
+    #[allow(dead_code)]
     extensions: Vec<u16>,
+    #[allow(dead_code)]
     signature_algorithms: Vec<u16>,
+}
+
+impl Default for TLSFingerprintResistance {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl TLSFingerprintResistance {

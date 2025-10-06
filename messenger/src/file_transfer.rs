@@ -29,6 +29,7 @@ pub struct IpfsClient {
 }
 
 impl IpfsClient {
+    #[allow(clippy::should_implement_trait)]
     pub fn default() -> Self {
         Self {
             _base_url: "http://localhost:5001".to_string(),
@@ -37,7 +38,7 @@ impl IpfsClient {
     
     pub async fn add<R: std::io::Read>(&self, _reader: R) -> Result<AddResponse, Error> {
         // Mock implementation - in real code this would upload to IPFS
-        let hash = format!("Qm{}", hex::encode(&rand::random::<[u8; 16]>()));
+        let hash = format!("Qm{}", hex::encode(rand::random::<[u8; 16]>()));
         Ok(AddResponse { hash })
     }
     
@@ -221,8 +222,11 @@ use std::ffi::CStr;
 use std::os::raw::c_char;
 
 /// FFI function for sending file with progress callback
+/// # Safety
+/// This function is unsafe because it dereferences raw pointers.
+/// The caller must ensure that the pointers are valid.
 #[no_mangle]
-pub extern "C" fn messenger_send_file_with_progress(
+pub unsafe extern "C" fn messenger_send_file_with_progress(
     path_ptr: *const c_char,
     key_b64_ptr: *const c_char,
     progress_callback: extern "C" fn(u32),
@@ -237,12 +241,12 @@ pub extern "C" fn messenger_send_file_with_progress(
     };
     
     runtime.block_on(async {
-        let path_str = match unsafe { CStr::from_ptr(path_ptr) }.to_str() {
+        let path_str = match CStr::from_ptr(path_ptr).to_str() {
             Ok(s) => s,
             Err(_) => return,
         };
         
-        let key_b64_str = match unsafe { CStr::from_ptr(key_b64_ptr) }.to_str() {
+        let key_b64_str = match CStr::from_ptr(key_b64_ptr).to_str() {
             Ok(s) => s,
             Err(_) => return,
         };

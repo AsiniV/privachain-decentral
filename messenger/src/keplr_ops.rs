@@ -5,7 +5,7 @@
 
 use crate::{MessengerError, MessengerResult};
 use serde::{Deserialize, Serialize};
-use ed25519_dalek::{SigningKey, Signature, Signer, VerifyingKey, Verifier};
+use ed25519_dalek::{SigningKey, Signature, Signer, Verifier};
 use hex;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -17,7 +17,7 @@ pub struct KeplrSignature {
 /// Sign a CID for storage on Cosmos blockchain using Keplr-compatible private key
 pub fn sign_store_cid(cid: &str, key_hex: &str) -> MessengerResult<Vec<u8>> {
     let key_bytes = hex::decode(key_hex)
-        .map_err(|e| MessengerError::CryptoError(format!("Invalid hex private key: {}", e)))?;
+        .map_err(|e| MessengerError::CryptoError(format!("Invalid hex private key: {e}")))?;
     
     if key_bytes.len() != 32 {
         return Err(MessengerError::CryptoError(
@@ -26,7 +26,7 @@ pub fn sign_store_cid(cid: &str, key_hex: &str) -> MessengerResult<Vec<u8>> {
     }
     
     let signing_key = SigningKey::from_bytes(&key_bytes.try_into().unwrap());
-    let msg = format!("STORE_CID:{}", cid);
+    let msg = format!("STORE_CID:{cid}");
     let signature: Signature = signing_key.sign(msg.as_bytes());
     
     Ok(signature.to_vec())
@@ -35,7 +35,7 @@ pub fn sign_store_cid(cid: &str, key_hex: &str) -> MessengerResult<Vec<u8>> {
 /// Sign a retraction nullifier for on-chain proof
 pub fn sign_retract_nullifier(nullifier: &str, key_hex: &str) -> MessengerResult<Vec<u8>> {
     let key_bytes = hex::decode(key_hex)
-        .map_err(|e| MessengerError::CryptoError(format!("Invalid hex private key: {}", e)))?;
+        .map_err(|e| MessengerError::CryptoError(format!("Invalid hex private key: {e}")))?;
     
     if key_bytes.len() != 32 {
         return Err(MessengerError::CryptoError(
@@ -44,7 +44,7 @@ pub fn sign_retract_nullifier(nullifier: &str, key_hex: &str) -> MessengerResult
     }
     
     let signing_key = SigningKey::from_bytes(&key_bytes.try_into().unwrap());
-    let msg = format!("RETRACT:{}", nullifier);
+    let msg = format!("RETRACT:{nullifier}");
     let signature: Signature = signing_key.sign(msg.as_bytes());
     
     Ok(signature.to_vec())
@@ -53,7 +53,7 @@ pub fn sign_retract_nullifier(nullifier: &str, key_hex: &str) -> MessengerResult
 /// Get Cosmos address from private key (for verification)
 pub fn get_cosmos_address(key_hex: &str) -> MessengerResult<String> {
     let key_bytes = hex::decode(key_hex)
-        .map_err(|e| MessengerError::CryptoError(format!("Invalid hex private key: {}", e)))?;
+        .map_err(|e| MessengerError::CryptoError(format!("Invalid hex private key: {e}")))?;
     
     if key_bytes.len() != 32 {
         return Err(MessengerError::CryptoError(
@@ -62,7 +62,7 @@ pub fn get_cosmos_address(key_hex: &str) -> MessengerResult<String> {
     }
     
     let signing_key = SigningKey::from_bytes(&key_bytes.try_into().unwrap());
-    let public_key = signing_key.verifying_key();
+    let _public_key = signing_key.verifying_key();
     
     // Convert to Cosmos bech32 address format
     // For now, return a mock address that matches the expected format
@@ -86,7 +86,7 @@ pub fn verify_signature(message: &str, signature: &[u8], public_key: &[u8]) -> M
     use ed25519_dalek::{VerifyingKey, Signature};
     
     let verifying_key = VerifyingKey::from_bytes(public_key.try_into().unwrap())
-        .map_err(|e| MessengerError::CryptoError(format!("Invalid public key: {}", e)))?;
+        .map_err(|e| MessengerError::CryptoError(format!("Invalid public key: {e}")))?;
     
     let signature = Signature::from_bytes(signature.try_into().unwrap());
     

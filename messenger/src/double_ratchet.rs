@@ -25,6 +25,7 @@ pub struct DoubleRatchet {
     /// Number of messages received in current receiving chain
     receiving_chain_length: u32,
     /// Post-quantum handshake component
+    #[allow(dead_code)]
     pq_handshake: Option<PqHandshake>,
     /// Whether PQ upgrade has been completed
     pq_upgraded: bool,

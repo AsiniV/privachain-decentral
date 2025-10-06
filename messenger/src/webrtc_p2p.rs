@@ -40,7 +40,7 @@ impl OnionIceCandidate {
     /// Create new onion ICE candidate
     pub fn new_onion_udp(onion_address: &str, port: u16) -> Self {
         Self {
-            candidate: format!("candidate:1 1 UDP 2130706431 {} {} typ host", onion_address, port),
+            candidate: format!("candidate:1 1 UDP 2130706431 {onion_address} {port} typ host"),
             sdp_mid: "0".to_string(),
             sdp_mline_index: 0,
         }
@@ -49,6 +49,7 @@ impl OnionIceCandidate {
 
 /// WebRTC P2P connection manager
 pub struct WebRtcP2p {
+    #[allow(dead_code)]
     ice_servers: Vec<String>,
     stun_packet_count: u32,
 }
@@ -72,12 +73,12 @@ impl WebRtcP2p {
 
     /// Generate onion ICE candidates for STUN-less operation
     pub async fn generate_onion_candidates(&self) -> MessengerResult<Vec<OnionIceCandidate>> {
-        let mut candidates = Vec::new();
-        
         // Generate mock onion candidates
-        candidates.push(OnionIceCandidate::new_onion_udp("onion1.priva", 9001));
-        candidates.push(OnionIceCandidate::new_onion_udp("onion2.priva", 9002));
-        candidates.push(OnionIceCandidate::new_onion_udp("onion3.priva", 9003));
+        let candidates = vec![
+            OnionIceCandidate::new_onion_udp("onion1.priva", 9001),
+            OnionIceCandidate::new_onion_udp("onion2.priva", 9002),
+            OnionIceCandidate::new_onion_udp("onion3.priva", 9003),
+        ];
         
         Ok(candidates)
     }

@@ -98,6 +98,7 @@ pub fn execute(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn execute_register(
     deps: DepsMut,
     env: Env,

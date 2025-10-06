@@ -3,13 +3,14 @@
 // Simplified implementation using available APIs
 
 use rand::thread_rng;
-use crate::{MessengerError, MessengerResult};
+use crate::MessengerResult;
 use serde::{Deserialize, Serialize};
 
 /// Post-quantum handshake implementation (placeholder for now)
 #[derive(Debug, Clone)]
 pub struct PqHandshake {
     // Placeholder fields - real implementation would use actual PQ crypto
+    #[allow(dead_code)]
     id: u64,
 }
 
