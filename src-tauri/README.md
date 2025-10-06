@@ -41,11 +41,13 @@ const result = await invoke('dpi_fetch', {
 ## Dependencies
 
 Key dependencies:
-- `tauri` (v1.6+) - Desktop application framework
+- `tauri` (v2.0+) - Desktop application framework
 - `reqwest` (v0.12) - HTTP client with JSON support
 - `fastrand` (v2.1) - Fast random number generation
 - `url` (v2.5) - URL parsing and validation
 - `serde` (v1.0) - Serialization framework
+
+**Note:** Tauri v2.0+ uses `libsoup3` instead of `libsoup2`, which resolves runtime conflicts when both versions were previously loaded.
 
 ## Building
 
@@ -63,18 +65,8 @@ sudo apt-get install libwebkit2gtk-4.1-dev \
     librsvg2-dev \
     libjavascriptcoregtk-4.1-dev
 
-# Create pkg-config symlinks for webkit2gtk 4.0 compatibility
-# (Required for older Tauri dependencies that reference webkit2gtk-4.0)
-sudo ln -sf /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.1.pc \
-    /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.0.pc
-sudo ln -sf /usr/lib/x86_64-linux-gnu/pkgconfig/javascriptcoregtk-4.1.pc \
-    /usr/lib/x86_64-linux-gnu/pkgconfig/javascriptcoregtk-4.0.pc
-
-# Create library symlinks for webkit2gtk 4.0 compatibility
-sudo ln -sf /usr/lib/x86_64-linux-gnu/libwebkit2gtk-4.1.so \
-    /usr/lib/x86_64-linux-gnu/libwebkit2gtk-4.0.so
-sudo ln -sf /usr/lib/x86_64-linux-gnu/libjavascriptcoregtk-4.1.so \
-    /usr/lib/x86_64-linux-gnu/libjavascriptcoregtk-4.0.so
+# Install libsoup3 (required for Tauri v2.0+)
+sudo apt-get install libsoup-3.0-dev
 
 # Build the application
 npm run tauri build

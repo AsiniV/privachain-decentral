@@ -175,7 +175,7 @@
         "@eslint/js": "^9.34.0",
         "@playwright/test": "^1.40.1",
         "@tailwindcss/postcss": "^4.1.8",
-        "@tauri-apps/cli": "^1.6.0",
+        "@tauri-apps/cli": "^2.0.0",
         "@types/node": "^24.6.2",
         "@types/react": "^19.1.9",
         "@types/react-dom": "^19.1.9",
