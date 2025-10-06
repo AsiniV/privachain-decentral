@@ -108,15 +108,16 @@ fn fuzz_zk_proof_validation() {
         (Binary::from(b"abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"), "Valid hex proof"),
     ];
 
-    for (proof, description) in proof_test_cases {
+    for (idx, (proof, description)) in proof_test_cases.into_iter().enumerate() {
         let register_msg = ExecuteMsg::RegisterDomain {
-            domain: "testdomain".to_string(),
+            domain: format!("testdomain{idx}"), // Use unique domain for each test
             zk_proof: proof,
             public_key: Binary::from(b"mock_public_key_data_for_testing"),
             mx_records: None,
         };
 
-        let info = mock_info("user", &coins(1000, "upriv"));
+        // Use unique user for each test to avoid rate limiting
+        let info = mock_info(&format!("user{idx}"), &coins(1000, "upriv"));
         let result = execute(deps.as_mut(), env.clone(), info, register_msg);
         
         println!("ZK Proof test - {}: {:?}", description, result.is_ok());
