@@ -17,20 +17,11 @@ Before testing, ensure you have:
        libgtk-3-dev \
        libayatana-appindicator3-dev \
        librsvg2-dev \
-       libjavascriptcoregtk-4.1-dev
-   
-   # Create pkg-config symlinks for webkit2gtk 4.0 compatibility
-   sudo ln -sf /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.1.pc \
-       /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.0.pc
-   sudo ln -sf /usr/lib/x86_64-linux-gnu/pkgconfig/javascriptcoregtk-4.1.pc \
-       /usr/lib/x86_64-linux-gnu/pkgconfig/javascriptcoregtk-4.0.pc
-   
-   # Create library symlinks for webkit2gtk 4.0 compatibility
-   sudo ln -sf /usr/lib/x86_64-linux-gnu/libwebkit2gtk-4.1.so \
-       /usr/lib/x86_64-linux-gnu/libwebkit2gtk-4.0.so
-   sudo ln -sf /usr/lib/x86_64-linux-gnu/libjavascriptcoregtk-4.1.so \
-       /usr/lib/x86_64-linux-gnu/libjavascriptcoregtk-4.0.so
+       libjavascriptcoregtk-4.1-dev \
+       libsoup-3.0-dev
    ```
+   
+   **Note:** Tauri v2.0+ uses `libsoup3` instead of `libsoup2`. The `libsoup-3.0-dev` package is required.
 
 2. **Node.js and npm** (v18 or later recommended)
 

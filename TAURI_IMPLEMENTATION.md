@@ -21,7 +21,8 @@ This document summarizes the implementation of the Tauri backend for the PrivaCh
 
 3. **`src-tauri/Cargo.toml`**
    - Rust dependencies configuration
-   - Key dependencies: tauri 1.6, reqwest 0.12, fastrand 2.1, url 2.5
+   - Key dependencies: tauri 2.0, reqwest 0.12, fastrand 2.1, url 2.5
+   - **Note:** Upgraded to Tauri v2.0 to use libsoup3 instead of libsoup2, resolving runtime conflicts
 
 4. **`src-tauri/build.rs`**
    - Tauri build script
