@@ -13,6 +13,12 @@ pub struct UDPHolePuncher {
     stun_servers: Vec<String>,
 }
 
+impl Default for UDPHolePuncher {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl UDPHolePuncher {
     pub fn new() -> Self {
         Self {
@@ -35,7 +41,7 @@ impl UDPHolePuncher {
         
         // Discover external IP and port via STUN
         let external_addr = self.discover_external_address(&local_socket).await?;
-        println!("Discovered external address: {}", external_addr);
+        println!("Discovered external address: {external_addr}");
         
         // Parse target address
         let target_addr: SocketAddr = target.parse()
@@ -164,7 +170,7 @@ impl UDPHolePuncher {
         match timeout(Duration::from_secs(2), socket.recv_from(&mut buf)).await {
             Ok(Ok((len, addr))) => {
                 if addr == target && &buf[..len] == b"HOLE_PUNCH_ACK" {
-                    println!("Hole punching successful to {}", target);
+                    println!("Hole punching successful to {target}");
                 } else {
                     println!("Received unexpected data during hole punching");
                 }

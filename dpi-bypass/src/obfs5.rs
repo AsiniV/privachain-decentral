@@ -25,12 +25,12 @@ impl Obfs5Stream {
     ) -> io::Result<Self> {
         // Initialize Noise protocol with NN pattern (no static keys)
         let builder = Builder::new("Noise_NN_25519_AESGCM_SHA256".parse()
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Noise pattern error: {}", e)))?);
+            .map_err(|e| io::Error::other(format!("Noise pattern error: {e}")))?);
         
         let mut noise = builder
             .local_private_key(secret)
             .build_initiator()
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Noise builder error: {}", e)))?;
+            .map_err(|e| io::Error::other(format!("Noise builder error: {e}")))?;
         
         // First handshake message with random padding
         let pad_len = rand::thread_rng().gen_range(0..=255);
@@ -39,7 +39,7 @@ impl Obfs5Stream {
         
         let mut output_buf = vec![0u8; input_buf.len() + 16]; // Extra space for encryption
         let len = noise.write_message(&input_buf, &mut output_buf)
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Noise write error: {}", e)))?;
+            .map_err(|e| io::Error::other(format!("Noise write error: {e}")))?;
         
         socket.write_all(&output_buf[..len]).await?;
         
@@ -51,11 +51,11 @@ impl Obfs5Stream {
         // Process handshake response
         let mut payload = vec![0u8; 1024];
         let _payload_len = noise.read_message(&response, &mut payload)
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Noise read error: {}", e)))?;
+            .map_err(|e| io::Error::other(format!("Noise read error: {e}")))?;
         
         // Complete handshake to get transport state
         let noise = noise.into_transport_mode()
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Transport mode error: {}", e)))?;
+            .map_err(|e| io::Error::other(format!("Transport mode error: {e}")))?;
         
         Ok(Obfs5Stream { 
             noise, 
@@ -69,12 +69,12 @@ impl Obfs5Stream {
         secret: &[u8; 32]
     ) -> io::Result<Self> {
         let builder = Builder::new("Noise_NN_25519_AESGCM_SHA256".parse()
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Noise pattern error: {}", e)))?);
+            .map_err(|e| io::Error::other(format!("Noise pattern error: {e}")))?);
             
         let mut noise = builder
             .local_private_key(secret)
             .build_responder()
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Noise builder error: {}", e)))?;
+            .map_err(|e| io::Error::other(format!("Noise builder error: {e}")))?;
         
         // Read client handshake
         let mut buf = vec![0u8; 1024];
@@ -84,18 +84,18 @@ impl Obfs5Stream {
         // Process handshake and respond
         let mut payload = vec![0u8; 1024];
         let _payload_len = noise.read_message(&buf, &mut payload)
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Noise read error: {}", e)))?;
+            .map_err(|e| io::Error::other(format!("Noise read error: {e}")))?;
         
         // Send response with padding
         let pad_len = rand::thread_rng().gen_range(0..=255);
         let mut response_buf = vec![0u8; pad_len + 64]; // Extra space for encryption overhead
         let response_len = noise.write_message(&payload[..pad_len], &mut response_buf)
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Noise write error: {}", e)))?;
+            .map_err(|e| io::Error::other(format!("Noise write error: {e}")))?;
         
         socket.write_all(&response_buf[..response_len]).await?;
         
         let noise = noise.into_transport_mode()
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("Transport mode error: {}", e)))?;
+            .map_err(|e| io::Error::other(format!("Transport mode error: {e}")))?;
         
         Ok(Obfs5Stream {
             noise,
@@ -130,8 +130,7 @@ impl Obfs5Stream {
             PadPolicy::Dynamic => {
                 // Dynamic padding based on data size to mask patterns
                 let base_pad = rand::thread_rng().gen_range(16..=64);
-                let size_mask = (data.len() + base_pad).next_power_of_two() - data.len();
-                size_mask
+                (data.len() + base_pad).next_power_of_two() - data.len()
             },
             PadPolicy::Random { min, max } => {
                 rand::thread_rng().gen_range(min..=max)
