@@ -17,10 +17,10 @@ pub fn generate_otc_pair() -> MessengerResult<(String, String)> {
     rng.fill(&mut entropy2);
     
     let otc1 = Mnemonic::from_entropy_in(Language::English, &entropy1)
-        .map_err(|e| MessengerError::CryptoError(format!("Failed to generate first OTC: {}", e)))?;
+        .map_err(|e| MessengerError::CryptoError(format!("Failed to generate first OTC: {e}")))?;
     
     let otc2 = Mnemonic::from_entropy_in(Language::English, &entropy2)
-        .map_err(|e| MessengerError::CryptoError(format!("Failed to generate second OTC: {}", e)))?;
+        .map_err(|e| MessengerError::CryptoError(format!("Failed to generate second OTC: {e}")))?;
     
     Ok((otc1.to_string(), otc2.to_string()))
 }
