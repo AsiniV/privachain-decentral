@@ -281,7 +281,7 @@ fn fuzz_basic_functionality() {
     // Should handle correctly
     match result {
         Ok(_) => println!("Domain registration handled successfully"),
-        Err(e) => println!("Domain registration rejected appropriately: {e:?}"),
+        Err(e) => println!("Domain registration rejected appropriately: {:?}", e),
     }
 
     println!("✅ Basic fuzz test passed");
