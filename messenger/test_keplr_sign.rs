@@ -9,11 +9,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     // Test 1: Sign CID
     let signature = sign_store_cid(test_cid, priv_key)?;
-    println!("✅ CID signature created: {} bytes", signature.len());
+    let signature_len = signature.len();
+    println!("✅ CID signature created: {signature_len} bytes");
     
     // Test 2: Get address
     let address = get_cosmos_address(priv_key)?;
-    println!("✅ Cosmos address: {}", address);
+    println!("✅ Cosmos address: {address}");
     
     // Test 3: Verify signature
     let key_bytes = hex::decode(priv_key)?;
@@ -34,7 +35,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if address == "cosmos1hcgd3hg6kpvsfuklsgkzjratda53vwsymrp24k" {
         println!("✅ Address matches expected: PASS");
     } else {
-        println!("⚠️  Address mismatch - expected: cosmos1hcgd3hg6kpvsfuklsgkzjratda53vwsymrp24k, got: {}", address);
+        println!("⚠️  Address mismatch - expected: cosmos1hcgd3hg6kpvsfuklsgkzjratda53vwsymrp24k, got: {address}");
     }
     
     println!("🎉 All Keplr signing tests completed successfully!");

@@ -120,7 +120,8 @@ fn fuzz_zk_proof_validation() {
         let info = mock_info(&format!("user{idx}"), &coins(1000, "upriv"));
         let result = execute(deps.as_mut(), env.clone(), info, register_msg);
         
-        println!("ZK Proof test - {}: {:?}", description, result.is_ok());
+        let is_ok = result.is_ok();
+        println!("ZK Proof test - {description}: {is_ok:?}");
     }
 
     println!("✅ ZK proof fuzz test completed");
@@ -237,7 +238,8 @@ fn fuzz_concurrent_operations() {
             println!("✅ Domain '{domain}' registered by user{i}");
         } else {
             failed_registrations += 1;
-            println!("❌ Domain '{}' registration failed for user{}: {:?}", domain, i, result.err());
+            let err = result.err();
+            println!("❌ Domain '{domain}' registration failed for user{i}: {err:?}");
         }
     }
 
@@ -281,7 +283,7 @@ fn fuzz_basic_functionality() {
     // Should handle correctly
     match result {
         Ok(_) => println!("Domain registration handled successfully"),
-        Err(e) => println!("Domain registration rejected appropriately: {:?}", e),
+        Err(e) => println!("Domain registration rejected appropriately: {e:?}"),
     }
 
     println!("✅ Basic fuzz test passed");

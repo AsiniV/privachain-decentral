@@ -9,17 +9,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     // Test initial timing
     let initial_delay = decoy_loop.time_until_next_decoy();
-    println!("⏰ Initial delay: {:.2}s", initial_delay.as_secs_f64());
+    let initial_delay_secs = initial_delay.as_secs_f64();
+    println!("⏰ Initial delay: {initial_delay_secs:.2}s");
     
     // Check that initial delay is within expected range (30s ± 5%)
     let min_delay = Duration::from_millis((30000.0 * 0.95) as u64);
     let max_delay = Duration::from_millis((30000.0 * 1.05) as u64);
     
     if initial_delay < min_delay || initial_delay > max_delay {
-        eprintln!("❌ Initial timing test failed: {:.2}s not in range {:.2}s - {:.2}s", 
-                 initial_delay.as_secs_f64(), 
-                 min_delay.as_secs_f64(), 
-                 max_delay.as_secs_f64());
+        let initial_secs = initial_delay.as_secs_f64();
+        let min_secs = min_delay.as_secs_f64();
+        let max_secs = max_delay.as_secs_f64();
+        eprintln!("❌ Initial timing test failed: {initial_secs:.2}s not in range {min_secs:.2}s - {max_secs:.2}s");
         std::process::exit(1);
     }
     
@@ -32,7 +33,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         decoy_loop = DecoyLoop::new(); // Create fresh instance to get different jitter
         let delay = decoy_loop.time_until_next_decoy();
         intervals.push(delay.as_millis());
-        println!("📊 Interval {}: {:.2}s", i + 1, delay.as_secs_f64());
+        let interval_num = i + 1;
+        let delay_secs = delay.as_secs_f64();
+        println!("📊 Interval {interval_num}: {delay_secs:.2}s");
     }
     
     // Check that intervals are not all identical (jitter is working)
@@ -50,7 +53,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for (i, &interval_ms) in intervals.iter().enumerate() {
         let interval_s = interval_ms as f64 / 1000.0;
         if interval_s < 28.5 || interval_s > 31.5 {
-            eprintln!("❌ Interval {} out of range: {:.2}s", i + 1, interval_s);
+            let interval_num = i + 1;
+            eprintln!("❌ Interval {interval_num} out of range: {interval_s:.2}s");
             std::process::exit(1);
         }
     }
@@ -60,7 +64,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Test decoy traffic generation
     let decoy_data = decoy_loop.generate_decoy_traffic();
     if decoy_data.len() != 256 * 1024 {
-        eprintln!("❌ Decoy data size test failed: expected 262144 bytes, got {}", decoy_data.len());
+        let got_len = decoy_data.len();
+        eprintln!("❌ Decoy data size test failed: expected 262144 bytes, got {got_len}");
         std::process::exit(1);
     }
     
@@ -85,9 +90,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let max_interval = intervals.iter().max().unwrap();
     
     println!("📈 Timing statistics:");
-    println!("   Average: {:.2}s", avg_interval);
-    println!("   Range: {:.2}s - {:.2}s", *min_interval as f64 / 1000.0, *max_interval as f64 / 1000.0);
-    println!("   Jitter: {:.1}%", ((max_interval - min_interval) as f64 / avg_interval / 10.0));
+    println!("   Average: {avg_interval:.2}s");
+    let min_secs = *min_interval as f64 / 1000.0;
+    let max_secs = *max_interval as f64 / 1000.0;
+    println!("   Range: {min_secs:.2}s - {max_secs:.2}s");
+    let jitter = ((max_interval - min_interval) as f64 / avg_interval / 10.0);
+    println!("   Jitter: {jitter:.1}%");
     
     Ok(())
 }

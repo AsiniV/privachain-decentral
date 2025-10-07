@@ -42,18 +42,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Test header synchronization
     let target_height = 1010; // Sync 10 blocks
     
-    println!("🔄 Syncing headers from 1000 to {}...", target_height);
+    println!("🔄 Syncing headers from 1000 to {target_height}...");
     
     match client.sync_headers(target_height).await {
         Ok(_) => {
             let elapsed = start_time.elapsed();
-            println!("✅ Header sync completed in {:.2}s", elapsed.as_secs_f64());
+            let elapsed_secs = elapsed.as_secs_f64();
+            println!("✅ Header sync completed in {elapsed_secs:.2}s");
             
             // Check performance requirements
             if elapsed.as_secs() <= 3 {
-                println!("✅ **header sync ≤ 3 s**: PASS ({:.2}s)", elapsed.as_secs_f64());
+                println!("✅ **header sync ≤ 3 s**: PASS ({elapsed_secs:.2}s)");
             } else {
-                eprintln!("❌ **header sync ≤ 3 s**: FAIL ({:.2}s)", elapsed.as_secs_f64());
+                eprintln!("❌ **header sync ≤ 3 s**: FAIL ({elapsed_secs:.2}s)");
                 std::process::exit(1);
             }
             
@@ -68,7 +69,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("  **no full node**: ✅");
         }
         Err(e) => {
-            eprintln!("❌ Header sync failed: {}", e);
+            eprintln!("❌ Header sync failed: {e}");
             std::process::exit(1);
         }
     }

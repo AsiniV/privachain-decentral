@@ -28,7 +28,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Test 3: Sign nullifier with private key
     println!("✍️  Signing nullifier...");
     let nullifier_signature = sign_retract_nullifier(&nullifier, priv_key)?;
-    println!("✅ Nullifier signed: {} bytes", nullifier_signature.len());
+    let nullifier_signature_len = nullifier_signature.len();
+    println!("✅ Nullifier signed: {nullifier_signature_len} bytes");
     
     // Test 4: Retract message (unpin from IPFS)
     println!("📌 Retracting message (unpinning CID)...");
@@ -37,7 +38,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     // Test 5: Verify nullifier in retraction notice
     if retraction_notice.cid == test_cid {
-        println!("✅ **nullifier stored**: PASS (CID: {})", retraction_notice.cid);
+        let cid_value = &retraction_notice.cid;
+        println!("✅ **nullifier stored**: PASS (CID: {cid_value})");
     } else {
         eprintln!("❌ **nullifier stored**: FAIL");
         std::process::exit(1);
@@ -53,9 +55,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Test 7: Verify cosmos address matches expected
     let address = get_cosmos_address(priv_key)?;
     if address == "cosmos1hcgd3hg6kpvsfuklsgkzjratda53vwsymrp24k" {
-        println!("✅ Cosmos address verified: {}", address);
+        println!("✅ Cosmos address verified: {address}");
     } else {
-        println!("⚠️  Address: {} (expected: cosmos1hcgd3hg6kpvsfuklsgkzjratda53vwsymrp24k)", address);
+        println!("⚠️  Address: {address} (expected: cosmos1hcgd3hg6kpvsfuklsgkzjratda53vwsymrp24k)");
     }
     
     println!("");
@@ -68,10 +70,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     println!("");
     println!("📋 Retraction details:");
-    println!("  Message ID: {}", retraction_notice.message_id);
-    println!("  CID: {}", retraction_notice.cid);
-    println!("  Timestamp: {}", retraction_notice.timestamp);
-    println!("  Nullifier: {}", nullifier);
+    let message_id_value = &retraction_notice.message_id;
+    let cid_value = &retraction_notice.cid;
+    let timestamp_value = retraction_notice.timestamp;
+    println!("  Message ID: {message_id_value}");
+    println!("  CID: {cid_value}");
+    println!("  Timestamp: {timestamp_value}");
+    println!("  Nullifier: {nullifier}");
     
     Ok(())
 }

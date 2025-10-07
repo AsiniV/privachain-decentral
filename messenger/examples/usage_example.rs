@@ -14,13 +14,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     // Action 1: Bit-exact function demonstration
     println!("\n📦 Action 1: Bit-exact pad_to_chunks function");
-    println!("   CHUNK constant: {} bytes (256 KiB)", CHUNK);
+    println!("   CHUNK constant: {CHUNK} bytes (256 KiB)");
     
     let test_data = b"Hello, this is a test message for the onion router!";
     let chunks = pad_to_chunks(test_data);
     
-    println!("   Input data: {} bytes", test_data.len());
-    println!("   Output chunks: {} chunks of {} bytes each", chunks.len(), CHUNK);
+    let test_data_len = test_data.len();
+    println!("   Input data: {test_data_len} bytes");
+    let chunks_len = chunks.len();
+    println!("   Output chunks: {chunks_len} chunks of {CHUNK} bytes each");
     println!("   ✅ Data chunked with length header and random padding");
     
     // Action 2: Decoy loop demonstration
@@ -43,7 +45,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     while count < 3 {
         match tokio::time::timeout(std::time::Duration::from_millis(100), rx.recv()).await {
             Ok(Some(chunk)) => {
-                println!("   Received chunk {}: {} bytes", count + 1, chunk.len());
+                let chunk_num = count + 1;
+                let chunk_len = chunk.len();
+                println!("   Received chunk {chunk_num}: {chunk_len} bytes");
                 count += 1;
             }
             _ => break,

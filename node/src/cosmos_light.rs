@@ -53,10 +53,13 @@ impl IpfsHeaderStore {
                 .unwrap()
                 .as_secs(),
             chain_id: "provider-testnet".to_string(),
-            last_commit_hash: format!("hash_{}", height - 1),
-            data_hash: format!("data_{}", height),
-            validators_hash: format!("validators_{}", height),
-            app_hash: format!("app_{}", height),
+            last_commit_hash: {
+                let prev_height = height - 1;
+                format!("hash_{prev_height}")
+            },
+            data_hash: format!("data_{height}"),
+            validators_hash: format!("validators_{height}"),
+            app_hash: format!("app_{height}"),
         };
 
         self.cache.insert(height, header.clone());
@@ -96,12 +99,12 @@ impl LightClient {
     pub async fn sync_headers(&mut self, target_height: u64) -> Result<(), LightClientError> {
         let start_height = self.trusted_block.trusted_height;
         
-        println!("🔄 Syncing headers from {} to {}", start_height, target_height);
+        println!("🔄 Syncing headers from {start_height} to {target_height}");
         
         for height in (start_height + 1)..=target_height {
             if let Some(header) = self.store.get_header(height).await? {
                 if self.verify_header(&header).await? {
-                    println!("✅ Verified header at height {}", height);
+                    println!("✅ Verified header at height {height}");
                 } else {
                     return Err(LightClientError::InvalidHeader(format!(
                         "Header verification failed at height {}",
@@ -155,10 +158,10 @@ pub enum LightClientError {
 impl std::fmt::Display for LightClientError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            LightClientError::NetworkError(msg) => write!(f, "Network error: {}", msg),
-            LightClientError::InvalidHeader(msg) => write!(f, "Invalid header: {}", msg),
+            LightClientError::NetworkError(msg) => write!(f, "Network error: {msg}"),
+            LightClientError::InvalidHeader(msg) => write!(f, "Invalid header: {msg}"),
             LightClientError::TrustPeriodExpired => write!(f, "Trust period expired"),
-            LightClientError::IpfsError(msg) => write!(f, "IPFS error: {}", msg),
+            LightClientError::IpfsError(msg) => write!(f, "IPFS error: {msg}"),
         }
     }
 }
