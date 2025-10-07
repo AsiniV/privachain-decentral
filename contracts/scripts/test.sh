@@ -20,4 +20,16 @@ echo "Building domain registry for deployment..."
 cargo build --release --target wasm32-unknown-unknown
 cd ..
 
+# Test DID registry contract
+echo "Testing DID registry contract..."
+cd did-registry
+cargo test
+cd ..
+
+# Test recovery code contract
+echo "Testing recovery code contract..."
+cd recovery_code
+cargo test
+cd ..
+
 echo "All tests passed!"
