@@ -21,7 +21,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Action 1: SRTP master from ratchet
     println!("Action 1: SRTP master from ratchet");
     let master_key = ratchet.derive_srtp_material(32)?;
-    let srtp = webrtc.create_srtp_context(&ratchet)?;
+    let _srtp = webrtc.create_srtp_context(&ratchet)?;
     let master_key_len = master_key.len();
     println!("✓ SRTP master key derived: {master_key_len} bytes");
     println!("✓ SRTP context created with master key\n");

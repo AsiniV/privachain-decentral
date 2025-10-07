@@ -2,9 +2,8 @@
 //
 // Shows how to use the new send_file function with progress tracking
 
-use privachain_messenger::{FileTransfer, Cid};
+use privachain_messenger::FileTransfer;
 use std::io::Write;
-use std::path::Path;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

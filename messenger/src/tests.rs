@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod tests {
+mod zk_metadata_seal_tests {
     use crate::zk_metadata_seal::*;
 
     #[test]
@@ -17,7 +17,7 @@ mod tests {
         assert!(result.is_ok());
         
         let proof = result.unwrap();
-        assert!(proof.len() > 0);
+        assert!(!proof.is_empty());
     }
 
     #[test]
