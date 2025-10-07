@@ -1,14 +1,12 @@
-#[cfg(test)]
-mod tests {
-    use crate::{execute, query, instantiate, ExecuteMsg, QueryMsg, InstantiateMsg, error::ContractError};
-    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use cosmwasm_std::{from_json, Env, Timestamp, Binary};
+use crate::{execute, query, instantiate, ExecuteMsg, QueryMsg, InstantiateMsg, error::ContractError};
+use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+use cosmwasm_std::{from_json, Env, Timestamp, Binary};
 
-    fn mock_env_with_time(time: Timestamp) -> Env {
-        let mut env = mock_env();
-        env.block.time = time;
-        env
-    }
+fn mock_env_with_time(time: Timestamp) -> Env {
+    let mut env = mock_env();
+    env.block.time = time;
+    env
+}
 
     #[test]
     fn test_did_registration() {
@@ -278,4 +276,3 @@ mod tests {
         // Expect StdError due to invalid deserialize, but in real use InvalidProof
         assert!(err.to_string().contains("Generic error"));
     }
-}
