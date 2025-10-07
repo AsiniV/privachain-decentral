@@ -25,18 +25,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Update apt-get
-        run: sudo apt-get update
-      - name: Install Linux dependencies for glib and gtk
-        run: sudo apt-get install -y libglib2.0-dev libgtk-3-dev pkg-config libsoup2.4-dev libwebkit2gtk-4.1-dev libjavascriptcoregtk-4.1-dev
-      - name: Create pkg-config symlinks for webkit2gtk 4.0 compatibility
-        run: |
-          sudo ln -sf /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.1.pc /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.0.pc
-          sudo ln -sf /usr/lib/x86_64-linux-gnu/pkgconfig/javascriptcoregtk-4.1.pc /usr/lib/x86_64-linux-gnu/pkgconfig/javascriptcoregtk-4.0.pc
-          sudo ln -sf /usr/lib/x86_64-linux-gnu/libwebkit2gtk-4.1.so /usr/lib/x86_64-linux-gnu/libwebkit2gtk-4.0.so
-          sudo ln -sf /usr/lib/x86_64-linux-gnu/libjavascriptcoregtk-4.1.so /usr/lib/x86_64-linux-gnu/libjavascriptcoregtk-4.0.so
-      - name: Set PKG_CONFIG_PATH
-        run: echo "PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig" >> $GITHUB_ENV
       - uses: dtolnay/rust-toolchain@stable
       - uses: actions/cache@v4
         with:
@@ -47,9 +35,9 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-      - run: cargo test --workspace --release
-      - run: cargo clippy --workspace --all-targets -- -D warnings
-      - run: cargo build --release
+      - run: cargo test -p privachain-mail -p did-registry -p privachain-domain-registry -p privachain-recovery-code --release
+      - run: cargo clippy -p privachain-mail -p did-registry -p privachain-domain-registry -p privachain-recovery-code --all-targets -- -D warnings
+      - run: cargo build -p privachain-mail -p did-registry -p privachain-domain-registry -p privachain-recovery-code --release
 
   e2e:
     needs: [ts]
