@@ -8,6 +8,20 @@ PrivaChain uses Groth16 ZK-SNARKs for:
 - **Domain Ownership Proofs**: Proving ownership of `.prv` domains without revealing private keys
 - **Search Inclusion Proofs**: Proving search results are valid without revealing query content
 
+## Development vs Production Mode
+
+### Test/Development Mode
+- Smart contracts built with `cargo test` automatically enable test mode via `#[cfg(test)]`
+- ZK proof verification accepts well-formed proofs after structural validation
+- No verification key deployment required for testing
+- Allows rapid development and testing without full ZK circuit setup
+
+### Production Mode
+- Smart contracts built with `cargo build --release` require real verification keys
+- ZK proof verification fails securely if verification key is not deployed
+- Requires proper trusted setup ceremony and VK deployment to contract storage
+- Ensures cryptographic security in production deployments
+
 ## Circuits
 
 ### 1. Domain Registration Circuit (`domain_register.circom`)
