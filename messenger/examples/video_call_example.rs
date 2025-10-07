@@ -22,15 +22,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Action 1: SRTP master from ratchet");
     let master_key = ratchet.derive_srtp_material(32)?;
     let srtp = webrtc.create_srtp_context(&ratchet)?;
-    println!("✓ SRTP master key derived: {} bytes", master_key.len());
+    let master_key_len = master_key.len();
+    println!("✓ SRTP master key derived: {master_key_len} bytes");
     println!("✓ SRTP context created with master key\n");
 
     // Action 2: Onion-UDP ICE candidate
     println!("Action 2: Onion-UDP ICE candidate");
     let ice_candidate = webrtc.generate_onion_ice_candidate("onion1.priva", 9001);
-    println!("✓ ICE candidate: {}", ice_candidate.candidate);
-    println!("✓ SDP MID: {}", ice_candidate.sdp_mid);
-    println!("✓ SDP MLine Index: {}\n", ice_candidate.sdp_mline_index);
+    let candidate = &ice_candidate.candidate;
+    let sdp_mid = &ice_candidate.sdp_mid;
+    let sdp_mline_index = ice_candidate.sdp_mline_index;
+    println!("✓ ICE candidate: {candidate}");
+    println!("✓ SDP MID: {sdp_mid}");
+    println!("✓ SDP MLine Index: {sdp_mline_index}\n");
 
     // Action 3: Bitrate adapter
     println!("Action 3: Bitrate adapter");
@@ -47,11 +51,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let bitrate = target_bitrate(rtt_ms, loss_percent);
         let profile = quality_optimizer.update_quality(rtt_ms, loss_percent)?;
         
-        println!("Scenario: {} (RTT: {}ms, Loss: {}%)", description, rtt_ms, loss_percent);
-        println!("  → Target bitrate: {} bps ({:.1} Mbps)", bitrate, bitrate as f32 / 1_000_000.0);
-        println!("  → Resolution: {}", profile.resolution);
-        println!("  → Framerate: {}fps", profile.framerate);
-        println!("  → Codec: {}", profile.codec);
+        let bitrate_mbps = bitrate as f32 / 1_000_000.0;
+        println!("Scenario: {description} (RTT: {rtt_ms}ms, Loss: {loss_percent}%)");
+        println!("  → Target bitrate: {bitrate} bps ({bitrate_mbps:.1} Mbps)");
+        let resolution = &profile.resolution;
+        let framerate = profile.framerate;
+        let codec = &profile.codec;
+        println!("  → Resolution: {resolution}");
+        println!("  → Framerate: {framerate}fps");
+        println!("  → Codec: {codec}");
         
         if quality_optimizer.supports_1080p_30fps() {
             println!("  ✓ Supports 1080p@30fps target");

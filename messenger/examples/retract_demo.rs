@@ -18,7 +18,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     // Example CID from IPFS (this would normally come from file_transfer)
     let cid = Cid("QmExampleHash123abc456def789".to_string());
-    println!("📄 Example CID: {}", cid);
+    println!("📄 Example CID: {cid}");
     
     // ACTION 1: Unpin + stop provide as per problem statement
     println!("\n🔄 ACTION 1: Executing retract(cid, ratchet)");
@@ -34,7 +34,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("  ✓ Retract message sent to peer");
         }
         Err(e) => {
-            println!("❌ Retract failed: {}", e);
+            println!("❌ Retract failed: {e}");
             return Err(e.into());
         }
     }
@@ -45,9 +45,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Retract a specific message
     let notice = retractor.retract_message("msg_123", &cid.0).await?;
     println!("📢 Retraction notice created:");
-    println!("  • Message ID: {}", notice.message_id);
-    println!("  • CID: {}", notice.cid);
-    println!("  • Timestamp: {}", notice.timestamp);
+    let message_id = &notice.message_id;
+    let notice_cid = &notice.cid;
+    let timestamp = notice.timestamp;
+    println!("  • Message ID: {message_id}");
+    println!("  • CID: {notice_cid}");
+    println!("  • Timestamp: {timestamp}");
     
     // Process retraction (simulate receiving from peer)
     retractor.process_retraction(&notice).await?;

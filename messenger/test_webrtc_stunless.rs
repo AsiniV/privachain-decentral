@@ -24,14 +24,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::process::exit(1);
     }
     
-    println!("✅ Generated {} onion ICE candidates", onion_candidates.len());
+    let candidates_len = onion_candidates.len();
+    println!("✅ Generated {candidates_len} onion ICE candidates");
     
     // Test 3: Verify candidate format
     for candidate in &onion_candidates {
         if candidate.candidate.contains("onion") && candidate.candidate.contains("typ host") {
-            println!("✅ Valid onion candidate: {}", candidate.candidate);
+            let cand = &candidate.candidate;
+            println!("✅ Valid onion candidate: {cand}");
         } else {
-            eprintln!("❌ Invalid candidate format: {}", candidate.candidate);
+            let cand = &candidate.candidate;
+            eprintln!("❌ Invalid candidate format: {cand}");
             std::process::exit(1);
         }
     }
@@ -47,11 +50,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match connection_result {
         Ok(Ok(_)) => {
             let elapsed = start_time.elapsed();
-            println!("✅ Connection established in {:.2}s", elapsed.as_secs_f64());
+            let elapsed_secs = elapsed.as_secs_f64();
+            println!("✅ Connection established in {elapsed_secs:.2}s");
         }
         Ok(Err(e)) => {
             // Expected for mock implementation
-            println!("⚠️ Connection simulation completed (mock): {}", e);
+            println!("⚠️ Connection simulation completed (mock): {e}");
         }
         Err(_) => {
             eprintln!("❌ Connection establishment timed out");
@@ -67,7 +71,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if stun_packets == 0 {
         println!("✅ **0 % STUN packets captured**: PASS");
     } else {
-        eprintln!("❌ **0 % STUN packets captured**: FAIL ({} STUN packets found)", stun_packets);
+        eprintln!("❌ **0 % STUN packets captured**: FAIL ({stun_packets} STUN packets found)");
         std::process::exit(1);
     }
     

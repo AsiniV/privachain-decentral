@@ -35,7 +35,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         file.write_all(demo_content.as_bytes())?;
     }
     
-    println!("✅ Demo file created: {}", demo_file.display());
+    let demo_file_display = demo_file.display();
+    println!("✅ Demo file created: {demo_file_display}");
     
     // Generate a test encryption key
     let shared_key = [42u8; 32]; // In real usage, this would be derived from key exchange
@@ -47,7 +48,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     let cid = FileTransfer::send_file(&demo_file, &shared_key).await?;
     println!("✅ File uploaded to IPFS!");
-    println!("   CID: {}", cid);
+    println!("   CID: {cid}");
     
     // Demo 2: File transfer with progress tracking
     println!("\n📊 Demo 2: File transfer with progress tracking");
@@ -58,14 +59,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         &demo_file, 
         &shared_key, 
         |percent| {
-            println!("   Progress: {}%", percent);
+            println!("   Progress: {percent}%");
             progress_updates.push(percent);
         }
     ).await?;
     
     println!("✅ File uploaded with progress tracking!");
-    println!("   CID: {}", cid_with_progress);
-    println!("   Progress updates: {:?}", progress_updates);
+    println!("   CID: {cid_with_progress}");
+    println!("   Progress updates: {progress_updates:?}");
     
     // Demo 3: Show what happens with chunking
     println!("\n🧩 Demo 3: File chunking information");
@@ -75,15 +76,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let transfer = FileTransfer::new();
     let (info, chunks) = transfer.prepare_file_transfer("demo".to_string(), &file_data)?;
     
-    println!("   Original file size: {} bytes", info.file_size);
-    println!("   Number of chunks: {}", info.total_chunks);
-    println!("   Chunk hashes: {} integrity checksums", info.chunk_hashes.len());
+    let file_size = info.file_size;
+    let total_chunks = info.total_chunks;
+    let chunk_hashes_len = info.chunk_hashes.len();
+    println!("   Original file size: {file_size} bytes");
+    println!("   Number of chunks: {total_chunks}");
+    println!("   Chunk hashes: {chunk_hashes_len} integrity checksums");
     
     for (i, chunk) in chunks.iter().enumerate().take(3) {
-        println!("   Chunk {}: {} bytes", i, chunk.data.len());
+        let chunk_data_len = chunk.data.len();
+        println!("   Chunk {i}: {chunk_data_len} bytes");
     }
     if chunks.len() > 3 {
-        println!("   ... and {} more chunks", chunks.len() - 3);
+        let more_chunks = chunks.len() - 3;
+        println!("   ... and {more_chunks} more chunks");
     }
     
     // Clean up

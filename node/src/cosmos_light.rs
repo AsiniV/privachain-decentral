@@ -96,12 +96,12 @@ impl LightClient {
     pub async fn sync_headers(&mut self, target_height: u64) -> Result<(), LightClientError> {
         let start_height = self.trusted_block.trusted_height;
         
-        println!("🔄 Syncing headers from {} to {}", start_height, target_height);
+        println!("🔄 Syncing headers from {start_height} to {target_height}");
         
         for height in (start_height + 1)..=target_height {
             if let Some(header) = self.store.get_header(height).await? {
                 if self.verify_header(&header).await? {
-                    println!("✅ Verified header at height {}", height);
+                    println!("✅ Verified header at height {height}");
                 } else {
                     return Err(LightClientError::InvalidHeader(format!(
                         "Header verification failed at height {}",

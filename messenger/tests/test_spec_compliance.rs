@@ -33,10 +33,14 @@ fn test_exact_spec_compliance() {
     assert_eq!(CHUNK - 24 + 24, CHUNK); // This should be true by definition
     
     println!("✅ Spec compliance verified:");
-    println!("   - CHUNK = {}", CHUNK);
-    println!("   - Data storage: bytes 0..{}", data.len());
-    println!("   - Length storage: bytes {}..{}", CHUNK - 32, CHUNK - 24);
-    println!("   - Random padding: bytes {}..{}", CHUNK - 24, CHUNK);
+    println!("   - CHUNK = {CHUNK}");
+    let data_len = data.len();
+    println!("   - Data storage: bytes 0..{data_len}");
+    let length_start = CHUNK - 32;
+    let length_end = CHUNK - 24;
+    println!("   - Length storage: bytes {length_start}..{length_end}");
+    let padding_start = CHUNK - 24;
+    println!("   - Random padding: bytes {padding_start}..{CHUNK}");
 }
 
 #[test]
@@ -47,8 +51,8 @@ fn test_chunk_size_calculation() {
     assert_eq!(effective_size, 262_112);
     
     println!("✅ Chunk size calculation:");
-    println!("   - Total chunk size: {} bytes", CHUNK);
-    println!("   - Effective data size: {} bytes", effective_size);
+    println!("   - Total chunk size: {CHUNK} bytes");
+    println!("   - Effective data size: {effective_size} bytes");
     println!("   - Length header: 8 bytes (CHUNK-32 to CHUNK-24)");
     println!("   - Random padding: 24 bytes (CHUNK-24 to CHUNK)");
 }
@@ -64,5 +68,6 @@ fn test_empty_data_decoy() {
     
     println!("✅ Empty data decoy verified:");
     println!("   - Empty input creates 1 decoy block");
-    println!("   - Decoy block size: {} bytes", chunks[0].len());
+    let chunk_len = chunks[0].len();
+    println!("   - Decoy block size: {chunk_len} bytes");
 }
