@@ -281,6 +281,7 @@ fn verify_zk_proof(proof: &Binary, did: &str, nonce: u64) -> Result<bool, Contra
 
 /// ✅ M3: Generate cryptographically secure nonce
 /// Uses block time, height, and sender for entropy
+#[allow(dead_code)]
 fn generate_secure_nonce(env: &Env, sender: &Addr) -> u64 {
     let mut hasher = Sha256::new();
     hasher.update(env.block.time.nanos().to_be_bytes());
