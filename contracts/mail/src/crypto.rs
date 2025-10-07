@@ -306,7 +306,7 @@ mod tests {
         let result = verify_zk_proof(&proof_data);
         // ✅ In test mode, well-formed proofs should succeed
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), true);
+        assert!(result.unwrap());
     }
     
     #[test]
@@ -331,7 +331,7 @@ mod tests {
         let result = verify_domain_proof(domain_hash, proof_json, &public_signals);
         // ✅ In test mode, well-formed proofs should succeed
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), true);
+        assert!(result.unwrap());
     }
     
     #[test]
