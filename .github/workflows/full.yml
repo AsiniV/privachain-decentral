@@ -61,13 +61,19 @@ jobs:
         run: sudo apt-get update
       - name: Install Linux dependencies
         run: |
-          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libjavascriptcoregtk-4.1-dev
-      - name: Create pkg-config symlinks for webkit2gtk 4.0 compatibility
-        run: |
-          sudo ln -sf /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.1.pc /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.0.pc
-          sudo ln -sf /usr/lib/x86_64-linux-gnu/pkgconfig/javascriptcoregtk-4.1.pc /usr/lib/x86_64-linux-gnu/pkgconfig/javascriptcoregtk-4.0.pc
-          sudo ln -sf /usr/lib/x86_64-linux-gnu/libwebkit2gtk-4.1.so /usr/lib/x86_64-linux-gnu/libwebkit2gtk-4.0.so
-          sudo ln -sf /usr/lib/x86_64-linux-gnu/libjavascriptcoregtk-4.1.so /usr/lib/x86_64-linux-gnu/libjavascriptcoregtk-4.0.so
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            libssl-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libjavascriptcoregtk-4.1-dev \
+            libsoup-3.0-dev \
+            file \
+            patchelf
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -83,9 +89,21 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-      - run: npm run tauri build
+      - name: Build Tauri application
+        run: npm run tauri build
       - uses: actions/upload-artifact@v4
         with:
-          name: privachain-desktop
-          path: src-tauri/target/release/bundle/**
+          name: privachain-desktop-deb
+          path: target/release/bundle/deb/*.deb
           if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: privachain-desktop-rpm
+          path: target/release/bundle/rpm/*.rpm
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: privachain-desktop-appimage
+          path: target/release/bundle/appimage/*.AppImage
+          if-no-files-found: warn

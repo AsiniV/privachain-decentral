@@ -53,7 +53,7 @@ This will:
 npm run tauri build
 ```
 
-The built application will be in `src-tauri/target/release/bundle/`.
+The built application will be in `target/release/bundle/`.
 
 ## Testing Without Tor
 
