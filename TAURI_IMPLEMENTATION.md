@@ -188,7 +188,7 @@ npm run tauri dev
 npm run tauri build
 ```
 
-Output will be in `src-tauri/target/release/bundle/`.
+Output will be in `target/release/bundle/`.
 
 ## Security Considerations
 
