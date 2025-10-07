@@ -382,7 +382,7 @@ mod tests {
     #[test]
     fn test_cid_display() {
         let cid = Cid("QmTestHash123".to_string());
-        assert_eq!(format!("{}", cid), "QmTestHash123");
+        assert_eq!(format!("{cid}"), "QmTestHash123");
     }
 
     #[test]
