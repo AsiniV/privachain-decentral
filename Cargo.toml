@@ -9,6 +9,7 @@ members = [
     "dpi-bypass",
     "node",
     "rust/crypto",
-    "rust/crypto/ffi"
+    "rust/crypto/ffi",
+    "rust/search"
 ]
 resolver = "2"
