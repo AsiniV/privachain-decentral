@@ -1,0 +1,44 @@
+namespace privachain_dr {
+    KeyPair generate_identity_key();
+    KeyPair generate_signed_prekey(KeyPair identity);
+    KeyPair generate_ephemeral_key();
+    KeyPair generate_one_time_prekey();
+};
+
+dictionary KeyPair {
+    sequence<u8> public_key;
+    sequence<u8> private_key;
+};
+
+dictionary RatchetAddress {
+    string did;
+    u32 device_id;
+};
+
+dictionary CipherMessage {
+    sequence<u8> ciphertext;
+    sequence<u8> header;
+};
+
+[Error]
+enum DrError {
+    "NoSession",
+    "Crypto",
+    "Serialize",
+};
+
+interface DrSession {
+    constructor();
+    [Throws=DrError]
+    void establish_outbound(RatchetAddress addr, sequence<u8> their_identity_pub, sequence<u8> their_signed_pre_pub, sequence<u8> their_ephemeral_pub);
+    [Throws=DrError]
+    void establish_inbound(RatchetAddress addr, sequence<u8> identity_pub, sequence<u8> signed_pre_pub, sequence<u8> ephemeral_pub);
+    [Throws=DrError]
+    CipherMessage encrypt(RatchetAddress addr, sequence<u8> plaintext);
+    [Throws=DrError]
+    sequence<u8> decrypt(RatchetAddress addr, CipherMessage msg);
+    [Throws=DrError]
+    sequence<u8> serialize_session(RatchetAddress addr);
+    [Throws=DrError]
+    void load_session(RatchetAddress addr, sequence<u8> data);
+};
