@@ -7,6 +7,8 @@ members = [
     "contracts/recovery_code",
     "contracts/mail",
     "dpi-bypass",
-    "node"
+    "node",
+    "rust/crypto",
+    "rust/crypto/ffi"
 ]
 resolver = "2"
