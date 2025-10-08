@@ -16,7 +16,7 @@ Currently implemented features are in various stages of completion as part of th
 - 🚧 **Messaging**: Basic structure present, full E2E encryption pending
 - 🚧 **Search**: Index structure present, ZK inclusion proofs pending
 - 🚧 **Video**: WebRTC signaling present, E2E encryption layer pending
-- ❌ **Onion Routing**: Not yet implemented
+- ✅ **Tor Integration**: Real Tor anonymization for P2P node (native only, see [TOR_INTEGRATION.md](./TOR_INTEGRATION.md))
 - ❌ **Mixnet Integration**: Configuration present, Nym integration pending
 - ❌ **Post-Quantum Crypto**: Placeholder implementations only
 
