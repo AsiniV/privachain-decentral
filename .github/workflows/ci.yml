@@ -127,6 +127,17 @@ jobs:
           cd node
           cargo build --bin privachain-node --release
 
+      - name: Verify privachain-node binary exists
+        run: |
+          if [ ! -f ./target/release/privachain-node ]; then
+            echo "❌ privachain-node binary not found!"
+            echo "Expected location: ./target/release/privachain-node"
+            ls -la ./target/release/ || echo "Target directory does not exist"
+            exit 1
+          fi
+          echo "✅ privachain-node binary found at ./target/release/privachain-node"
+          ls -lh ./target/release/privachain-node
+
       - name: Test node without Tor
         run: |
           timeout 10 ./target/release/privachain-node > /tmp/node_test.log 2>&1 &
