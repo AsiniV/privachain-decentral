@@ -55,7 +55,7 @@ jobs:
     name: Build and Test
     runs-on: ubuntu-latest
     needs: security-scan
-    
+
     strategy:
       matrix:
         node-version: [20.x]
@@ -181,20 +181,22 @@ jobs:
 
       - name: Generate security summary
         run: |
-          echo "# 🔒 PrivaChain Security Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Build Status**: ${{ needs.test.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Security Scan**: ${{ needs.security-scan.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 🚨 Current Security Status" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ **Mnemonic Security**: Hardcoded mnemonics removed from frontend" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ **Secret Scanning**: Automated detection enabled" >> $GITHUB_STEP_SUMMARY
-          echo "- ⚠️ **ZK Proofs**: Placeholder implementations (@placeholder @insecure)" >> $GITHUB_STEP_SUMMARY
-          echo "- ⚠️ **Post-Quantum Crypto**: Placeholder implementations (@placeholder @insecure)" >> $GITHUB_STEP_SUMMARY
-          echo "- 🚧 **Phase**: Currently in Phase 0 (Stabilization)" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "See [Security Placeholders](./docs/security/placeholders.md) for detailed status." >> $GITHUB_STEP_SUMMARY
+          {
+            echo "# 🔒 PrivaChain Security Summary"
+            echo ""
+            echo "**Build Status**: ${{ needs.test.result }}"
+            echo "**Security Scan**: ${{ needs.security-scan.result }}"
+            echo ""
+            echo "## 🚨 Current Security Status"
+            echo ""
+            echo "- ✅ **Mnemonic Security**: Hardcoded mnemonics removed from frontend"
+            echo "- ✅ **Secret Scanning**: Automated detection enabled"
+            echo "- ⚠️ **ZK Proofs**: Placeholder implementations (@placeholder @insecure)"
+            echo "- ⚠️ **Post-Quantum Crypto**: Placeholder implementations (@placeholder @insecure)"
+            echo "- 🚧 **Phase**: Currently in Phase 0 (Stabilization)"
+            echo ""
+            echo "See [Security Placeholders](./docs/security/placeholders.md) for detailed status."
+          } >> "$GITHUB_STEP_SUMMARY"
 
   # Optional: Add a deployment job for successful builds on main branch
   # deploy:
