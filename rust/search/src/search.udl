@@ -1,0 +1,20 @@
+namespace privachain_search {};
+
+[Error]
+enum SearchError {
+    "Io",
+    "Ipfs",
+    "Index",
+    "Other",
+};
+
+interface SearchEngine {
+    [Throws=SearchError]
+    constructor(string path);
+    
+    [Throws=SearchError]
+    u64 crawl(string root_cid);
+    
+    [Throws=SearchError]
+    sequence<string> search(string query);
+};
