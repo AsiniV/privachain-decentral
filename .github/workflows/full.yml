@@ -38,6 +38,8 @@ jobs:
       - run: cargo test -p privachain-mail -p did-registry -p privachain-domain-registry -p privachain-recovery-code --release
       - run: cargo clippy -p privachain-mail -p did-registry -p privachain-domain-registry -p privachain-recovery-code --all-targets -- -D warnings
       - run: cargo build -p privachain-mail -p did-registry -p privachain-domain-registry -p privachain-recovery-code --release
+      - name: Build FFI crate
+        run: cargo build -p privachain_dr_ffi --release
 
   e2e:
     needs: [ts]
