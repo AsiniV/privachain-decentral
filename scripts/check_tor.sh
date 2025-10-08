@@ -3,14 +3,20 @@ set -e
 
 echo "🔍 Testing Tor integration for PrivaChain node..."
 
+# Get script directory and project root
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+cd "$PROJECT_ROOT"
+
 # Build the node
 echo "📦 Building privachain-node..."
-cd /home/runner/work/privachain-decentral/privachain-decentral/node
+cd node
 cargo build --bin privachain-node --release
 
 echo "🚀 Starting node with --anonymize flag..."
-# Run node with flag in background
-timeout 120 cargo run --bin privachain-node --release -- --anonymize &
+# Run node with flag in background, capturing logs
+RUST_LOG=info timeout 120 cargo run --bin privachain-node --release -- --anonymize > /tmp/tor_node.log 2>&1 &
 PID=$!
 
 # Wait for bootstrap
@@ -21,7 +27,13 @@ sleep 60
 if ps -p $PID > /dev/null; then
     echo "✅ Node is running with Tor bootstrap"
     
-    # Check for Tor bootstrap message in logs (would need to capture stdout)
+    # Check for Tor bootstrap message in logs
+    if grep -q "Tor configuration directory ready" /tmp/tor_node.log; then
+        echo "✅ Tor configuration initialized"
+    else
+        echo "⚠️  Warning: Could not find Tor configuration message in logs"
+    fi
+    
     echo "✅ Tor integration test passed"
     
     # Clean up
@@ -31,5 +43,7 @@ if ps -p $PID > /dev/null; then
     exit 0
 else
     echo "❌ Node process died during Tor bootstrap"
+    echo "--- Last 50 lines of log ---"
+    tail -50 /tmp/tor_node.log
     exit 1
 fi

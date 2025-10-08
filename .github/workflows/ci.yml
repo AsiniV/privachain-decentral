@@ -122,6 +122,42 @@ jobs:
         run: npm run test:secrets
         if: success()
 
+      - name: Build node binary
+        run: |
+          cd node
+          cargo build --bin privachain-node --release
+
+      - name: Test node without Tor
+        run: |
+          timeout 10 ./target/release/privachain-node > /tmp/node_test.log 2>&1 &
+          PID=$!
+          sleep 5
+          if ps -p $PID > /dev/null; then
+            echo "✅ Node started successfully"
+            kill $PID || true
+          else
+            echo "❌ Node failed to start"
+            cat /tmp/node_test.log
+            exit 1
+          fi
+
+      - name: Test Tor bootstrap (optional)
+        run: |
+          echo "🕵️ Testing Tor integration..."
+          # Note: Full Tor bootstrap requires network access and takes time
+          # This test just verifies the node can start with --anonymize flag
+          timeout 15 ./target/release/privachain-node --anonymize > /tmp/tor_test.log 2>&1 &
+          PID=$!
+          sleep 10
+          if ps -p $PID > /dev/null; then
+            echo "✅ Node started with --anonymize flag"
+            kill $PID || true
+          else
+            echo "⚠️ Tor bootstrap may have failed (expected in CI without Tor network)"
+            cat /tmp/tor_test.log || true
+          fi
+        continue-on-error: true
+
   # Security summary job
   security-summary:
     name: Security Summary
