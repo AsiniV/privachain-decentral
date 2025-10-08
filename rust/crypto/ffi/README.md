@@ -11,6 +11,12 @@ cd rust/crypto/ffi
 cargo build --release
 ```
 
+Run the example:
+
+```bash
+cargo run --example basic_usage
+```
+
 The built libraries will be in `../../../target/release/`:
 - `libprivachain_dr_ffi.so` (Linux)
 - `libprivachain_dr_ffi.dylib` (macOS)
