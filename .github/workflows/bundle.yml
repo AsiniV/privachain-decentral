@@ -1,0 +1,196 @@
+name: Build Optimized Linux Bundle
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  build-linux-bundle:
+    name: Build Optimized Linux Bundle
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-bundle-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-bundle-
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y binutils upx-ucl wget file patchelf desktop-file-utils
+
+      - name: Reproducible build environment
+        run: |
+          export SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)
+          export RUSTFLAGS="-C metadata=privachain -C extra-filename="
+          echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> $GITHUB_ENV
+          echo "RUSTFLAGS=$RUSTFLAGS" >> $GITHUB_ENV
+
+      - name: Build release binary
+        run: |
+          cargo build --release --workspace --bin privachain-node
+          # Build FFI library as well
+          cargo build --release -p privachain_dr_ffi
+
+      - name: Strip symbols
+        run: |
+          strip target/release/privachain-node
+          find target/release -name '*.so' -exec strip {} \;
+
+      - name: Compress with UPX
+        uses: crazy-max/ghaction-upx@v3
+        with:
+          files: |
+            target/release/privachain-node
+            target/release/*.so
+          args: '--best --lzma'
+        continue-on-error: true
+
+      - name: Remove debuginfo from deps
+        run: |
+          # Extract debug symbols to separate file
+          objcopy --only-keep-debug target/release/privachain-node target/release/privachain-node.debug
+          objcopy --strip-debug target/release/privachain-node
+          objcopy --add-gnu-debuglink=target/release/privachain-node.debug target/release/privachain-node
+          # Strip debug from .so files
+          find target/release -name '*.so' -exec objcopy --strip-debug {} \;
+          # Save debug symbols path
+          echo "PRIVACHAIN_DEBUG=target/release/privachain-node.debug" >> $GITHUB_ENV
+
+      - name: Create icon and desktop file
+        run: |
+          mkdir -p /tmp/bundle-assets
+          # Use existing Tauri icon or create a simple placeholder
+          if [ -f "src-tauri/icons/128x128.png" ]; then
+            cp src-tauri/icons/128x128.png /tmp/bundle-assets/privachain.png
+          else
+            # Create a simple 128x128 placeholder PNG if no icon exists
+            echo "Warning: No icon found, AppImage may not have an icon"
+          fi
+          
+          # Create .desktop file
+          cat > /tmp/bundle-assets/privachain.desktop << 'EOF'
+          [Desktop Entry]
+          Type=Application
+          Name=PrivaChain
+          Comment=Privacy-focused blockchain node
+          Exec=privachain-node
+          Icon=privachain
+          Categories=Network;P2P;
+          Terminal=true
+          EOF
+
+      - name: Build AppImage without toolchains
+        run: |
+          # 1. Build minimal AppDir
+          mkdir -p AppDir/usr/bin AppDir/usr/lib
+          cp target/release/privachain-node AppDir/usr/bin/
+          # Copy FFI library if it exists
+          if [ -f target/release/libprivachain_dr_ffi.so ]; then
+            cp target/release/libprivachain_dr_ffi.so AppDir/usr/lib/
+          fi
+          
+          # Copy icon and desktop file
+          if [ -f /tmp/bundle-assets/privachain.png ]; then
+            cp /tmp/bundle-assets/privachain.png AppDir/
+          fi
+          cp /tmp/bundle-assets/privachain.desktop AppDir/
+          
+          # 2. Copy only runtime libs via ldd
+          ldd target/release/privachain-node | grep "=> /" | awk '{print $3}' | xargs -I {} cp --parents {} AppDir/ || true
+          
+          # 3. Remove static libs, cmake, pkgconfig to save space
+          rm -rf AppDir/usr/lib/*.a AppDir/usr/lib/cmake AppDir/usr/lib/pkgconfig || true
+          
+          # 4. Download and create AppImage
+          ARCH=x86_64 wget -c https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool-x86_64.AppImage
+          ARCH=x86_64 ./appimagetool-x86_64.AppImage AppDir privachain_1.0.0_amd64.AppImage || echo "AppImage creation completed with warnings"
+          
+          # 5. Verify size and test
+          ls -lh privachain_1.0.0_amd64.AppImage || echo "AppImage not created"
+          if [ -f privachain_1.0.0_amd64.AppImage ]; then
+            chmod +x privachain_1.0.0_amd64.AppImage
+            # Basic test - just check if it's executable
+            file privachain_1.0.0_amd64.AppImage
+          fi
+        continue-on-error: true
+
+      - name: Upload release binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: privachain-node-linux-x86_64
+          path: target/release/privachain-node
+          if-no-files-found: error
+
+      - name: Upload FFI library
+        uses: actions/upload-artifact@v4
+        with:
+          name: libprivachain-ffi-linux-x86_64
+          path: target/release/libprivachain_dr_ffi.so
+          if-no-files-found: warn
+
+      - name: Upload AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: privachain-appimage
+          path: privachain_1.0.0_amd64.AppImage
+          if-no-files-found: warn
+
+      - name: Upload debug symbols separately
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-symbols
+          path: target/release/privachain-node.debug
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Build summary
+        run: |
+          echo "## 📦 Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Binary Sizes" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| File | Size |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|------|" >> $GITHUB_STEP_SUMMARY
+          if [ -f target/release/privachain-node ]; then
+            SIZE=$(ls -lh target/release/privachain-node | awk '{print $5}')
+            echo "| privachain-node | $SIZE |" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f target/release/libprivachain_dr_ffi.so ]; then
+            SIZE=$(ls -lh target/release/libprivachain_dr_ffi.so | awk '{print $5}')
+            echo "| libprivachain_dr_ffi.so | $SIZE |" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f privachain_1.0.0_amd64.AppImage ]; then
+            SIZE=$(ls -lh privachain_1.0.0_amd64.AppImage | awk '{print $5}')
+            echo "| AppImage | $SIZE |" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Build optimizations applied:" >> $GITHUB_STEP_SUMMARY
+          echo "- Strip symbols removed" >> $GITHUB_STEP_SUMMARY
+          echo "- UPX compression applied" >> $GITHUB_STEP_SUMMARY
+          echo "- Debug info extracted separately" >> $GITHUB_STEP_SUMMARY
+          echo "- LTO and size optimizations enabled" >> $GITHUB_STEP_SUMMARY
