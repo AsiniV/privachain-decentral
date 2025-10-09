@@ -123,9 +123,7 @@ jobs:
         if: success()
 
       - name: Build node binary
-        run: |
-          cd node
-          cargo build --bin privachain-node --release
+        run: cargo build --bin privachain-node --release
 
       - name: Verify privachain-node binary exists
         run: |
