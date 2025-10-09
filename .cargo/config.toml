@@ -1,2 +1,10 @@
 [build]
 target-dir = "target"  # Force consistent target directory
+
+[profile.release]
+debug = false      # No symbols in binary
+lto = true         # Link-Time Optimization
+codegen-units = 1  # One codegen-unit → less duplication
+strip = true       # For rustc >=1.65 (automatic strip)
+opt-level = "z"    # Optimize for size
+panic = "abort"    # Save space on panic handling

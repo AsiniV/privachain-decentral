@@ -13,3 +13,9 @@ members = [
     "rust/search"
 ]
 resolver = "2"
+
+[workspace.dependencies]
+# Minimal tokio instead of full features for smaller binaries
+tokio = { version = "1", default-features = false, features = ["rt-multi-thread", "macros", "sync", "time"] }
+# arti-client with minimal features for Tor integration (use in workspace members as needed)
+arti-client = { version = "0.34", default-features = false, features = ["native-tls"] }
