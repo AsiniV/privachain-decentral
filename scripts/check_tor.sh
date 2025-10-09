@@ -11,7 +11,6 @@ cd "$PROJECT_ROOT"
 
 # Build the node
 echo "📦 Building privachain-node..."
-cd node
 cargo build --bin privachain-node --release
 
 echo "🚀 Starting node with --anonymize flag..."
