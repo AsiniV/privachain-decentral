@@ -10,7 +10,8 @@ members = [
     "node",
     "rust/crypto",
     "rust/crypto/ffi",
-    "rust/search"
+    "rust/search",
+    "rust/node"
 ]
 resolver = "2"
 
