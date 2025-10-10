@@ -9,6 +9,8 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 libp2p = { version = "0.53", features = ["tcp", "dns", "tokio", "noise", "yamux", "ping", "macros"] }
 libp2p-community-tor = "0.4"
+arti-client = { version = "0.24", features = ["native-tls", "tokio"] }
+tor-rtcompat = { version = "0.24", features = ["tokio", "rustls"] }
 directories = "5.0"
 tracing = "0.1"
 tracing-subscriber = "0.3"

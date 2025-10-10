@@ -2,6 +2,9 @@ use anyhow::Result;
 use clap::Parser;
 use futures::StreamExt;
 use libp2p::{identity, swarm::SwarmEvent, Swarm, Transport};
+use libp2p::core::transport::OrTransport;
+use libp2p_community_tor::TorTransport;
+use std::sync::Arc;
 use tracing::info;
 
 mod cli;
@@ -38,20 +41,26 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
     let args = cli::Args::parse();
 
-    if args.anonymize {
-        info!("Anonymize mode enabled - bootstrapping Tor...");
-        tor_runner::bootstrap_tor().await?; // Fail if can't bootstrap
-    }
-
     // Generate identity
     let local_key = identity::Keypair::generate_ed25519();
     let local_peer_id = local_key.public().to_peer_id();
 
-    // Transport: Use Tor if anonymize, else TCP
+    // Transport: Use Tor + TCP if anonymize, else TCP only
     let transport = if args.anonymize {
+        info!("Anonymize mode enabled - bootstrapping Tor...");
+        let tor = tor_runner::bootstrap_tor().await?; // Fail if can't bootstrap
+        
         info!("Building Tor transport...");
-        libp2p_community_tor::TorTransport::bootstrapped()
-            .await?
+        let tor_transport = TorTransport::from_client(
+            Arc::new(tor),
+            libp2p_community_tor::AddressConversion::IpAndDns,
+        );
+        
+        info!("Building TCP transport...");
+        let tcp_transport = libp2p::tcp::tokio::Transport::new(libp2p::tcp::Config::default());
+        
+        // Combine Tor and TCP transports - Tor will be tried first
+        OrTransport::new(tor_transport, tcp_transport)
             .upgrade(libp2p::core::upgrade::Version::V1)
             .authenticate(libp2p::noise::Config::new(&local_key)?)
             .multiplex(libp2p::yamux::Config::default())
