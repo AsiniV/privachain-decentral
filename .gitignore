@@ -33,6 +33,7 @@ dist-ssr
 !.env.example
 **/agent-eval-report*
 packages
+!packages/resolver/
 .file-manifest
 .devcontainer/
 
