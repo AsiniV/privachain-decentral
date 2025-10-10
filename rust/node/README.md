@@ -69,37 +69,9 @@ Use the main `node` module with `libp2p-community-tor` when you need:
 - Automatic Tor integration in a P2P network
 - Higher-level abstractions
 
-## Example: Integration with libp2p
-
-The returned `TorClient` can be integrated with libp2p using `libp2p-community-tor`'s `TorTransport`:
-
-```rust
-use privachain_arti_node::bootstrap_tor;
-use libp2p_community_tor::TorTransport;
-use libp2p::core::transport::OrTransport;
-use std::sync::Arc;
-
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    // Bootstrap Tor and wrap in Arc for shared ownership
-    let tor = bootstrap_tor().await?;
-    let tor_transport = TorTransport::new(Arc::new(tor));
-    
-    // Combine with other transports (TCP, QUIC, etc.)
-    let other_transports = libp2p::tcp::tokio::Transport::default();
-    let transport = OrTransport::new(tor_transport, other_transports)
-        .boxed();
-    
-    // Use transport when building your libp2p Swarm
-    // No SOCKS port required - onion addresses are dialed directly
-    
-    Ok(())
-}
-```
-
 ## Example: SOCKS Proxy
 
-The returned `TorClient` can also be used to create SOCKS proxy connections or direct streams:
+The returned `TorClient` can be used to create SOCKS proxy connections or direct streams:
 
 ```rust
 use privachain_arti_node::bootstrap_tor;

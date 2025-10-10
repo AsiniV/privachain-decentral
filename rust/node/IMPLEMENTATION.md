@@ -12,15 +12,14 @@ This module provides a `bootstrap_tor()` function that creates and bootstraps a 
 
 ```
 rust/node/
-├── Cargo.toml                   # Dependencies and package configuration
-├── README.md                    # User-facing documentation
-├── IMPLEMENTATION.md            # This file - technical details
+├── Cargo.toml              # Dependencies and package configuration
+├── README.md               # User-facing documentation
+├── IMPLEMENTATION.md       # This file - technical details
 ├── src/
-│   ├── lib.rs                  # Module exports
-│   └── arti_runner.rs          # Core implementation
+│   ├── lib.rs             # Module exports
+│   └── arti_runner.rs     # Core implementation
 └── examples/
-    ├── bootstrap_example.rs    # Basic usage example
-    └── libp2p_integration.rs   # libp2p + Tor integration example
+    └── bootstrap_example.rs # Usage example
 ```
 
 ### Key Components
@@ -90,9 +89,7 @@ pub async fn bootstrap_tor() -> anyhow::Result<TorClient<TokioRustlsRuntime>>
 - Runtime initialization errors
 - Tor bootstrap failures (network issues, timeouts, etc.)
 
-### Usage Patterns
-
-#### Direct Connection Usage
+### Usage Pattern
 
 ```rust
 use privachain_arti_node::bootstrap_tor;
@@ -107,40 +104,6 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 ```
-
-#### libp2p Integration
-
-The `TorClient` can be integrated with libp2p using `libp2p-community-tor`:
-
-```rust
-use privachain_arti_node::bootstrap_tor;
-use libp2p_community_tor::TorTransport;
-use libp2p::core::transport::OrTransport;
-use std::sync::Arc;
-
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    // Bootstrap Tor and wrap in Arc
-    let tor = bootstrap_tor().await?;
-    let tor_transport = TorTransport::new(Arc::new(tor));
-    
-    // Combine with other transports
-    let other_transports = libp2p::tcp::tokio::Transport::default();
-    let transport = OrTransport::new(tor_transport, other_transports)
-        .boxed();
-    
-    // Use transport when building libp2p Swarm
-    // No SOCKS port required - onion addresses are dialed directly
-    
-    Ok(())
-}
-```
-
-This integration pattern allows you to:
-- Have full control over the Tor client lifecycle
-- Use the same `TorClient` with libp2p-community-tor's `TorTransport`
-- Dial onion addresses directly without SOCKS proxy setup
-- Combine Tor transport with other libp2p transports
 
 ## Dependency Compatibility
 
