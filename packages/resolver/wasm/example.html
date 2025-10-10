@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>DPI-WASM Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .container {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        #output {
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+            min-height: 100px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .error {
+            color: #dc3545;
+        }
+        .success {
+            color: #28a745;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>DPI-WASM Example</h1>
+    
+    <div class="container">
+        <h2>Test DPI Bypass</h2>
+        
+        <label for="urlInput">URL to fetch:</label>
+        <input type="text" id="urlInput" value="https://httpbin.org/json" placeholder="https://example.com">
+        
+        <label for="transportInput">Transport method:</label>
+        <input type="text" id="transportInput" value="domain-fronting" placeholder="domain-fronting, obfs5, or default">
+        
+        <button id="fetchBtn" onclick="testDpiDial()">Fetch with DPI Bypass</button>
+        
+        <div id="output">Click the button to test DPI bypass...</div>
+    </div>
+
+    <script type="module">
+        // Import the WASM module
+        import init, { dpi_dial } from '../src/wasm-pkg/dpi_wasm.js';
+
+        // Initialize the WASM module
+        let wasmReady = false;
+        
+        async function initWasm() {
+            try {
+                await init();
+                wasmReady = true;
+                console.log('WASM module initialized successfully');
+                document.getElementById('output').innerHTML = 'WASM module loaded! Ready to test.';
+                document.getElementById('output').className = 'success';
+            } catch (error) {
+                console.error('Failed to initialize WASM:', error);
+                document.getElementById('output').innerHTML = `Error initializing WASM: ${error}`;
+                document.getElementById('output').className = 'error';
+                document.getElementById('fetchBtn').disabled = true;
+            }
+        }
+
+        // Test the dpi_dial function
+        window.testDpiDial = async function() {
+            if (!wasmReady) {
+                document.getElementById('output').innerHTML = 'WASM not ready yet...';
+                return;
+            }
+
+            const url = document.getElementById('urlInput').value;
+            const transport = document.getElementById('transportInput').value;
+            const output = document.getElementById('output');
+            const btn = document.getElementById('fetchBtn');
+            
+            output.innerHTML = `Fetching ${url} with transport: ${transport}...`;
+            output.className = '';
+            btn.disabled = true;
+            
+            try {
+                const startTime = performance.now();
+                const result = await dpi_dial(url, transport);
+                const endTime = performance.now();
+                const duration = (endTime - startTime).toFixed(2);
+                
+                // Convert Uint8Array to string for display
+                const decoder = new TextDecoder();
+                const text = decoder.decode(result);
+                
+                output.innerHTML = `✅ Success! (${duration}ms)\n\nReceived ${result.length} bytes:\n\n${text.substring(0, 500)}${text.length > 500 ? '\n\n... (truncated)' : ''}`;
+                output.className = 'success';
+            } catch (error) {
+                output.innerHTML = `❌ Error: ${error}`;
+                output.className = 'error';
+            } finally {
+                btn.disabled = false;
+            }
+        };
+
+        // Initialize on page load
+        initWasm();
+    </script>
+</body>
+</html>

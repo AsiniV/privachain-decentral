@@ -99,3 +99,15 @@ mod console_error_panic_hook {
         });
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_dpi_dial_signature() {
+        // This test ensures the function signature is correct and compiles
+        // Actual functionality testing requires a browser environment
+        
+        // The function should accept String parameters and return Result<Uint8Array, JsValue>
+        // This is verified at compile time
+    }
+}

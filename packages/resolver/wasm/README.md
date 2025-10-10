@@ -11,6 +11,13 @@ This package provides a WebAssembly wrapper for the DPI bypass functionality, en
 
 ## Building
 
+### Option 1: Using the build script
+```bash
+cd packages/resolver/wasm
+./build.sh
+```
+
+### Option 2: Using wasm-pack directly
 ```bash
 cd packages/resolver/wasm
 wasm-pack build --target web --out-dir ../src/wasm-pkg
@@ -20,7 +27,16 @@ This will generate:
 - `dpi_wasm.js` - JavaScript bindings
 - `dpi_wasm_bg.wasm` - WebAssembly binary
 - `dpi_wasm.d.ts` - TypeScript definitions
+- `dpi_wasm_bg.wasm.d.ts` - TypeScript definitions for WASM exports
 - `package.json` - Package metadata
+
+### Testing the Example
+
+```bash
+cd packages/resolver/wasm
+python3 -m http.server 8000
+# Open http://localhost:8000/example.html in your browser
+```
 
 ## Usage
 

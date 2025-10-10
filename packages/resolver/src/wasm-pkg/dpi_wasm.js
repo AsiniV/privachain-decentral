@@ -197,7 +197,7 @@ export function dpi_dial(url, transport) {
     return takeObject(ret);
 }
 
-function __wbg_adapter_6(arg0, arg1, arg2) {
+function __wbg_adapter_4(arg0, arg1, arg2) {
     wasm.__wbindgen_export_4(arg0, arg1, addHeapObject(arg2));
 }
 
@@ -412,7 +412,7 @@ function __wbg_get_imports() {
     };
     imports.wbg.__wbindgen_cast_5a2b0633f94b54a3 = function(arg0, arg1) {
         // Cast intrinsic for `Closure(Closure { dtor_idx: 14, function: Function { arguments: [Externref], shim_idx: 15, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-        const ret = makeMutClosure(arg0, arg1, 14, __wbg_adapter_6);
+        const ret = makeMutClosure(arg0, arg1, 14, __wbg_adapter_4);
         return addHeapObject(ret);
     };
     imports.wbg.__wbindgen_object_clone_ref = function(arg0) {
