@@ -66,13 +66,15 @@ Updated to initialize Helia at app startup.
 
 ## Dependencies
 
-The following dependencies were added to support this implementation:
+The following dependencies are used for this implementation (updated Oct 2025):
 
 - `@helia/verified-fetch@^3.0.0` - For HTTP-like IPFS requests
-- `blockstore-idb@^2.0.0` - IndexedDB blockstore
-- `datastore-idb@^3.0.0` - IndexedDB datastore
+- `blockstore-idb@^2.0.4` - IndexedDB blockstore (compatible with Helia 5.x)
+- `datastore-idb@^3.0.4` - IndexedDB datastore
 - `@chainsafe/libp2p-noise@^16.0.0` - Connection encryption
 - `@libp2p/mplex@^11.0.0` - Stream multiplexer
+- `@libp2p/websockets@^9.0.0` - WebSocket transport
+- `@libp2p/webrtc@^5.0.0` - WebRTC transport
 - `file-type@^19.0.0` - Better MIME type detection
 - `uint8arrays@^5.0.0` - Array utilities (already available)
 
