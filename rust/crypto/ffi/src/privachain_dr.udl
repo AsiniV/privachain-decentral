@@ -3,6 +3,7 @@ namespace privachain_dr {
     KeyPair generate_signed_prekey(KeyPair identity);
     KeyPair generate_ephemeral_key();
     KeyPair generate_one_time_prekey();
+    boolean dr_session_exists(string did);
 };
 
 dictionary KeyPair {
