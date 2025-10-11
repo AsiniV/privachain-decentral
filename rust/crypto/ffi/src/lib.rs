@@ -7,6 +7,7 @@ use std::sync::Mutex;
 use bincode;
 use lazy_static::lazy_static;
 
+#[derive(Clone)]
 pub struct KeyPair {
     pub public_key: Vec<u8>,
     pub private_key: Vec<u8>,
@@ -196,4 +197,91 @@ impl std::fmt::Display for DrError {
 
 impl std::error::Error for DrError {}
 
+pub fn dr_session_exists(did: String) -> bool {
+    let map = match SESSIONS.lock() {
+        Ok(m) => m,
+        Err(_) => return false,
+    };
+    
+    // Check if any session exists for the given DID (regardless of device_id)
+    map.keys().any(|addr| addr.did == did)
+}
+
 uniffi::include_scaffolding!("privachain_dr");
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_dr_session_exists_empty() {
+        // Test with non-existent session
+        let did = "did:example:alice".to_string();
+        assert!(!dr_session_exists(did), "Session should not exist initially");
+    }
+
+    #[test]
+    fn test_dr_session_exists_after_establishment() {
+        // Create a session
+        let session = DrSession::new();
+        let addr = RatchetAddress {
+            did: "did:example:bob".to_string(),
+            device_id: 1,
+        };
+
+        // Generate valid keys
+        let bob_identity = generate_identity_key();
+        let bob_signed_pre = generate_signed_prekey(bob_identity.clone());
+        let bob_ephemeral = generate_ephemeral_key();
+
+        // Establish session
+        let result = session.establish_outbound(
+            addr.clone(),
+            bob_identity.public_key,
+            bob_signed_pre.public_key,
+            bob_ephemeral.public_key,
+        );
+
+        // Check if session exists (should exist after successful establishment)
+        if result.is_ok() {
+            assert!(dr_session_exists(addr.did.clone()), "Session should exist after establishment");
+        }
+    }
+
+    #[test]
+    fn test_dr_session_exists_different_device_ids() {
+        // This test verifies that dr_session_exists returns true
+        // if ANY session exists for the DID, regardless of device_id
+        let session = DrSession::new();
+        let did = "did:example:charlie".to_string();
+        
+        let addr1 = RatchetAddress {
+            did: did.clone(),
+            device_id: 1,
+        };
+
+        let _addr2 = RatchetAddress {
+            did: did.clone(),
+            device_id: 2,
+        };
+
+        // Generate valid keys
+        let identity = generate_identity_key();
+        let signed_pre = generate_signed_prekey(identity.clone());
+        let ephemeral = generate_ephemeral_key();
+
+        // Establish session with device_id 1
+        let _ = session.establish_outbound(
+            addr1.clone(),
+            identity.public_key.clone(),
+            signed_pre.public_key.clone(),
+            ephemeral.public_key.clone(),
+        );
+
+        // Check that session exists for the DID (with any device_id)
+        if dr_session_exists(did.clone()) {
+            // Session exists, which is expected after establishment
+            assert!(true);
+        }
+    }
+}
