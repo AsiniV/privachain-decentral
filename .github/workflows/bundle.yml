@@ -14,7 +14,7 @@ jobs:
   build-linux-bundle:
     name: Build Optimized Linux Bundle
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -90,7 +90,7 @@ jobs:
             # Create a simple 128x128 placeholder PNG if no icon exists
             echo "Warning: No icon found, AppImage may not have an icon"
           fi
-          
+
           # Create .desktop file
           cat > /tmp/bundle-assets/privachain.desktop << 'EOF'
           [Desktop Entry]
@@ -112,32 +112,41 @@ jobs:
           if [ -f target/release/libprivachain_dr_ffi.so ]; then
             cp target/release/libprivachain_dr_ffi.so AppDir/usr/lib/
           fi
-          
+
           # Copy icon and desktop file
           if [ -f /tmp/bundle-assets/privachain.png ]; then
             cp /tmp/bundle-assets/privachain.png AppDir/
           fi
           cp /tmp/bundle-assets/privachain.desktop AppDir/
-          
+
           # 2. Copy only runtime libs via ldd
           ldd target/release/privachain-node | grep "=> /" | awk '{print $3}' | xargs -I {} cp --parents {} AppDir/ || true
-          
+
           # 3. Remove static libs, cmake, pkgconfig to save space
           rm -rf AppDir/usr/lib/*.a AppDir/usr/lib/cmake AppDir/usr/lib/pkgconfig || true
-          
+
           # 4. Download and create AppImage
           ARCH=x86_64 wget -c https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool-x86_64.AppImage
-          ARCH=x86_64 ./appimagetool-x86_64.AppImage AppDir privachain_1.0.0_amd64.AppImage || echo "AppImage creation completed with warnings"
-          
-          # 5. Verify size and test
-          ls -lh privachain_1.0.0_amd64.AppImage || echo "AppImage not created"
-          if [ -f privachain_1.0.0_amd64.AppImage ]; then
-            chmod +x privachain_1.0.0_amd64.AppImage
+          ARCH=x86_64 ./appimagetool-x86_64.AppImage AppDir privachain-linux-x86_64.AppImage || echo "AppImage creation completed with warnings"
+
+          # 5. Move to dist directory
+          mkdir -p dist
+          if [ -f privachain-linux-x86_64.AppImage ]; then
+            mv privachain-linux-x86_64.AppImage dist/
+            chmod +x dist/privachain-linux-x86_64.AppImage
             # Basic test - just check if it's executable
-            file privachain_1.0.0_amd64.AppImage
+            file dist/privachain-linux-x86_64.AppImage
+            ls -lh dist/privachain-linux-x86_64.AppImage
+          else
+            echo "AppImage not created"
           fi
         continue-on-error: true
+
+      - name: Bundle size guard
+        run: |
+          SIZE=$(stat -c%s dist/privachain-linux-x86_64.AppImage)
+          [[ $SIZE -lt 35000000 ]] || { echo "Bundle $SIZE exceeds 35 MB"; exit 1; }
 
       - name: Upload release binary
         uses: actions/upload-artifact@v4
@@ -157,7 +166,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: privachain-appimage
-          path: privachain_1.0.0_amd64.AppImage
+          path: dist/privachain-linux-x86_64.AppImage
           if-no-files-found: warn
 
       - name: Upload debug symbols separately
@@ -184,8 +193,8 @@ jobs:
             SIZE=$(ls -lh target/release/libprivachain_dr_ffi.so | awk '{print $5}')
             echo "| libprivachain_dr_ffi.so | $SIZE |" >> $GITHUB_STEP_SUMMARY
           fi
-          if [ -f privachain_1.0.0_amd64.AppImage ]; then
-            SIZE=$(ls -lh privachain_1.0.0_amd64.AppImage | awk '{print $5}')
+          if [ -f dist/privachain-linux-x86_64.AppImage ]; then
+            SIZE=$(ls -lh dist/privachain-linux-x86_64.AppImage | awk '{print $5}')
             echo "| AppImage | $SIZE |" >> $GITHUB_STEP_SUMMARY
           fi
           echo "" >> $GITHUB_STEP_SUMMARY
