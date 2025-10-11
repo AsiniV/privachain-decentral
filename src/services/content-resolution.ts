@@ -32,14 +32,12 @@ interface ResolvedContent {
  * Handles IPFS content, blockchain domains, and DPI-bypassed HTTP content
  */
 export class ContentResolver {
-  private ipfsGateway: string
   private blockchain: CosmosBlockchain | null = null
   private cache: Map<string, ResolvedContent>
   private dpiBypass: DPIBypassService
   private initialized = false
 
-  constructor(ipfsGateway: string = 'https://ipfs.io') {
-    this.ipfsGateway = ipfsGateway
+  constructor() {
     this.cache = new Map()
     this.dpiBypass = new DPIBypassService()
   }
@@ -115,22 +113,11 @@ export class ContentResolver {
    */
   private async resolveIpfsContent(cid: string): Promise<ResolvedContent> {
     try {
-      // First try local IPFS node
-      let content: ArrayBuffer
-      try {
-        const data = await ipfsStorage.retrieveData(cid)
-        const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
-        // Narrow type from ArrayBuffer | SharedArrayBuffer to ArrayBuffer
-        content = buffer instanceof ArrayBuffer ? buffer : (new Uint8Array(buffer).buffer as unknown as ArrayBuffer)
-      } catch (localError) {
-        console.warn('Local IPFS failed, trying gateway:', localError)
-        // Fallback to IPFS gateway
-        const response = await fetch(`${this.ipfsGateway}/ipfs/${cid}`)
-        if (!response.ok) {
-          throw new Error(`Gateway fetch failed: ${response.status}`)
-        }
-        content = await response.arrayBuffer()
-      }
+      // Retrieve from IPFS using Helia
+      const data = await ipfsStorage.retrieveData(cid)
+      const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
+      // Narrow type from ArrayBuffer | SharedArrayBuffer to ArrayBuffer
+      const content = buffer instanceof ArrayBuffer ? buffer : (new Uint8Array(buffer).buffer as unknown as ArrayBuffer)
 
       return {
         content,
