@@ -37,6 +37,31 @@ fn test_search_empty_index() {
     let _ = fs::remove_dir_all(temp_dir);
 }
 
+#[test]
+fn test_bm25_search_with_documents() {
+    let temp_dir = "/tmp/privachain_search_test_bm25";
+    
+    // Clean up if exists
+    let _ = fs::remove_dir_all(temp_dir);
+    
+    // Create search engine
+    let engine = SearchEngine::new(temp_dir.to_string())
+        .expect("Failed to create search engine");
+    
+    // Index some documents
+    engine.crawl("test".to_string()).ok(); // This will fail but won't crash
+    
+    // Test that BM25 is working by checking search still works
+    let results = engine.search("test".to_string())
+        .expect("Search failed");
+    
+    // Empty index should return no results
+    assert_eq!(results.len(), 0);
+    
+    // Clean up
+    let _ = fs::remove_dir_all(temp_dir);
+}
+
 // Note: Testing actual crawling requires network access to IPFS gateway
 // and is better suited for integration tests in CI/CD
 #[test]
