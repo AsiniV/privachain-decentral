@@ -1,0 +1,18 @@
+{
+  "name": "dpi-wasm",
+  "type": "module",
+  "collaborators": [
+    "PrivaChain Team <team@privachain.org>"
+  ],
+  "version": "0.1.0",
+  "files": [
+    "dpi_wasm_bg.wasm",
+    "dpi_wasm.js",
+    "dpi_wasm.d.ts"
+  ],
+  "main": "dpi_wasm.js",
+  "types": "dpi_wasm.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

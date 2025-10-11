@@ -47,6 +47,26 @@ impl fmt::Display for DPIBypassError {
 
 impl Error for DPIBypassError {}
 
+/// Public API function for dialing with DPI bypass
+pub async fn dpi_dial(url: &str, transport: &str) -> Result<Vec<u8>, DPIBypassError> {
+    let mut bypass = DPIBypass::new().await?;
+    
+    // Use the specified transport or fallback to domain fronting
+    match transport {
+        "obfs5" => {
+            // For obfs5, we need a secret key - using a placeholder for now
+            let secret = [0u8; 32];
+            bypass.establish_obfs5_tunnel(url, &secret).await?;
+            // After establishing tunnel, fetch through it
+            bypass.fetch_with_bypass(url).await
+        }
+        _ => {
+            // Default to domain fronting with full DPI bypass stack
+            bypass.fetch_with_bypass(url).await
+        }
+    }
+}
+
 impl DPIBypass {
     /// Initialize DPI bypass with configuration
     pub async fn new() -> Result<Self, DPIBypassError> {
