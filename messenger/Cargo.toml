@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-pqc_kyber = { version = "0.7", features = ["std"] }
-pqc_dilithium = { version = "0.2", features = ["aes"] }
+pqc_kyber = { version = "0.7", features = ["std"], optional = true }
+pqc_dilithium = { version = "0.2", features = ["aes"], optional = true }
 rand = "0.8"
 hkdf = "0.12"
 sha2 = "0.10"
@@ -34,6 +34,7 @@ tempfile = "3.13"
 [features]
 default = []
 nym = ["tokio/full"]
+post-quantum = ["dep:pqc_kyber", "dep:pqc_dilithium"]
 
 [lib]
 name = "privachain_messenger"
