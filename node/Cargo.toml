@@ -29,8 +29,9 @@ name = "privachain_node"
 crate-type = ["cdylib", "rlib"]
 
 [features]
-default = []
-mixnet = ["dep:nym-crypto"]
+default = ["mixnet-default"]
+mixnet-default = ["dep:nym-crypto"]
+fallback-tor = []
 
 [[bin]]
 name = "privachain-node"

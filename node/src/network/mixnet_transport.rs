@@ -1,4 +1,4 @@
-#![cfg(feature = "mixnet")]
+#![cfg(feature = "mixnet-default")]
 
 use anyhow::Result;
 use std::net::SocketAddr;
