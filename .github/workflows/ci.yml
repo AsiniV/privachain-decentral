@@ -144,13 +144,14 @@ jobs:
           echo "✅ privachain-node binary found at ./target/release/privachain-node"
           ls -lh ./target/release/privachain-node
 
-      - name: Test node without Tor
+      - name: Test node with mixnet (default)
         run: |
+          echo "🕸️ Testing default mixnet mode..."
           timeout 10 ./target/release/privachain-node > /tmp/node_test.log 2>&1 &
           PID=$!
           sleep 5
           if ps -p $PID > /dev/null; then
-            echo "✅ Node started successfully"
+            echo "✅ Node started successfully with mixnet (default)"
             kill $PID || true
           else
             echo "❌ Node failed to start"
@@ -158,16 +159,34 @@ jobs:
             exit 1
           fi
 
-      - name: Test Tor bootstrap (optional)
+      - name: Test --fallback flag without feature
         run: |
-          echo "🕵️ Testing Tor integration..."
+          echo "Testing --fallback flag rejection..."
+          OUTPUT=$(./target/release/privachain-node --fallback 2>&1 || true)
+          if echo "$OUTPUT" | grep -q "without --features fallback-tor"; then
+            echo "✅ Fallback flag properly rejected without feature"
+          else
+            echo "❌ Fallback flag validation failed"
+            echo "Got: $OUTPUT"
+            exit 1
+          fi
+
+      - name: Build node with fallback-tor feature
+        run: |
+          echo "🕵️ Building with fallback-tor feature..."
+          cargo build --release --features fallback-tor -p privachain_node
+          ls -lh ./target/release/privachain-node
+
+      - name: Test Tor fallback (optional)
+        run: |
+          echo "🕵️ Testing Tor fallback mode..."
           # Note: Full Tor bootstrap requires network access and takes time
-          # This test just verifies the node can start with --anonymize flag
-          timeout 15 ./target/release/privachain-node --anonymize > /tmp/tor_test.log 2>&1 &
+          # This test just verifies the node can start with --fallback flag
+          timeout 15 ./target/release/privachain-node --fallback > /tmp/tor_test.log 2>&1 &
           PID=$!
           sleep 10
           if ps -p $PID > /dev/null; then
-            echo "✅ Node started with --anonymize flag"
+            echo "✅ Node started with --fallback flag"
             kill $PID || true
           else
             echo "⚠️ Tor bootstrap may have failed (expected in CI without Tor network)"
@@ -175,23 +194,21 @@ jobs:
           fi
         continue-on-error: true
 
-      - name: Build node with mixnet feature
+      - name: Test v1.0-rc mode (no features)
         run: |
-          echo "🕸️ Building with mixnet feature..."
-          cargo build --release --features mixnet -p privachain_node
-          ls -lh ./target/release/privachain-node
-
-      - name: Test mixnet CLI
-        run: |
-          echo "Testing --mixnet flag..."
-          OUTPUT=$(./target/release/privachain-node --mixnet 2>&1 || true)
-          if echo "$OUTPUT" | grep -q "required when using --mixnet"; then
-            echo "✅ Mixnet CLI validation works"
+          echo "Testing v1.0-rc mode..."
+          cargo build --release --no-default-features -p privachain_node
+          timeout 10 ./target/release/privachain-node > /tmp/v1rc_test.log 2>&1 &
+          PID=$!
+          sleep 5
+          if ps -p $PID > /dev/null; then
+            echo "✅ Node started in v1.0-rc mode (no features)"
+            kill $PID || true
           else
-            echo "❌ Mixnet CLI validation failed"
-            echo "Got: $OUTPUT"
-            exit 1
+            echo "⚠️ v1.0-rc mode test completed"
+            cat /tmp/v1rc_test.log || true
           fi
+        continue-on-error: true
 
   # Security summary job
   security-summary:
