@@ -6,6 +6,7 @@ A libp2p-based P2P node with optional Tor anonymization for the PrivaChain netwo
 
 - **libp2p networking**: Uses libp2p for peer-to-peer communication
 - **Tor integration**: Optional anonymization of all network traffic through Tor
+- **NYM Mixnet support**: Optional mixnet transport (feature-gated, see [MIXNET.md](./MIXNET.md))
 - **Configurable listening address**: Specify TCP/IP addresses to listen on
 - **Lightweight**: Minimal implementation suitable for various deployment scenarios
 
@@ -60,10 +61,14 @@ Specify a custom multiaddr to listen on:
 Usage: privachain-node [OPTIONS]
 
 Options:
-      --listen <LISTEN>  Listen multiaddr (tcp/websocket) [default: /ip4/0.0.0.0/tcp/33333]
-      --anonymize        Force all traffic through Tor
-  -h, --help             Print help
+      --listen <LISTEN>                      Listen multiaddr (tcp/websocket) [default: /ip4/0.0.0.0/tcp/33333]
+      --anonymize                            Force all traffic through Tor
+      --mixnet                               Use NYM mixnet instead of Tor [env: PRIVACHAIN_MIXNET=]
+      --mixnet-gateway <MIXNET_GATEWAY>      NYM mixnet gateway address (required if --mixnet is enabled) [env: PRIVACHAIN_MIXNET_GATEWAY=]
+  -h, --help                                 Print help
 ```
+
+**Note**: For mixnet support, build with `--features mixnet`. See [MIXNET.md](./MIXNET.md) for details.
 
 ## Architecture
 

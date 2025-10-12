@@ -175,6 +175,24 @@ jobs:
           fi
         continue-on-error: true
 
+      - name: Build node with mixnet feature
+        run: |
+          echo "🕸️ Building with mixnet feature..."
+          cargo build --release --features mixnet -p privachain_node
+          ls -lh ./target/release/privachain-node
+
+      - name: Test mixnet CLI
+        run: |
+          echo "Testing --mixnet flag..."
+          OUTPUT=$(./target/release/privachain-node --mixnet 2>&1 || true)
+          if echo "$OUTPUT" | grep -q "required when using --mixnet"; then
+            echo "✅ Mixnet CLI validation works"
+          else
+            echo "❌ Mixnet CLI validation failed"
+            echo "Got: $OUTPUT"
+            exit 1
+          fi
+
   # Security summary job
   security-summary:
     name: Security Summary
