@@ -105,6 +105,14 @@ jobs:
           cd rust/crypto/ffi
           cargo build --release
 
+      - name: Install wasm-pack
+        run: cargo install wasm-pack || echo "wasm-pack already installed"
+
+      - name: Build DPI-WASM
+        run: |
+          cd packages/resolver/wasm
+          wasm-pack build --target web --out-dir ../src/wasm-pkg
+
       - name: Ensure no plaintext messages
         run: |
           ! grep -r 'plaintext:' packages/ --include='*.dart' 2>/dev/null | grep -v 'plaintext()' | grep -v '// plaintext()' || echo "No packages directory yet - skipping check"
