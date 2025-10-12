@@ -198,8 +198,8 @@ mod tests {
         let bundle = handshake.get_public_bundle();
         
         // Keys should have expected sizes
-        assert_eq!(bundle.kyber_pk.len(), 1184);
-        assert_eq!(bundle.dilithium_pk.len(), 1312);
+        assert_eq!(bundle.kyber_pk.len(), 1184); // Kyber768 public key
+        assert_eq!(bundle.dilithium_pk.len(), 32); // X25519 public key (repurposed field)
     }
 
     #[test]

@@ -129,8 +129,9 @@ mod tests {
 
     #[test]
     fn test_hybrid_signature_encoding() {
-        let mut rng = OsRng;
-        let sk = SigningKey::generate(&mut rng);
+        let mut rng = rand::rngs::OsRng;
+        let sk_bytes: [u8; 32] = rand::Rng::gen(&mut rng);
+        let sk = SigningKey::from_bytes(&sk_bytes);
         let msg = b"test transaction";
         
         let sig = hybrid_sign(msg, &sk).unwrap();
@@ -145,8 +146,9 @@ mod tests {
 
     #[test]
     fn test_sign_pq_tx() {
-        let mut rng = OsRng;
-        let sk = SigningKey::generate(&mut rng);
+        let mut rng = rand::rngs::OsRng;
+        let sk_bytes: [u8; 32] = rand::Rng::gen(&mut rng);
+        let sk = SigningKey::from_bytes(&sk_bytes);
         
         let body = b"transaction body";
         let auth_info = b"auth info";

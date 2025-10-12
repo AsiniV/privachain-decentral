@@ -54,8 +54,9 @@ mod tests {
 
     #[test]
     fn test_hybrid_sign_verify() {
-        let mut rng = OsRng;
-        let sk_ed = SigningKey::generate(&mut rng);
+        let mut rng = rand::rngs::OsRng;
+        let sk_bytes: [u8; 32] = rand::Rng::gen(&mut rng);
+        let sk_ed = SigningKey::from_bytes(&sk_bytes);
         let pk_ed = sk_ed.verifying_key();
         
         let msg = b"Hello, post-quantum world!";
