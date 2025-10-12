@@ -2,15 +2,20 @@ use anyhow::Result;
 use clap::Parser;
 use futures::StreamExt;
 use libp2p::{identity, swarm::SwarmEvent, Swarm, Transport};
-use libp2p::core::transport::OrTransport;
-use libp2p_community_tor::TorTransport;
-use std::sync::Arc;
 use tracing::info;
 
-#[cfg(feature = "mixnet")]
+#[cfg(feature = "mixnet-default")]
 use std::net::SocketAddr;
 
+#[cfg(feature = "fallback-tor")]
+use libp2p::core::transport::OrTransport;
+#[cfg(feature = "fallback-tor")]
+use libp2p_community_tor::TorTransport;
+#[cfg(feature = "fallback-tor")]
+use std::sync::Arc;
+
 mod cli;
+#[cfg(feature = "fallback-tor")]
 mod tor_runner;
 mod network;
 
@@ -49,19 +54,38 @@ async fn main() -> Result<()> {
     let local_key = identity::Keypair::generate_ed25519();
     let local_peer_id = local_key.public().to_peer_id();
 
-    // Validate conflicting flags
-    if args.mixnet && args.anonymize {
-        anyhow::bail!("Cannot use both --mixnet and --anonymize flags simultaneously. Choose one.");
-    }
-
-    // Transport: Use Mixnet, Tor, or TCP based on flags
-    let transport = if args.mixnet {
-        #[cfg(feature = "mixnet")]
+    // Transport: Default=Mixnet, Fallback=Tor, or TCP if no features
+    let transport = if args.fallback {
+        #[cfg(feature = "fallback-tor")]
+        {
+            info!("Fallback mode enabled - bootstrapping Tor...");
+            let tor = tor_runner::bootstrap_tor().await?; // Fail if can't bootstrap
+            
+            info!("Building Tor transport...");
+            let tor_transport = TorTransport::from_client(
+                Arc::new(tor),
+                libp2p_community_tor::AddressConversion::IpAndDns,
+            );
+            
+            info!("Building TCP transport...");
+            let tcp_transport = libp2p::tcp::tokio::Transport::new(libp2p::tcp::Config::default());
+            
+            // Combine Tor and TCP transports - Tor will be tried first
+            OrTransport::new(tor_transport, tcp_transport)
+                .upgrade(libp2p::core::upgrade::Version::V1)
+                .authenticate(libp2p::noise::Config::new(&local_key)?)
+                .multiplex(libp2p::yamux::Config::default())
+                .boxed()
+        }
+        #[cfg(not(feature = "fallback-tor"))]
+        {
+            anyhow::bail!("Binary compiled without --features fallback-tor");
+        }
+    } else {
+        #[cfg(feature = "mixnet-default")]
         {
             info!("Mixnet mode enabled - initializing NYM transport...");
-            let gateway_str = args.mixnet_gateway
-                .ok_or_else(|| anyhow::anyhow!("--mixnet-gateway is required when using --mixnet"))?;
-            let gateway: SocketAddr = gateway_str.parse()?;
+            let gateway: SocketAddr = args.mixnet_gateway.parse()?;
             
             // Initialize mixnet transport
             let _mixnet = network::MixnetTransport::new(gateway).await?;
@@ -76,36 +100,16 @@ async fn main() -> Result<()> {
                 .multiplex(libp2p::yamux::Config::default())
                 .boxed()
         }
-        #[cfg(not(feature = "mixnet"))]
+        #[cfg(not(feature = "mixnet-default"))]
         {
-            anyhow::bail!("Binary compiled without --features mixnet. Rebuild with: cargo build --features mixnet");
+            // v1.0-rc behaviour: plain TCP
+            info!("Building TCP transport (no mixnet, no Tor)...");
+            libp2p::tcp::tokio::Transport::new(libp2p::tcp::Config::default())
+                .upgrade(libp2p::core::upgrade::Version::V1)
+                .authenticate(libp2p::noise::Config::new(&local_key)?)
+                .multiplex(libp2p::yamux::Config::default())
+                .boxed()
         }
-    } else if args.anonymize {
-        info!("Anonymize mode enabled - bootstrapping Tor...");
-        let tor = tor_runner::bootstrap_tor().await?; // Fail if can't bootstrap
-        
-        info!("Building Tor transport...");
-        let tor_transport = TorTransport::from_client(
-            Arc::new(tor),
-            libp2p_community_tor::AddressConversion::IpAndDns,
-        );
-        
-        info!("Building TCP transport...");
-        let tcp_transport = libp2p::tcp::tokio::Transport::new(libp2p::tcp::Config::default());
-        
-        // Combine Tor and TCP transports - Tor will be tried first
-        OrTransport::new(tor_transport, tcp_transport)
-            .upgrade(libp2p::core::upgrade::Version::V1)
-            .authenticate(libp2p::noise::Config::new(&local_key)?)
-            .multiplex(libp2p::yamux::Config::default())
-            .boxed()
-    } else {
-        info!("Building TCP transport...");
-        libp2p::tcp::tokio::Transport::new(libp2p::tcp::Config::default())
-            .upgrade(libp2p::core::upgrade::Version::V1)
-            .authenticate(libp2p::noise::Config::new(&local_key)?)
-            .multiplex(libp2p::yamux::Config::default())
-            .boxed()
     };
 
     // Create Swarm
@@ -122,12 +126,13 @@ async fn main() -> Result<()> {
     swarm.listen_on(listen_addr)?;
 
     info!("Node started, Peer ID: {}", local_peer_id);
-    if args.mixnet {
-        info!("🕸️ Running in mixnet mode via NYM");
-    } else if args.anonymize {
-        info!("🕵️ Running in anonymized mode via Tor");
+    if args.fallback {
+        info!("🕵️ Running in fallback mode via Tor");
     } else {
-        info!("Running in normal mode (no Tor, no mixnet)");
+        #[cfg(feature = "mixnet-default")]
+        info!("🕸️ Running with mixnet (default) via NYM");
+        #[cfg(not(feature = "mixnet-default"))]
+        info!("Running in v1.0-rc mode (TCP only)");
     }
 
     // Run swarm loop
