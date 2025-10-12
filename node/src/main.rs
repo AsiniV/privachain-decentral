@@ -4,9 +4,11 @@ use futures::StreamExt;
 use libp2p::{identity, swarm::SwarmEvent, Swarm, Transport};
 use libp2p::core::transport::OrTransport;
 use libp2p_community_tor::TorTransport;
-use std::net::SocketAddr;
 use std::sync::Arc;
 use tracing::info;
+
+#[cfg(feature = "mixnet")]
+use std::net::SocketAddr;
 
 mod cli;
 mod tor_runner;
