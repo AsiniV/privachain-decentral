@@ -38,6 +38,8 @@ export async function getHelia(): Promise<Helia> {
     libp2p: libp2pOptions,
   })
 
+  console.info('[Helia] browser node ready', helia.libp2p.peerId.toString())
+
   return helia
 }
 
