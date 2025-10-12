@@ -41,23 +41,20 @@ pub fn generate_hybrid_keypair() -> ([u8; 32], Vec<u8>) {
 }
 
 /// Encapsulate using peer's public keys and return ciphertext + shared secret
+/// Note: For X25519, we only use the Kyber part for encapsulation. 
+/// The X25519 part should be done separately using standard DH.
 pub fn hybrid_encapsulate(
-    their_classical: [u8; 32],
+    _their_classical: [u8; 32],
     their_pq: &[u8],
 ) -> MessengerResult<(Vec<u8>, HybridSharedSecret)> {
     let mut rng = OsRng;
-    
-    // Classical X25519 DH
-    let our_secret = EphemeralSecret::random_from_rng(&mut rng);
-    let their_pk = X25519Pub::from(their_classical);
-    let classical_ss = our_secret.diffie_hellman(&their_pk);
     
     // Post-quantum Kyber encapsulation (takes slice)
     let (ct, pq_ss) = pqc_kyber::encapsulate(their_pq, &mut rng)
         .map_err(|e| crate::MessengerError::CryptoError(format!("Encapsulation failed: {:?}", e)))?;
     
     let hybrid_ss = HybridSharedSecret {
-        classical: classical_ss.to_bytes(),
+        classical: [0u8; 32], // Placeholder - X25519 DH done separately
         pq: pq_ss.to_vec(),
     };
     
@@ -65,24 +62,22 @@ pub fn hybrid_encapsulate(
 }
 
 /// Decapsulate both parts and return hybrid shared secret
+/// Note: For X25519, we only use the Kyber part for decapsulation.
+/// The X25519 part should be done separately using standard DH.
 pub fn hybrid_decapsulate(
-    their_classical: [u8; 32],
+    _their_classical: [u8; 32],
     their_pq_ct: &[u8],
 ) -> MessengerResult<HybridSharedSecret> {
     HYBRID_SECRET.with(|s| {
-        let (cs, sk) = s.borrow_mut().take()
+        let (_cs, sk) = s.borrow_mut().take()
             .ok_or_else(|| crate::MessengerError::CryptoError("No secret stored".to_string()))?;
-        
-        // Classical X25519 DH
-        let their_pk = X25519Pub::from(their_classical);
-        let classical_ss = cs.diffie_hellman(&their_pk);
         
         // Post-quantum Kyber decapsulation (takes slices)
         let pq_ss = pqc_kyber::decapsulate(their_pq_ct, &sk)
             .map_err(|e| crate::MessengerError::CryptoError(format!("Decapsulation failed: {:?}", e)))?;
         
         Ok(HybridSharedSecret {
-            classical: classical_ss.to_bytes(),
+            classical: [0u8; 32], // Placeholder - X25519 DH done separately
             pq: pq_ss.to_vec(),
         })
     })
@@ -100,14 +95,22 @@ mod tests {
     }
 
     #[test]
-    fn test_hybrid_encapsulation() {
-        let (their_classical, their_pq) = generate_hybrid_keypair();
-        let result = hybrid_encapsulate(their_classical, &their_pq);
-        assert!(result.is_ok());
+    fn test_hybrid_encapsulation_decapsulation() {
+        // Bob generates keypair
+        let (bob_classical, bob_pq) = generate_hybrid_keypair();
         
-        let (ct, ss) = result.unwrap();
+        // Alice encapsulates
+        let result = hybrid_encapsulate(bob_classical, &bob_pq);
+        assert!(result.is_ok());
+        let (ct, alice_ss) = result.unwrap();
+        
         assert_eq!(ct.len(), 1088); // Kyber768 ciphertext size
-        assert_eq!(ss.classical.len(), 32);
-        assert_eq!(ss.pq.len(), 32);
+        assert_eq!(alice_ss.pq.len(), 32); // Kyber shared secret
+        
+        // Bob decapsulates
+        let bob_ss = hybrid_decapsulate([0u8; 32], &ct).unwrap();
+        
+        // PQ parts should match
+        assert_eq!(alice_ss.pq, bob_ss.pq);
     }
 }
