@@ -210,6 +210,21 @@ jobs:
           fi
         continue-on-error: true
 
+      - name: Bundle size check (v4.0 with zk-proofs)
+        run: |
+          echo "📦 Checking binary size with zk-proofs..."
+          cargo build --release --features zk-proofs -p privachain_node
+          strip ./target/release/privachain-node || true
+          SIZE=$(stat -c%s ./target/release/privachain-node 2>/dev/null || stat -f%z ./target/release/privachain-node 2>/dev/null)
+          SIZE_MB=$((SIZE / 1024 / 1024))
+          echo "Binary size with zk-proofs: ${SIZE_MB}MB"
+          if [ $SIZE -lt 53000000 ]; then
+            echo "✅ Binary size within budget: ${SIZE_MB}MB < 53MB"
+          else
+            echo "❌ Binary size exceeds budget: ${SIZE_MB}MB >= 53MB"
+            exit 1
+          fi
+
   # Security summary job
   security-summary:
     name: Security Summary
@@ -232,8 +247,9 @@ jobs:
             echo ""
             echo "- ✅ **Mnemonic Security**: Hardcoded mnemonics removed from frontend"
             echo "- ✅ **Secret Scanning**: Automated detection enabled"
-            echo "- ⚠️ **ZK Proofs**: Placeholder implementations (@placeholder @insecure)"
-            echo "- ⚠️ **Post-Quantum Crypto**: Placeholder implementations (@placeholder @insecure)"
+            echo "- 🔒 **v4.0 ZK Proofs**: Feature-gated, off by default"
+            echo "- ✅ **v3.0 Post-Quantum Crypto**: Real implementations with pqc_kyber/dilithium"
+            echo "- ✅ **v2.0 Mixnet**: Default transport with NYM"
             echo "- 🚧 **Phase**: Currently in Phase 0 (Stabilization)"
             echo ""
             echo "See [Security Placeholders](./docs/security/placeholders.md) for detailed status."
