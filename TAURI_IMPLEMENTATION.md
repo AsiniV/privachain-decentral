@@ -243,4 +243,6 @@ Potential improvements:
 
 ## License
 
-Same as the main PrivaChain project.
+Copyright (c) 2025 Aleksandr Orlov. All rights reserved.
+
+This software is proprietary and confidential. No permission is granted to copy, modify, distribute, or use this software in any form without explicit written consent from the copyright holder.
