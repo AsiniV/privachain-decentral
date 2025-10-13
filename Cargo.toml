@@ -12,7 +12,8 @@ members = [
     "rust/crypto",
     "rust/crypto/ffi",
     "rust/search",
-    "rust/node"
+    "rust/node",
+    "src/render/gecko_engine"
 ]
 resolver = "2"
 
