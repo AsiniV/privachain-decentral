@@ -27,6 +27,9 @@ group = "0.13"
 # BIP-39 and encrypted storage for OTC
 bip39 = "2.0"
 rusqlite = { version = "0.32", features = ["bundled"] }
+# Note: Media pipeline (NetEQ) and GraphSync are mock implementations
+# For production, add: webrtc-neteq and rust-graphsync crates
+# Estimated size: +600 KB (NetEQ) + 400 KB (GraphSync) = +1 MB total
 
 [dev-dependencies]
 tempfile = "3.13"

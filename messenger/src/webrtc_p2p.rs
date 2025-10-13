@@ -1,8 +1,10 @@
 // webrtc_p2p.rs - WebRTC P2P with SRTP keys from Double Ratchet
 //
 // Provides WebRTC peer-to-peer communication using SRTP keys derived from the Double Ratchet
+// Integrated with media pipeline (NetEQ, FEC) for smooth voice/video calls
 
 use crate::{MessengerError, MessengerResult, double_ratchet::DoubleRatchet};
+use crate::media::{JitterBuffer, FecCodec, AdaptiveBitrate};
 use serde::{Deserialize, Serialize};
 
 /// Basic SRTP context for encrypted media streams
@@ -47,11 +49,15 @@ impl OnionIceCandidate {
     }
 }
 
-/// WebRTC P2P connection manager
+/// WebRTC P2P connection manager with media pipeline
 pub struct WebRtcP2p {
     #[allow(dead_code)]
     ice_servers: Vec<String>,
     stun_packet_count: u32,
+    // Media pipeline components for smooth voice/video
+    jitter_buffer: Option<JitterBuffer>,
+    fec_codec: Option<FecCodec>,
+    adaptive_bitrate: Option<AdaptiveBitrate>,
 }
 
 impl WebRtcP2p {
@@ -60,6 +66,9 @@ impl WebRtcP2p {
         Ok(Self {
             ice_servers: vec![],
             stun_packet_count: 0,
+            jitter_buffer: None,
+            fec_codec: None,
+            adaptive_bitrate: None,
         })
     }
 
@@ -68,7 +77,37 @@ impl WebRtcP2p {
         Ok(Self {
             ice_servers: vec![], // Empty - no STUN servers
             stun_packet_count: 0,
+            jitter_buffer: None,
+            fec_codec: None,
+            adaptive_bitrate: None,
         })
+    }
+
+    /// Enable media pipeline hardening (NetEQ + FEC)
+    pub fn enable_media_pipeline(&mut self, sample_rate: u32, target_delay_ms: u32, fec_redundancy: u8) {
+        self.jitter_buffer = Some(JitterBuffer::new(sample_rate, target_delay_ms));
+        self.fec_codec = Some(FecCodec::new(fec_redundancy));
+        self.adaptive_bitrate = Some(AdaptiveBitrate::new(24000, 510000)); // Opus bitrate range
+    }
+
+    /// Get jitter buffer (if enabled)
+    pub fn jitter_buffer(&self) -> Option<&JitterBuffer> {
+        self.jitter_buffer.as_ref()
+    }
+
+    /// Get mutable jitter buffer (if enabled)
+    pub fn jitter_buffer_mut(&mut self) -> Option<&mut JitterBuffer> {
+        self.jitter_buffer.as_mut()
+    }
+
+    /// Get FEC codec (if enabled)
+    pub fn fec_codec(&self) -> Option<&FecCodec> {
+        self.fec_codec.as_ref()
+    }
+
+    /// Get adaptive bitrate controller (if enabled)
+    pub fn adaptive_bitrate_mut(&mut self) -> Option<&mut AdaptiveBitrate> {
+        self.adaptive_bitrate.as_mut()
     }
 
     /// Generate onion ICE candidates for STUN-less operation
