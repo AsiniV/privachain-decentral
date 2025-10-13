@@ -15,3 +15,6 @@ pub mod mixnet;
 
 #[cfg(all(not(target_arch = "wasm32"), feature = "post-quantum"))]
 pub mod crypto;
+
+#[cfg(all(not(target_arch = "wasm32"), feature = "zk-proofs"))]
+pub mod zk;

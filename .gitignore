@@ -46,6 +46,16 @@ contracts/*/target/
 contracts/mail/target/
 contracts/artifacts/*.wasm
 
+# ZK circuit build artifacts (v4.0)
+build/zk/
+circuits/**/*.r1cs
+circuits/**/*.wasm
+circuits/**/*.sym
+circuits/**/*.zkey
+circuits/**/*.ptau
+circuits/**/verification_key.json
+circuits/**/verifier.sol
+
 # Tauri generated files
 src-tauri/gen/
 

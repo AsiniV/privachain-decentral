@@ -21,3 +21,15 @@ resolver = "2"
 tokio = { version = "1", default-features = false, features = ["rt-multi-thread", "macros", "sync", "time"] }
 # arti-client with minimal features for Tor integration (use in workspace members as needed)
 arti-client = { version = "0.34", default-features = false, features = ["native-tls"] }
+
+# ---------- NIST-FIPS-203/204 + ZK (v4.0) ----------
+pqcrypto-kyber = { version = "0.8", optional = true }
+pqcrypto-dilithium = { version = "0.6", optional = true }
+# ---------- ZK libraries (Oct 2025) ----------
+ark-snark = { version = "0.4", optional = true }
+ark-groth16 = { version = "0.4", optional = true }
+ark-stark = { version = "0.4", optional = true }
+ark-bls12-381 = { version = "0.4", optional = true }
+ark-ff = { version = "0.4", optional = true }
+ark-serialize = { version = "0.4", optional = true }
+circom-compat = { version = "0.2", optional = true }
