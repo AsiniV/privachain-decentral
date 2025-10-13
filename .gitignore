@@ -76,3 +76,4 @@ orbitdb/
 # Test directories that should be excluded from builds but not from git
 # (tests/ folder is kept in git for actual test files)
 actionlint
+cosmos/contract/*.wasm
