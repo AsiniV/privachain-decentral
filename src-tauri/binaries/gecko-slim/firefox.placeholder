@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Placeholder Firefox binary for testing
+# In production, this would be the actual firefox executable
+echo "Gecko-slim Firefox placeholder"
+echo "Args: $@"
+echo "Note: Run ./scripts/build-gecko-slim.sh to build the real binary"
+sleep infinity

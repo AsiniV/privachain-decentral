@@ -48,6 +48,13 @@ contracts/artifacts/*.wasm
 
 # ZK circuit build artifacts (v4.0)
 build/zk/
+
+# Gecko engine binaries (downloaded/built separately)
+# Exclude actual firefox binary but keep placeholder and docs
+src-tauri/binaries/gecko-slim/firefox
+src-tauri/binaries/gecko-slim/browser/*
+!src-tauri/binaries/gecko-slim/*.placeholder
+!src-tauri/binaries/gecko-slim/*.md
 circuits/**/*.r1cs
 circuits/**/*.wasm
 circuits/**/*.sym
