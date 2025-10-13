@@ -138,6 +138,8 @@ await tab.loadUrl('https://www.youtube.com/');
 
 ## Site Compatibility
 
+### v4.0 Base Compatibility
+
 Tested and validated for:
 
 | Site | Feature | Target | Status |
@@ -145,6 +147,41 @@ Tested and validated for:
 | YouTube | 1080p/60fps video | < 5% dropped frames | ✅ Ready |
 | Figma | Multi-user editing | WebSocket alive 30+ min | ✅ Ready |
 | Google Maps | WebGL rendering | 60fps on 4K display | ✅ Ready |
+
+### v1.0-browser: "Any-Site, Any-Complexity" Compatibility
+
+Extended compatibility for demanding sites:
+
+| Site | Feature | Gap Closed | Status |
+|------|---------|------------|--------|
+| Netflix 4K | DRM/EME (Widevine) | No "Error code N-8156" | ✅ Ready |
+| Google Meet | WebRTC + IP leak protection | No real IP exposure | ✅ Ready |
+| Twitter/Instagram | H.264/AAC codecs | No green screen | ✅ Ready |
+| Figma | Clipboard/File System API | Copy as PNG works | ✅ Ready |
+| Spotify | DRM audio streaming | Full playback support | ✅ Ready |
+| Prime Video | DRM video streaming | HD/4K playback | ✅ Ready |
+| Discord | WebRTC voice/video | NYM-proxied only | ✅ Ready |
+
+**What's new in v1.0-browser:**
+
+1. **DRM/EME Support**: Widevine CDM enabled for protected content
+   - Netflix, Spotify, Prime Video work without errors
+   - License requests can be proxied to avoid Google CRL
+   
+2. **WebRTC IP Leak Protection**: All WebRTC forced through NYM SOCKS
+   - Test at: https://browserleaks.com/webrtc
+   - Only NYM exit IP visible, no local IP leak
+   - Prevents tracking on video conferencing sites
+   
+3. **Proprietary Codecs**: H.264 (OpenH264) + AAC support
+   - Twitter/Instagram stories display correctly (no green screen)
+   - Cisco pays H.264 patent royalty via OpenH264
+   - AAC patent expired in 2023 (now free)
+   
+4. **Clipboard/File System Access**: Tauri command handlers
+   - `clipboard_read_text()`, `clipboard_write_text()`
+   - `file_system_pick()` for native file picker
+   - Integrates with Gecko's Web APIs via CDP
 
 ## Privacy Features
 
@@ -171,6 +208,12 @@ Tested and validated for:
 6. **Local Only**
    - Remote debugging bound to 127.0.0.1
    - No external access to DevTools
+
+7. **WebRTC IP Leak Protection** (v1.0-browser)
+   - All WebRTC forced through NYM SOCKS proxy (port 9050)
+   - Prevents real IP exposure on Google Meet, Discord, Zoom
+   - Test protection: https://browserleaks.com/webrtc
+   - Only NYM exit node IP visible
 
 ## Zero Regressions
 
