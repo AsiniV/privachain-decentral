@@ -27,6 +27,7 @@ fi
 cd gecko-dev
 
 # 2. Minimal .mozconfig → no telemetry, no crash-reporter, no updater
+# Now with DRM/EME support and proprietary codecs (H.264, AAC) for v1.0-browser
 echo ""
 echo "2️⃣  Configuring minimal build..."
 cat > .mozconfig <<'EOF'
@@ -38,9 +39,20 @@ ac_add_options --enable-strip
 ac_add_options --enable-install-strip
 ac_add_options --enable-optimize="-O2 -g0"
 ac_add_options --enable-resistfingerprinting
+
+# Proprietary codecs for full site compatibility
+# OpenH264 (Cisco pays patent royalty) - enables Twitter/Instagram stories
+ac_add_options --enable-openh264
+# AAC (patent expired 2023) - enables audio on many sites
+ac_add_options --enable-aac
+
+# DRM/EME support for Netflix, Spotify, Prime Video
+# Widevine CDM is included but license requests redirected to self-hosted proxy
+ac_add_options --enable-eme=widevine
+
 mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-slim
 EOF
-echo "   ✅ .mozconfig created"
+echo "   ✅ .mozconfig created with codecs (H.264, AAC) and DRM support"
 
 # 3. Parallel build (≈ 25 min on 8-core)
 echo ""

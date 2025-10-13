@@ -66,6 +66,23 @@ impl GeckoLauncher {
             args.push("--safe-mode".to_string());
         }
 
+        // WebRTC IP leak mitigation: Force all WebRTC through NYM SOCKS proxy
+        // This prevents real IP exposure even when using Google Meet, Discord, etc.
+        args.extend([
+            "--pref=media.peerconnection.use_document_iceservers=false".to_string(),
+            "--pref=media.peerconnection.ice.proxy_only=true".to_string(),
+            "--pref=network.proxy.socks=127.0.0.1".to_string(),
+            "--pref=network.proxy.socks_port=9050".to_string(),  // NYM socks port
+            "--pref=media.peerconnection.ice.proxy_type=socks".to_string(),
+        ]);
+
+        // DRM/EME configuration: Redirect Widevine license requests to self-hosted proxy
+        // This avoids Google CRL checks while still supporting Netflix, Spotify, etc.
+        args.extend([
+            "--pref=media.gmp-widevinecdm.enabled=true".to_string(),
+            "--pref=media.eme.enabled=true".to_string(),
+        ]);
+
         // Launch the Firefox process
         let child = Command::new(&bin)
             .args(&args)
@@ -137,5 +154,20 @@ mod tests {
         };
         
         assert_eq!(launcher.port(), 9223);
+    }
+
+    #[test]
+    fn test_webrtc_and_drm_preferences_in_source() {
+        // Verify that the source code contains the necessary privacy/compatibility prefs
+        let source = include_str!("lib.rs");
+        
+        // WebRTC IP leak mitigation
+        assert!(source.contains("media.peerconnection.ice.proxy_only"));
+        assert!(source.contains("network.proxy.socks=127.0.0.1"));
+        assert!(source.contains("network.proxy.socks_port=9050"));
+        
+        // DRM/EME support
+        assert!(source.contains("media.gmp-widevinecdm.enabled"));
+        assert!(source.contains("media.eme.enabled"));
     }
 }

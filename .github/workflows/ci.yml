@@ -225,6 +225,12 @@ jobs:
             exit 1
           fi
 
+      - name: v1.0-browser 'any-site' smoke test
+        run: |
+          echo "🌐 Testing v1.0-browser feature completeness..."
+          ./scripts/smoke-any-site.sh
+          echo "✅ All 'any-site' capability checks passed"
+
   # Security summary job
   security-summary:
     name: Security Summary
