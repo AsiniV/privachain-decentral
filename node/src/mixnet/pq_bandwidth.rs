@@ -14,13 +14,13 @@ use anyhow::Result;
 /// 
 /// # Example
 /// ```no_run
-/// use node::mixnet::pq_bandwidth::buy_pq_bandwidth;
+/// use privachain_node::mixnet::pq_bandwidth::buy_pq_bandwidth;
 /// 
 /// # async fn example() -> anyhow::Result<()> {
 /// let mnemonic = "word1 word2 ... word24";
 /// let mb = 100;
-/// // let dilithium_sk = ...; // Your Dilithium secret key
-/// // buy_pq_bandwidth(mnemonic, mb, &dilithium_sk).await?;
+/// let dilithium_sk = vec![0u8; 32]; // Your Dilithium secret key
+/// buy_pq_bandwidth(mnemonic, mb, &dilithium_sk).await?;
 /// # Ok(())
 /// # }
 /// ```
