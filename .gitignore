@@ -84,3 +84,7 @@ orbitdb/
 # (tests/ folder is kept in git for actual test files)
 actionlint
 cosmos/contract/*.wasm
+
+# Local databases
+*.db
+vault.db

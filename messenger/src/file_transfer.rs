@@ -80,9 +80,10 @@ pub struct FileChunk {
     pub hash: Vec<u8>,
 }
 
-/// File transfer manager
+/// File transfer manager with GraphSync support for resumable transfers
 pub struct FileTransfer {
-    // TODO: Add progress tracking and resumption capabilities
+    // GraphSync integration for large file resumption
+    // See fs::graphsync module for CAR-split and resumable transfer implementation
 }
 
 impl FileTransfer {

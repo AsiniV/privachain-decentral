@@ -25,6 +25,12 @@ pub mod local_vault;
 pub mod otc_recovery;
 pub mod otc_refresh;
 
+// Media pipeline modules for voice/video calls
+pub mod media;
+
+// File system modules for resumable transfers
+pub mod fs;
+
 // Post-quantum cryptography modules (feature-gated)
 #[cfg(feature = "post-quantum")]
 pub mod crypto;
@@ -83,3 +89,9 @@ pub use otc_generator::{generate_otc_pair, validate_otc_code};
 pub use local_vault::{save_otc_pair, load_otc_pair, burn_otc_pair, has_otc_pair};
 pub use otc_recovery::{generate_recovery_proof, code_to_private_key, derive_pubkey};
 pub use otc_refresh::{refresh_codes, refresh_after_recovery, secure_overwrite};
+
+// Media pipeline exports
+pub use media::{JitterBuffer, PacketArrival, FecCodec, AdaptiveBitrate};
+
+// File system exports
+pub use fs::{GraphSync, TransferState, CarChunk, send_with_graphsync, resume_transfer};
