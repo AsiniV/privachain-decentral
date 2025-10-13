@@ -115,6 +115,15 @@ The engine is tested against:
 - ✅ Figma multi-user (WebSocket stable for 30+ min)
 - ✅ Google Maps WebGL (60fps on 4K displays)
 
+### v1.0-browser Extended Compatibility
+
+With DRM, codecs, and WebRTC fixes:
+
+- ✅ **Netflix 4K**: DRM/EME support (no "Error code N-8156")
+- ✅ **Google Meet**: WebRTC with IP leak protection
+- ✅ **Twitter/Instagram**: H.264/AAC codec support (no green screen)
+- ✅ **Figma**: Clipboard and File System Access API
+
 ## Privacy Features
 
 1. **Fingerprint Resistance**: Uses Firefox's built-in `--resistfingerprinting`
@@ -122,6 +131,30 @@ The engine is tested against:
 3. **Safe Mode**: Disables extensions and plugins
 4. **No Auto-updates**: Update mechanism removed from build
 5. **Local Only**: Remote debugging bound to 127.0.0.1
+6. **WebRTC IP Leak Protection** (v1.0-browser): All WebRTC traffic forced through NYM SOCKS proxy (port 9050)
+   - Prevents real IP exposure on Google Meet, Discord, Zoom, etc.
+   - Configured via `media.peerconnection.ice.proxy_only=true`
+
+## v1.0-browser Features
+
+For full "any-site, any-complexity" compatibility:
+
+1. **DRM/EME Support**: Widevine CDM enabled for Netflix, Spotify, Prime Video
+   - License requests can be proxied to avoid Google CRL
+   - Configured via `media.eme.enabled=true`
+
+2. **Proprietary Codecs**: H.264 (OpenH264) and AAC support
+   - Enables Twitter/Instagram stories without green screen
+   - Configured in `.mozconfig` during build
+
+3. **WebRTC IP Leak Mitigation**: Forced SOCKS proxy for all WebRTC
+   - Test at: https://browserleaks.com/webrtc
+   - Should only show NYM exit IP, no local IP
+
+4. **Clipboard/File System Access**: Tauri command handlers
+   - `clipboard_read_text()`, `clipboard_write_text()`
+   - `file_system_pick()` for native file picker
+   - Tunnels through CDP when Gecko session is active
 
 ## Zero Regressions
 
