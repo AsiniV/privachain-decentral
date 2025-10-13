@@ -50,6 +50,33 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
     let args = cli::Args::parse();
 
+    // Handle PQ bandwidth purchase if requested
+    #[cfg(feature = "post-quantum")]
+    if let Some(mb) = args.buy_pq_bandwidth {
+        info!("PQ bandwidth purchase requested: {} MB", mb);
+        
+        // Get mnemonic from environment
+        let mnemonic = std::env::var("NYM_PQ_MNEMONIC")
+            .unwrap_or_else(|_| {
+                eprintln!("Error: NYM_PQ_MNEMONIC environment variable not set");
+                std::process::exit(1);
+            });
+        
+        // Mock Dilithium key for now - in production this would be derived from mnemonic
+        let dilithium_sk = vec![0u8; 32];
+        
+        match privachain_node::mixnet::buy_pq_bandwidth(&mnemonic, mb, &dilithium_sk).await {
+            Ok(()) => {
+                info!("✅ PQ bandwidth purchase initiated successfully");
+                return Ok(());
+            }
+            Err(e) => {
+                eprintln!("❌ Failed to purchase PQ bandwidth: {}", e);
+                std::process::exit(1);
+            }
+        }
+    }
+
     // Generate identity
     let local_key = identity::Keypair::generate_ed25519();
     let local_peer_id = local_key.public().to_peer_id();

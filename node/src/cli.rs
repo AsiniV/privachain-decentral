@@ -13,4 +13,9 @@ pub struct Args {
     /// NYM mixnet gateway address (only used if fallback=false)
     #[arg(long, default_value = "45.79.1.1:1789", env = "PRIVACHAIN_MIXNET_GATEWAY")]
     pub mixnet_gateway: String,
+
+    /// Buy PQ-bandwidth (MB) - requires NYM_PQ_MNEMONIC env var
+    #[cfg(feature = "post-quantum")]
+    #[arg(long, env = "BUY_PQ_BANDWIDTH")]
+    pub buy_pq_bandwidth: Option<u64>,
 }
