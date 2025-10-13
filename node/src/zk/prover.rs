@@ -2,10 +2,8 @@
 
 use ark_groth16::{Groth16, ProvingKey, Proof};
 use ark_bls12_381::Bls12_381;
-use ark_ff::PrimeField;
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
-use anyhow::{Result, Context};
-use rand::rngs::OsRng;
+use anyhow::Result;
 
 pub struct ZkProver {
     proving_key: Option<ProvingKey<Bls12_381>>,

@@ -32,12 +32,12 @@ cargo build --release --features zk-proofs -p privachain_node
 
 ## System Comparison
 
-| System | Trusted Setup | Gas Cost | Use-Case |
-|--------|--------------|----------|----------|
-| zk-SNARK (Groth16) | Yes (1 time) | ~200k gas | Private gas payer |
-| zk-STARK (FRI) | No | ~2M gas | Private ballot |
+| System | Trusted Setup | Gas Cost | Use-Case | Status |
+|--------|--------------|----------|----------|--------|
+| zk-SNARK (Groth16) | Yes (1 time) | ~200k gas | Private gas payer | ✅ v4.0 |
+| zk-STARK (FRI) | No | ~2M gas | Private ballot | 🚧 Future |
 
-We ship both and select at runtime based on use case.
+We currently ship Groth16 SNARK. STARK support is planned for future releases.
 
 ## Circuit: Gas Payer Privacy
 
@@ -240,12 +240,13 @@ The `gas_payer.circom` circuit should be audited for:
 ## Roadmap
 
 ### v4.0 (Current)
-- ✅ Groth16 prover/verifier
+- ✅ Groth16 infrastructure
 - ✅ Gas payer circuit
 - ✅ FFI for Flutter
-- ⚠️ STARK support (placeholder)
+- ✅ Feature-gated (off by default)
 
 ### v4.1 (Planned)
+- [ ] Real Groth16 prover with circom-compat
 - [ ] STARK prover implementation
 - [ ] Batch proof verification
 - [ ] Recursive proofs

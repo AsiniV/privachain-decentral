@@ -26,13 +26,11 @@ sha2 = "0.10"
 nym-crypto = { version = "0.4", optional = true }
 
 # ZK-proof dependencies (v4.0) - optional
-ark-snark = { version = "0.4", optional = true }
 ark-groth16 = { version = "0.4", optional = true }
-ark-stark = { version = "0.4", optional = true }
 ark-bls12-381 = { version = "0.4", optional = true }
 ark-ff = { version = "0.4", optional = true }
 ark-serialize = { version = "0.4", optional = true }
-circom-compat = { version = "0.2", optional = true }
+ark-std = { version = "0.4", optional = true }
 rand = { version = "0.8", optional = true }
 
 [lib]
@@ -44,7 +42,7 @@ default = ["mixnet-default", "post-quantum"]
 mixnet-default = ["dep:nym-crypto"]
 fallback-tor = []
 post-quantum = []
-zk-proofs = ["dep:ark-snark", "dep:ark-groth16", "dep:ark-stark", "dep:ark-bls12-381", "dep:ark-ff", "dep:ark-serialize", "dep:circom-compat", "dep:rand"]
+zk-proofs = ["dep:ark-groth16", "dep:ark-bls12-381", "dep:ark-ff", "dep:ark-serialize", "dep:ark-std", "dep:rand"]
 
 [[bin]]
 name = "privachain-node"
