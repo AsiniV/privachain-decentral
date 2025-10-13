@@ -18,6 +18,8 @@ clap = { version = "4.5", features = ["derive", "env"] }
 anyhow = "1.0"
 futures = "0.3"
 sha2 = "0.10"
+hex = "0.4"
+base64 = "0.22"
 
 # Mixnet stack (using latest available versions) - optional
 # Note: Specification called for 0.27 but actual latest on crates.io are older
