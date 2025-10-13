@@ -4,6 +4,7 @@ use crate::zk::prover::ZkProver;
 use anyhow::{Result, Context};
 use serde_json::json;
 use sha2::{Sha256, Digest};
+use base64::{Engine as _, engine::general_purpose};
 
 /// Poseidon hash simulation (in production, use ark-crypto-primitives)
 fn poseidon_hash(data: &[u8]) -> [u8; 32] {
@@ -111,7 +112,7 @@ async fn submit_vote_to_contract(
     let msg = json!({
         "vote_anon": {
             "proposal_id": proposal_id,
-            "proof": base64::encode(proof),
+            "proof": general_purpose::STANDARD.encode(proof),
             "voter_hash": hex::encode(voter_hash),
         }
     });

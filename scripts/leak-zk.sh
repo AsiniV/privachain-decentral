@@ -13,13 +13,18 @@ TEST_SECRET="123456789"
 PCAP_FILE="/tmp/zk_leak_test.pcap"
 TIMEOUT_DURATION=30
 
-echo "1️⃣  Building release binary with ZK proofs..."
-cargo build --release -p privachain_node --features zk-proofs --quiet
-if [ $? -eq 0 ]; then
-    echo "   ✅ Build successful"
+echo "1️⃣  Checking for release binary with ZK proofs..."
+if [ ! -f ./target/release/privachain-node ]; then
+    echo "   Building release binary..."
+    cargo build --release -p privachain_node --features zk-proofs --quiet
+    if [ $? -eq 0 ]; then
+        echo "   ✅ Build successful"
+    else
+        echo "   ❌ Build failed"
+        exit 1
+    fi
 else
-    echo "   ❌ Build failed"
-    exit 1
+    echo "   ✅ Using existing binary"
 fi
 echo ""
 
@@ -95,10 +100,11 @@ if [ -f "$PCAP_FILE" ]; then
     # Read pcap and search for test secret
     echo "   Searching for secret in plaintext..."
     if [ "$EUID" -ne 0 ]; then
-        LEAK_FOUND=$(sudo tcpdump -r $PCAP_FILE -A 2>/dev/null | grep -c "$TEST_SECRET" || echo "0")
+        LEAK_FOUND=$(sudo tcpdump -r $PCAP_FILE -A 2>/dev/null | grep "$TEST_SECRET" | wc -l || echo "0")
     else
-        LEAK_FOUND=$(tcpdump -r $PCAP_FILE -A 2>/dev/null | grep -c "$TEST_SECRET" || echo "0")
+        LEAK_FOUND=$(tcpdump -r $PCAP_FILE -A 2>/dev/null | grep "$TEST_SECRET" | wc -l || echo "0")
     fi
+    LEAK_FOUND=$(echo $LEAK_FOUND | tr -d ' ')
     
     if [ "$LEAK_FOUND" -gt 0 ]; then
         echo "   ❌ LEAK DETECTED: Secret found $LEAK_FOUND time(s) in network traffic!"
@@ -119,10 +125,11 @@ if [ -f "$PCAP_FILE" ]; then
     # Additional checks for common patterns
     echo "   Checking for suspicious patterns..."
     if [ "$EUID" -ne 0 ]; then
-        SUSPICIOUS=$(sudo tcpdump -r $PCAP_FILE -A 2>/dev/null | grep -i -c "payer_secret\|voter_secret\|private_key" || echo "0")
+        SUSPICIOUS=$(sudo tcpdump -r $PCAP_FILE -A 2>/dev/null | grep -i "payer_secret\|voter_secret\|private_key" | wc -l || echo "0")
     else
-        SUSPICIOUS=$(tcpdump -r $PCAP_FILE -A 2>/dev/null | grep -i -c "payer_secret\|voter_secret\|private_key" || echo "0")
+        SUSPICIOUS=$(tcpdump -r $PCAP_FILE -A 2>/dev/null | grep -i "payer_secret\|voter_secret\|private_key" | wc -l || echo "0")
     fi
+    SUSPICIOUS=$(echo $SUSPICIOUS | tr -d ' ')
     
     if [ "$SUSPICIOUS" -gt 0 ]; then
         echo "   ⚠️  WARNING: Found $SUSPICIOUS reference(s) to private data field names"
