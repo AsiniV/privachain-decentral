@@ -25,6 +25,13 @@ pub mod local_vault;
 pub mod otc_recovery;
 pub mod otc_refresh;
 
+// Post-quantum cryptography modules (feature-gated)
+#[cfg(feature = "post-quantum")]
+pub mod crypto;
+
+#[cfg(feature = "post-quantum")]
+pub mod cosmos;
+
 #[cfg(test)]
 mod tests;
 
