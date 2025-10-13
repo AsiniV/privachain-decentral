@@ -140,4 +140,6 @@ PrivaChain adheres to strict "NO STUB / NO SIMULATION" rules:
 
 ## 📄 License
 
-The Spark Template files and resources from GitHub are licensed under the terms of the MIT license, Copyright GitHub, Inc.
+Copyright (c) 2025 Aleksandr Orlov. All rights reserved.
+
+This software is proprietary and confidential. No permission is granted to copy, modify, distribute, or use this software in any form without explicit written consent from the copyright holder.
