@@ -5,7 +5,7 @@ This directory contains a comprehensive one-button orchestration system for depl
 ## Overview
 
 The deployment system orchestrates:
-1. **Cosmos smart-contracts** (ZK verifier + anon resolver) to Osmosis main-net
+1. **Cosmos smart-contracts** (ZK verifier + anon resolver) to Osmosis mainnet
 2. **IPFS CAR files** to Filebase (paid tier)
 3. **NYM bandwidth credentials** purchase
 4. **Real-endpoint smoke tests** (no stubs, no mocks)
@@ -58,6 +58,12 @@ export FILEBASE_KEY="test-key"
 export FILEBASE_SECRET="test-secret"
 export NYM_BANDWIDTH_CRED="test-cred"
 ```
+
+**⚠️ Security Warning:** 
+- NEVER commit real credentials to version control
+- Use GitHub Secrets for CI/CD (see CI/CD Integration section)
+- In production, use secure secret management (e.g., HashiCorp Vault, AWS Secrets Manager)
+- Rotate credentials regularly
 
 ### Deploy Everything
 
@@ -131,7 +137,7 @@ Upload CAR files to Filebase:
 This script:
 - Builds CAR file if not present (using `cargo make build-car`)
 - Creates Filebase bucket (idempotent)
-- Uploads timestamped CAR file
+- Uploads timestamped CAR file (format: `app-vYYYY-MM-DD.car`, e.g., `app-v2025-10-28.car`)
 - Outputs `IPFS_ROOT_CID`
 
 ### 3. NYM Bandwidth
