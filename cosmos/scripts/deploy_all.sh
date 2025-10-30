@@ -40,12 +40,12 @@ fi
 # Store contract code
 echo ""
 echo "Step 1: Storing contract code..."
-./cosmos/scripts/store_code.sh "$CHAIN" "$DRY"
+"${BASH_SOURCE%/*}/store_code.sh" "$CHAIN" "$DRY"
 
 # Instantiate contract
 echo ""
 echo "Step 2: Instantiating contract..."
-./cosmos/scripts/instantiate.sh "$CHAIN" "$DRY"
+"${BASH_SOURCE%/*}/instantiate.sh" "$CHAIN" "$DRY"
 
 echo ""
 echo "========================================="
