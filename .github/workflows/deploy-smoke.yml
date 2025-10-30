@@ -1,0 +1,105 @@
+name: Deploy & Smoke
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run in dry-run mode (no actual deployment)'
+        required: false
+        type: boolean
+        default: true
+      use_mainnet:
+        description: 'Deploy to mainnet (osmosis-1) instead of testnet'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install system dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y jq curl git python3 python3-venv
+      
+      - name: Install Osmosis binary
+        run: |
+          wget -q -O osmosisd https://github.com/osmosis-labs/osmosis/releases/download/v21.0.0/osmosisd-21.0.0-linux-amd64
+          chmod +x osmosisd
+          sudo mv osmosisd /usr/local/bin
+          osmosisd version
+      
+      - name: Install NYM wallet
+        run: |
+          wget -q https://github.com/nymtech/nym/releases/download/v1.2.0/nym-wallet_1.2.0_amd64.AppImage
+          chmod +x nym-wallet_1.2.0_amd64.AppImage
+          sudo mv nym-wallet_1.2.0_amd64.AppImage /usr/local/bin/nym-wallet
+      
+      - name: Install Filebase CLI
+        run: |
+          curl -L -s https://github.com/filebase/filebase-cli/releases/latest/download/filebase-linux-amd64 -o filebase
+          chmod +x filebase
+          sudo mv filebase /usr/local/bin
+          filebase version || echo "Filebase CLI installed"
+      
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+      
+      - name: Install cargo-make
+        run: cargo install cargo-make || echo "cargo-make already installed"
+      
+      - name: Load secrets
+        env:
+          COSMOS_MNEMONIC: ${{ secrets.COSMOS_MNEMONIC }}
+          FILEBASE_KEY: ${{ secrets.FILEBASE_KEY }}
+          FILEBASE_SECRET: ${{ secrets.FILEBASE_SECRET }}
+          NYM_BANDWIDTH_CRED: ${{ secrets.NYM_BANDWIDTH_CRED }}
+          ZK_VERIFICATION_KEY: ${{ secrets.ZK_VERIFICATION_KEY }}
+        run: |
+          echo "COSMOS_MNEMONIC=$COSMOS_MNEMONIC" >> $GITHUB_ENV
+          echo "FILEBASE_KEY=$FILEBASE_KEY" >> $GITHUB_ENV
+          echo "FILEBASE_SECRET=$FILEBASE_SECRET" >> $GITHUB_ENV
+          echo "NYM_BANDWIDTH_CRED=$NYM_BANDWIDTH_CRED" >> $GITHUB_ENV
+          echo "ZK_VERIFICATION_KEY=$ZK_VERIFICATION_KEY" >> $GITHUB_ENV
+      
+      - name: Make scripts executable
+        run: |
+          chmod +x scripts/full_deploy.sh
+          chmod +x scripts/smoke_real.sh
+          chmod +x cosmos/scripts/*.sh
+          chmod +x ipfs/scripts/*.sh
+          chmod +x nym/scripts/*.sh
+      
+      - name: Full deploy (dry-run)
+        if: github.event.inputs.dry_run == 'true' || github.event_name == 'push'
+        run: ./scripts/full_deploy.sh --dry-run
+      
+      - name: Full deploy (mainnet)
+        if: github.event.inputs.dry_run == 'false' && github.event.inputs.use_mainnet == 'true'
+        run: ./scripts/full_deploy.sh --mainnet
+      
+      - name: Full deploy (testnet)
+        if: github.event.inputs.dry_run == 'false' && github.event.inputs.use_mainnet == 'false'
+        run: ./scripts/full_deploy.sh
+      
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-artifacts
+          path: |
+            cosmos/contract/*.json
+            ipfs/out/*.car
+          if-no-files-found: ignore

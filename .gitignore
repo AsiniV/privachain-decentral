@@ -71,6 +71,10 @@ src-tauri/gen/
 *.tmp
 *.temp
 
+# IPFS output files
+ipfs/out/
+*.car
+
 # Backup files
 *.backup
 *_old.*
