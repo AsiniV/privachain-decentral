@@ -41,13 +41,13 @@ jobs:
       
       - name: Install NYM wallet
         run: |
-          wget -q https://github.com/nymtech/nym/releases/download/v1.2.0/nym-wallet_1.2.0_amd64.AppImage
-          if [ ! -f nym-wallet_1.2.0_amd64.AppImage ]; then
+          wget -q https://github.com/nymtech/nym/releases/download/nym-wallet-v1.2.19/NymWallet_1.2.19_amd64.AppImage
+          if [ ! -f NymWallet_1.2.19_amd64.AppImage ]; then
             echo "NYM wallet AppImage failed to download." >&2
             exit 1
           fi
-          chmod +x nym-wallet_1.2.0_amd64.AppImage
-          sudo mv nym-wallet_1.2.0_amd64.AppImage /usr/local/bin/nym-wallet
+          chmod +x NymWallet_1.2.19_amd64.AppImage
+          sudo mv NymWallet_1.2.19_amd64.AppImage /usr/local/bin/nym-wallet
       
       - name: Install Filebase CLI
         run: |
@@ -72,11 +72,13 @@ jobs:
           NYM_BANDWIDTH_CRED: ${{ secrets.NYM_BANDWIDTH_CRED }}
           ZK_VERIFICATION_KEY: ${{ secrets.ZK_VERIFICATION_KEY }}
         run: |
-          echo "COSMOS_MNEMONIC=$COSMOS_MNEMONIC" >> $GITHUB_ENV
-          echo "FILEBASE_KEY=$FILEBASE_KEY" >> $GITHUB_ENV
-          echo "FILEBASE_SECRET=$FILEBASE_SECRET" >> $GITHUB_ENV
-          echo "NYM_BANDWIDTH_CRED=$NYM_BANDWIDTH_CRED" >> $GITHUB_ENV
-          echo "ZK_VERIFICATION_KEY=$ZK_VERIFICATION_KEY" >> $GITHUB_ENV
+          {
+            echo "COSMOS_MNEMONIC=$COSMOS_MNEMONIC"
+            echo "FILEBASE_KEY=$FILEBASE_KEY"
+            echo "FILEBASE_SECRET=$FILEBASE_SECRET"
+            echo "NYM_BANDWIDTH_CRED=$NYM_BANDWIDTH_CRED"
+            echo "ZK_VERIFICATION_KEY=$ZK_VERIFICATION_KEY"
+          } >> "$GITHUB_ENV"
       
       - name: Make scripts executable
         run: |

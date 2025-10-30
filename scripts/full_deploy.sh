@@ -67,20 +67,20 @@ echo "✅ All required environment variables are set"
 echo ""
 
 echo "========== 1. Store + instantiate contracts =========="
-./cosmos/scripts/deploy_all.sh "$CHAIN" "$DRY_RUN"
+"${BASH_SOURCE%/*}/../cosmos/scripts/deploy_all.sh" "$CHAIN" "$DRY_RUN"
 
 echo ""
 echo "========== 2. Upload IPFS CAR ===================================="
-./ipfs/scripts/upload_car.sh "$DRY_RUN"
+"${BASH_SOURCE%/*}/../ipfs/scripts/upload_car.sh" "$DRY_RUN"
 
 echo ""
 echo "========== 3. Buy NYM bandwidth =================================="
-./nym/scripts/buy_bw.sh "$DRY_RUN"
+"${BASH_SOURCE%/*}/../nym/scripts/buy_bw.sh" "$DRY_RUN"
 
 echo ""
 echo "========== 4. Smoke vs REAL endpoints ============================"
 if [[ "$DRY_RUN" != "--dry-run" ]]; then
-  ./scripts/smoke_real.sh
+  "${BASH_SOURCE%/*}/smoke_real.sh"
 else
   echo "[dry] Would run smoke tests against real endpoints"
 fi
