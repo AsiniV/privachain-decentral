@@ -62,7 +62,14 @@ jobs:
           toolchain: stable
       
       - name: Install cargo-make
-        run: cargo install cargo-make || echo "cargo-make already installed"
+        run: |
+          if ! command -v cargo-make &> /dev/null; then
+            echo "Installing cargo-make..."
+            cargo install --locked cargo-make
+          else
+            echo "cargo-make is already installed"
+            cargo-make --version
+          fi
       
       - name: Load secrets
         env:
@@ -89,15 +96,15 @@ jobs:
           chmod +x nym/scripts/*.sh
       
       - name: Full deploy (dry-run)
-        if: github.event.inputs.dry_run == 'true' || github.event_name == 'push'
+        if: (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == true) || github.event_name == 'push'
         run: ./scripts/full_deploy.sh --dry-run
       
       - name: Full deploy (mainnet)
-        if: github.event.inputs.dry_run == 'false' && github.event.inputs.use_mainnet == 'true'
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == false && github.event.inputs.use_mainnet == true
         run: ./scripts/full_deploy.sh --mainnet
       
       - name: Full deploy (testnet)
-        if: github.event.inputs.dry_run == 'false' && github.event.inputs.use_mainnet == 'false'
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == false && github.event.inputs.use_mainnet == false
         run: ./scripts/full_deploy.sh
       
       - name: Upload artifacts
