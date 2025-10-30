@@ -72,11 +72,13 @@ jobs:
           NYM_BANDWIDTH_CRED: ${{ secrets.NYM_BANDWIDTH_CRED }}
           ZK_VERIFICATION_KEY: ${{ secrets.ZK_VERIFICATION_KEY }}
         run: |
-          echo "COSMOS_MNEMONIC=$COSMOS_MNEMONIC" >> $GITHUB_ENV
-          echo "FILEBASE_KEY=$FILEBASE_KEY" >> $GITHUB_ENV
-          echo "FILEBASE_SECRET=$FILEBASE_SECRET" >> $GITHUB_ENV
-          echo "NYM_BANDWIDTH_CRED=$NYM_BANDWIDTH_CRED" >> $GITHUB_ENV
-          echo "ZK_VERIFICATION_KEY=$ZK_VERIFICATION_KEY" >> $GITHUB_ENV
+          {
+            echo "COSMOS_MNEMONIC=$COSMOS_MNEMONIC"
+            echo "FILEBASE_KEY=$FILEBASE_KEY"
+            echo "FILEBASE_SECRET=$FILEBASE_SECRET"
+            echo "NYM_BANDWIDTH_CRED=$NYM_BANDWIDTH_CRED"
+            echo "ZK_VERIFICATION_KEY=$ZK_VERIFICATION_KEY"
+          } >> "$GITHUB_ENV"
       
       - name: Make scripts executable
         run: |
