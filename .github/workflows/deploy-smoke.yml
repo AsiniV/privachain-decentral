@@ -96,7 +96,7 @@ jobs:
         run: |
           set -e
           echo "Downloading Filebase CLI..."
-          curl -L -s https://github.com/filebase/filebase-cli/releases/latest/download/filebase-linux-amd64 -o filebase || {
+          curl -L -s --max-time 60 https://github.com/filebase/filebase-cli/releases/latest/download/filebase-linux-amd64 -o filebase || {
             echo "❌ Failed to download Filebase CLI"
             exit 1
           }
@@ -132,6 +132,13 @@ jobs:
             echo "❌ Failed to install Node.js dependencies"
             exit 1
           }
+          
+          # Verify critical dependencies are installed
+          if [[ ! -d "node_modules" ]]; then
+            echo "❌ node_modules directory not found after installation"
+            exit 1
+          fi
+          
           echo "✅ Node.js dependencies installed"
       
       - name: Setup Rust
@@ -142,7 +149,9 @@ jobs:
       - name: Cache cargo-make
         uses: actions/cache@v4
         with:
-          path: ~/.cargo/bin/cargo-make
+          path: |
+            ~/.cargo/bin/cargo-make
+            ~/.cargo/bin/makers
           key: ${{ runner.os }}-cargo-make-v0.37.20
           restore-keys: |
             ${{ runner.os }}-cargo-make-
