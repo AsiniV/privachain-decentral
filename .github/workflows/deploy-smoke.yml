@@ -118,6 +118,22 @@ jobs:
           echo "✅ Filebase CLI installed"
           filebase version || echo "✅ Filebase CLI installed (version command not available)"
       
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install Node.js dependencies
+        run: |
+          set -e
+          echo "Installing Node.js dependencies..."
+          npm ci || {
+            echo "❌ Failed to install Node.js dependencies"
+            exit 1
+          }
+          echo "✅ Node.js dependencies installed"
+      
       - name: Setup Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
@@ -133,6 +149,7 @@ jobs:
       
       - name: Install cargo-make
         run: |
+          set -e
           if ! command -v cargo-make &> /dev/null; then
             echo "Installing cargo-make..."
             # Install with timeout protection
@@ -160,6 +177,7 @@ jobs:
           NYM_BANDWIDTH_CRED: ${{ secrets.NYM_BANDWIDTH_CRED }}
           ZK_VERIFICATION_KEY: ${{ secrets.ZK_VERIFICATION_KEY }}
         run: |
+          set -e
           {
             echo "COSMOS_MNEMONIC=$COSMOS_MNEMONIC"
             echo "FILEBASE_KEY=$FILEBASE_KEY"
