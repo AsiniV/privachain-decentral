@@ -126,6 +126,7 @@ jobs:
           else
             echo "⚠️  npm installation failed, trying binary download..."
             # Fallback to binary download with retry mechanism
+            # Note: Using v0.0.2 as latest tag doesn't have linux-amd64 binary available
             for i in {1..5}; do
               curl -L -s --max-time 60 https://github.com/filebase/filebase-cli/releases/download/v0.0.2/filebase-linux-amd64 -o filebase && break || {
                 echo "⚠️  Download attempt $i failed"
