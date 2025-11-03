@@ -266,34 +266,7 @@ jobs:
           fi
           echo "✅ cargo-make verified: $(cargo make --version)"
       
-      - name: Load secrets
-        env:
-          COSMOS_MNEMONIC: ${{ secrets.COSMOS_MNEMONIC }}
-          FILEBASE_KEY: ${{ secrets.FILEBASE_KEY }}
-          FILEBASE_SECRET: ${{ secrets.FILEBASE_SECRET }}
-          NYM_BANDWIDTH_CRED: ${{ secrets.NYM_BANDWIDTH_CRED }}
-          ZK_VERIFICATION_KEY: ${{ secrets.ZK_VERIFICATION_KEY }}
-        run: |
-          set -e
-          # Use heredoc delimiter to safely handle secrets with special characters
-          {
-            echo "COSMOS_MNEMONIC<<EOF"
-            echo "$COSMOS_MNEMONIC"
-            echo "EOF"
-            echo "FILEBASE_KEY<<EOF"
-            echo "$FILEBASE_KEY"
-            echo "EOF"
-            echo "FILEBASE_SECRET<<EOF"
-            echo "$FILEBASE_SECRET"
-            echo "EOF"
-            echo "NYM_BANDWIDTH_CRED<<EOF"
-            echo "$NYM_BANDWIDTH_CRED"
-            echo "EOF"
-            echo "ZK_VERIFICATION_KEY<<EOF"
-            echo "$ZK_VERIFICATION_KEY"
-            echo "EOF"
-          } >> "$GITHUB_ENV"
-      
+
       - name: Make scripts executable
         run: |
           set -e
@@ -314,6 +287,12 @@ jobs:
       
       - name: Full deploy (dry-run)
         if: (github.event_name == 'workflow_dispatch' && inputs.dry_run) || github.event_name == 'push'
+        env:
+          COSMOS_MNEMONIC: ${{ secrets.COSMOS_MNEMONIC || 'test test test test test test test test test test test junk' }}
+          FILEBASE_KEY: ${{ secrets.FILEBASE_KEY || 'test-key' }}
+          FILEBASE_SECRET: ${{ secrets.FILEBASE_SECRET || 'test-secret' }}
+          NYM_BANDWIDTH_CRED: ${{ secrets.NYM_BANDWIDTH_CRED || 'test-cred' }}
+          ZK_VERIFICATION_KEY: ${{ secrets.ZK_VERIFICATION_KEY || '' }}
         run: |
           set -e
           echo "Running full deploy in dry-run mode..."
@@ -324,6 +303,12 @@ jobs:
       
       - name: Full deploy (mainnet)
         if: github.event_name == 'workflow_dispatch' && !inputs.dry_run && inputs.use_mainnet
+        env:
+          COSMOS_MNEMONIC: ${{ secrets.COSMOS_MNEMONIC }}
+          FILEBASE_KEY: ${{ secrets.FILEBASE_KEY }}
+          FILEBASE_SECRET: ${{ secrets.FILEBASE_SECRET }}
+          NYM_BANDWIDTH_CRED: ${{ secrets.NYM_BANDWIDTH_CRED }}
+          ZK_VERIFICATION_KEY: ${{ secrets.ZK_VERIFICATION_KEY }}
         run: |
           set -e
           echo "Running full deploy to mainnet (osmosis-1)..."
@@ -334,6 +319,12 @@ jobs:
       
       - name: Full deploy (testnet)
         if: github.event_name == 'workflow_dispatch' && !inputs.dry_run && !inputs.use_mainnet
+        env:
+          COSMOS_MNEMONIC: ${{ secrets.COSMOS_MNEMONIC }}
+          FILEBASE_KEY: ${{ secrets.FILEBASE_KEY }}
+          FILEBASE_SECRET: ${{ secrets.FILEBASE_SECRET }}
+          NYM_BANDWIDTH_CRED: ${{ secrets.NYM_BANDWIDTH_CRED }}
+          ZK_VERIFICATION_KEY: ${{ secrets.ZK_VERIFICATION_KEY }}
         run: |
           set -e
           echo "Running full deploy to testnet (osmo-test-5)..."
