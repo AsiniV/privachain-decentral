@@ -19,15 +19,31 @@ if [[ -z "${COSMOS_MNEMONIC:-}" ]]; then
   exit 1
 fi
 
+# Export chain configuration for child scripts
+# Select appropriate RPC node based on chain
+# NOTE: Only osmosis-1 (mainnet) and osmo-test-5 (testnet) are currently supported
+if [[ "$CHAIN" == "osmosis-1" ]]; then
+  export OSMOSIS_NODE="${OSMOSIS_NODE:-https://rpc.osmosis.zone:443}"
+elif [[ "$CHAIN" == "osmo-test-5" ]]; then
+  export OSMOSIS_NODE="${OSMOSIS_NODE:-https://rpc.testnet.osmosis.zone:443}"
+else
+  echo "⚠️  Unknown chain '$CHAIN', using default testnet RPC"
+  export OSMOSIS_NODE="${OSMOSIS_NODE:-https://rpc.testnet.osmosis.zone:443}"
+fi
+
 # Import wallet (idempotent - will not duplicate)
 echo "Setting up wallet..."
 if [[ "$DRY" != "--dry-run" ]]; then
+  # Use 'test' keyring backend in CI/CD environments (non-interactive)
+  # Use 'file' keyring backend for local deployments (requires password)
+  KEYRING_BACKEND="${KEYRING_BACKEND:-test}"
+  
   # Check if key already exists
-  if osmosisd keys show privachain-main --keyring-backend file >/dev/null 2>&1; then
-    echo "✅ Wallet already exists"
+  if osmosisd keys show privachain-main --keyring-backend "$KEYRING_BACKEND" >/dev/null 2>&1; then
+    echo "✅ Wallet already exists (keyring: $KEYRING_BACKEND)"
   else
-    echo "Importing wallet from mnemonic..."
-    echo "$COSMOS_MNEMONIC" | osmosisd keys add privachain-main --recover --keyring-backend file 2>&1 || {
+    echo "Importing wallet from mnemonic (keyring: $KEYRING_BACKEND)..."
+    echo "$COSMOS_MNEMONIC" | osmosisd keys add privachain-main --recover --keyring-backend "$KEYRING_BACKEND" 2>&1 || {
       echo "❌ Failed to import wallet"
       exit 1
     }

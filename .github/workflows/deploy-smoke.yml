@@ -49,9 +49,17 @@ jobs:
           # Retry mechanism for download
           success=false
           for i in {1..5}; do
-            if wget -q -O osmosisd https://github.com/osmosis-labs/osmosis/releases/download/v21.0.0/osmosisd-21.0.0-linux-amd64; then
-              success=true
-              break
+            # Show errors on last attempt, otherwise suppress to avoid noise
+            if [ "$i" -eq 5 ]; then
+              if wget -O osmosisd https://github.com/osmosis-labs/osmosis/releases/download/v21.0.0/osmosisd-21.0.0-linux-amd64 2>&1; then
+                success=true
+                break
+              fi
+            else
+              if wget -q -O osmosisd https://github.com/osmosis-labs/osmosis/releases/download/v21.0.0/osmosisd-21.0.0-linux-amd64; then
+                success=true
+                break
+              fi
             fi
             echo "⚠️  Download attempt $i failed"
             if [ "$i" -lt 5 ]; then
@@ -67,6 +75,12 @@ jobs:
           
           if [[ ! -f osmosisd ]]; then
             echo "❌ Osmosis binary not found after download"
+            exit 1
+          fi
+          
+          # Verify the downloaded file is not empty
+          if [[ ! -s osmosisd ]]; then
+            echo "❌ Osmosis binary is empty (size: $(stat -c%s osmosisd 2>/dev/null || echo 0) bytes)"
             exit 1
           fi
           
@@ -88,9 +102,17 @@ jobs:
           # Retry mechanism for download
           success=false
           for i in {1..5}; do
-            if wget -q https://github.com/nymtech/nym/releases/download/nym-wallet-v1.2.19/NymWallet_1.2.19_amd64.AppImage; then
-              success=true
-              break
+            # Show errors on last attempt, otherwise suppress to avoid noise
+            if [ "$i" -eq 5 ]; then
+              if wget https://github.com/nymtech/nym/releases/download/nym-wallet-v1.2.19/NymWallet_1.2.19_amd64.AppImage 2>&1; then
+                success=true
+                break
+              fi
+            else
+              if wget -q https://github.com/nymtech/nym/releases/download/nym-wallet-v1.2.19/NymWallet_1.2.19_amd64.AppImage; then
+                success=true
+                break
+              fi
             fi
             echo "⚠️  Download attempt $i failed"
             if [ "$i" -lt 5 ]; then
@@ -106,6 +128,12 @@ jobs:
           
           if [[ ! -f NymWallet_1.2.19_amd64.AppImage ]]; then
             echo "❌ NYM wallet AppImage not found after download"
+            exit 1
+          fi
+          
+          # Verify the downloaded file is not empty
+          if [[ ! -s NymWallet_1.2.19_amd64.AppImage ]]; then
+            echo "❌ NYM wallet AppImage is empty (size: $(stat -c%s NymWallet_1.2.19_amd64.AppImage 2>/dev/null || echo 0) bytes)"
             exit 1
           fi
           
@@ -139,9 +167,17 @@ jobs:
             # Note: Using v0.0.2 as latest tag doesn't have linux-amd64 binary available
             success=false
             for i in {1..5}; do
-              if curl -L -s --max-time 60 https://github.com/filebase/filebase-cli/releases/download/v0.0.2/filebase-linux-amd64 -o filebase; then
-                success=true
-                break
+              # Show errors on last attempt, otherwise suppress to avoid noise
+              if [ "$i" -eq 5 ]; then
+                if curl -L --max-time 60 https://github.com/filebase/filebase-cli/releases/download/v0.0.2/filebase-linux-amd64 -o filebase 2>&1; then
+                  success=true
+                  break
+                fi
+              else
+                if curl -L -s --max-time 60 https://github.com/filebase/filebase-cli/releases/download/v0.0.2/filebase-linux-amd64 -o filebase; then
+                  success=true
+                  break
+                fi
               fi
               echo "⚠️  Download attempt $i failed"
               if [ "$i" -lt 5 ]; then
@@ -156,6 +192,11 @@ jobs:
             fi
             
             if [[ -f filebase ]]; then
+              # Verify the downloaded file is not empty
+              if [[ ! -s filebase ]]; then
+                echo "❌ Filebase CLI binary is empty (size: $(stat -c%s filebase 2>/dev/null || echo 0) bytes)"
+                exit 1
+              fi
               chmod +x filebase
               sudo mv filebase /usr/local/bin/
               echo "✅ Filebase CLI installed from binary"

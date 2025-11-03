@@ -24,8 +24,14 @@ if [[ ! -f "$CODE_PATH" ]]; then
 fi
 
 # Store code on chain
+KEYRING_BACKEND="${KEYRING_BACKEND:-test}"
+# Use RPC node URL from environment (set by deploy_all.sh) or default
+NODE_URL="${OSMOSIS_NODE:-https://rpc.testnet.osmosis.zone:443}"
+
 RES=$(osmosisd tx wasm store "$CODE_PATH" \
       --from privachain-main --chain-id "$CHAIN" \
+      --node "$NODE_URL" \
+      --keyring-backend "$KEYRING_BACKEND" \
       --gas 3000000 --fees 5000uosmo -y -b block -o json 2>&1) || {
   echo "❌ Failed to store code on chain"
   echo "$RES"

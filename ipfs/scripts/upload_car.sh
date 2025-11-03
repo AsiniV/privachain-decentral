@@ -58,14 +58,23 @@ if [[ "$DRY" == "--dry-run" ]]; then
   exit 0
 fi
 
-# Configure filebase (if needed)
+# Configure filebase
 echo "Configuring Filebase..."
-# Note: In production, filebase would be configured with credentials
-# This is a placeholder for the actual filebase CLI configuration
+# Set up AWS credentials environment variables for Filebase S3 compatibility
+export AWS_ACCESS_KEY_ID="$FILEBASE_KEY"
+export AWS_SECRET_ACCESS_KEY="$FILEBASE_SECRET"
+
+# Verify filebase CLI is available
+if ! command -v filebase >/dev/null 2>&1; then
+  echo "❌ filebase CLI not found in PATH"
+  exit 1
+fi
 
 # Create bucket (idempotent)
 echo "Creating bucket privachain-main (if not exists)..."
-filebase bucket create privachain-main 2>/dev/null || true
+filebase bucket create privachain-main 2>/dev/null || {
+  echo "⚠️  Bucket creation failed or already exists, continuing..."
+}
 
 # Upload CAR file
 TIMESTAMP=$(date +%F)

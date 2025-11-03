@@ -24,11 +24,17 @@ if [[ "$DRY" == "--dry-run" ]]; then
   exit 0
 fi
 
+# Verify nym-wallet is available
+if ! command -v nym-wallet >/dev/null 2>&1; then
+  echo "❌ nym-wallet not found in PATH"
+  echo "Please ensure nym-wallet is installed and properly configured"
+  exit 1
+fi
+
 # Purchase bandwidth using credential
 echo "Burning NYM credential for bandwidth..."
 echo "$NYM_BANDWIDTH_CRED" | nym-wallet bandwidth-buy --file-stdin 2>&1 || {
   echo "❌ Failed to purchase NYM bandwidth"
-  echo "Note: This requires nym-wallet to be installed and properly configured"
   exit 1
 }
 
