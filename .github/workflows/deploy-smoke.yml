@@ -47,18 +47,23 @@ jobs:
           set -e
           echo "Downloading Osmosis binary v21.0.0..."
           # Retry mechanism for download
+          success=false
           for i in {1..5}; do
-            wget -q -O osmosisd https://github.com/osmosis-labs/osmosis/releases/download/v21.0.0/osmosisd-21.0.0-linux-amd64 && break || {
-              echo "⚠️  Download attempt $i failed"
-              if [ $i -lt 5 ]; then
-                echo "Retrying in 5 seconds..."
-                sleep 5
-              else
-                echo "❌ Failed to download Osmosis binary after 5 attempts"
-                exit 1
-              fi
-            }
+            if wget -q -O osmosisd https://github.com/osmosis-labs/osmosis/releases/download/v21.0.0/osmosisd-21.0.0-linux-amd64; then
+              success=true
+              break
+            fi
+            echo "⚠️  Download attempt $i failed"
+            if [ "$i" -lt 5 ]; then
+              echo "Retrying in 5 seconds..."
+              sleep 5
+            fi
           done
+          
+          if [ "$success" = false ]; then
+            echo "❌ Failed to download Osmosis binary after 5 attempts"
+            exit 1
+          fi
           
           if [[ ! -f osmosisd ]]; then
             echo "❌ Osmosis binary not found after download"
@@ -81,18 +86,23 @@ jobs:
           set -e
           echo "Downloading NYM wallet v1.2.19..."
           # Retry mechanism for download
+          success=false
           for i in {1..5}; do
-            wget -q https://github.com/nymtech/nym/releases/download/nym-wallet-v1.2.19/NymWallet_1.2.19_amd64.AppImage && break || {
-              echo "⚠️  Download attempt $i failed"
-              if [ $i -lt 5 ]; then
-                echo "Retrying in 5 seconds..."
-                sleep 5
-              else
-                echo "❌ Failed to download NYM wallet after 5 attempts"
-                exit 1
-              fi
-            }
+            if wget -q https://github.com/nymtech/nym/releases/download/nym-wallet-v1.2.19/NymWallet_1.2.19_amd64.AppImage; then
+              success=true
+              break
+            fi
+            echo "⚠️  Download attempt $i failed"
+            if [ "$i" -lt 5 ]; then
+              echo "Retrying in 5 seconds..."
+              sleep 5
+            fi
           done
+          
+          if [ "$success" = false ]; then
+            echo "❌ Failed to download NYM wallet after 5 attempts"
+            exit 1
+          fi
           
           if [[ ! -f NymWallet_1.2.19_amd64.AppImage ]]; then
             echo "❌ NYM wallet AppImage not found after download"
@@ -127,18 +137,23 @@ jobs:
             echo "⚠️  npm installation failed, trying binary download..."
             # Fallback to binary download with retry mechanism
             # Note: Using v0.0.2 as latest tag doesn't have linux-amd64 binary available
+            success=false
             for i in {1..5}; do
-              curl -L -s --max-time 60 https://github.com/filebase/filebase-cli/releases/download/v0.0.2/filebase-linux-amd64 -o filebase && break || {
-                echo "⚠️  Download attempt $i failed"
-                if [ $i -lt 5 ]; then
-                  echo "Retrying in 5 seconds..."
-                  sleep 5
-                else
-                  echo "❌ Failed to download Filebase CLI after 5 attempts"
-                  exit 1
-                fi
-              }
+              if curl -L -s --max-time 60 https://github.com/filebase/filebase-cli/releases/download/v0.0.2/filebase-linux-amd64 -o filebase; then
+                success=true
+                break
+              fi
+              echo "⚠️  Download attempt $i failed"
+              if [ "$i" -lt 5 ]; then
+                echo "Retrying in 5 seconds..."
+                sleep 5
+              fi
             done
+            
+            if [ "$success" = false ]; then
+              echo "❌ Failed to download Filebase CLI after 5 attempts"
+              exit 1
+            fi
             
             if [[ -f filebase ]]; then
               chmod +x filebase
@@ -219,12 +234,23 @@ jobs:
           ZK_VERIFICATION_KEY: ${{ secrets.ZK_VERIFICATION_KEY }}
         run: |
           set -e
+          # Use heredoc delimiter to safely handle secrets with special characters
           {
-            echo "COSMOS_MNEMONIC=$COSMOS_MNEMONIC"
-            echo "FILEBASE_KEY=$FILEBASE_KEY"
-            echo "FILEBASE_SECRET=$FILEBASE_SECRET"
-            echo "NYM_BANDWIDTH_CRED=$NYM_BANDWIDTH_CRED"
-            echo "ZK_VERIFICATION_KEY=$ZK_VERIFICATION_KEY"
+            echo "COSMOS_MNEMONIC<<EOF"
+            echo "$COSMOS_MNEMONIC"
+            echo "EOF"
+            echo "FILEBASE_KEY<<EOF"
+            echo "$FILEBASE_KEY"
+            echo "EOF"
+            echo "FILEBASE_SECRET<<EOF"
+            echo "$FILEBASE_SECRET"
+            echo "EOF"
+            echo "NYM_BANDWIDTH_CRED<<EOF"
+            echo "$NYM_BANDWIDTH_CRED"
+            echo "EOF"
+            echo "ZK_VERIFICATION_KEY<<EOF"
+            echo "$ZK_VERIFICATION_KEY"
+            echo "EOF"
           } >> "$GITHUB_ENV"
       
       - name: Make scripts executable
