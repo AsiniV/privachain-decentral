@@ -24,8 +24,10 @@ if [[ ! -f "$CODE_PATH" ]]; then
 fi
 
 # Store code on chain
+KEYRING_BACKEND="${KEYRING_BACKEND:-test}"
 RES=$(osmosisd tx wasm store "$CODE_PATH" \
       --from privachain-main --chain-id "$CHAIN" \
+      --keyring-backend "$KEYRING_BACKEND" \
       --gas 3000000 --fees 5000uosmo -y -b block -o json 2>&1) || {
   echo "❌ Failed to store code on chain"
   echo "$RES"

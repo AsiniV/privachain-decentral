@@ -17,8 +17,10 @@ if [[ "$DRY" == "--dry-run" ]]; then
 fi
 
 # Instantiate contract
+KEYRING_BACKEND="${KEYRING_BACKEND:-test}"
 RES=$(osmosisd tx wasm instantiate "$CODE_ID" "$INIT" \
   --label privachain_zk_verifier --from privachain-main \
+  --keyring-backend "$KEYRING_BACKEND" \
   --chain-id "$CHAIN" --gas 3000000 --fees 5000uosmo -y -b block -o json 2>&1) || {
   echo "❌ Failed to instantiate contract"
   echo "$RES"

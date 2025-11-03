@@ -22,12 +22,16 @@ fi
 # Import wallet (idempotent - will not duplicate)
 echo "Setting up wallet..."
 if [[ "$DRY" != "--dry-run" ]]; then
+  # Use 'test' keyring backend in CI/CD environments (non-interactive)
+  # Use 'file' keyring backend for local deployments (requires password)
+  KEYRING_BACKEND="${KEYRING_BACKEND:-test}"
+  
   # Check if key already exists
-  if osmosisd keys show privachain-main --keyring-backend file >/dev/null 2>&1; then
-    echo "✅ Wallet already exists"
+  if osmosisd keys show privachain-main --keyring-backend "$KEYRING_BACKEND" >/dev/null 2>&1; then
+    echo "✅ Wallet already exists (keyring: $KEYRING_BACKEND)"
   else
-    echo "Importing wallet from mnemonic..."
-    echo "$COSMOS_MNEMONIC" | osmosisd keys add privachain-main --recover --keyring-backend file 2>&1 || {
+    echo "Importing wallet from mnemonic (keyring: $KEYRING_BACKEND)..."
+    echo "$COSMOS_MNEMONIC" | osmosisd keys add privachain-main --recover --keyring-backend "$KEYRING_BACKEND" 2>&1 || {
       echo "❌ Failed to import wallet"
       exit 1
     }
