@@ -25,12 +25,8 @@ fi
 
 # Store code on chain
 KEYRING_BACKEND="${KEYRING_BACKEND:-test}"
-# Select appropriate RPC node based on chain
-if [[ "$CHAIN" == "osmosis-1" ]]; then
-  NODE_URL="${OSMOSIS_NODE:-https://rpc.osmosis.zone:443}"
-else
-  NODE_URL="${OSMOSIS_NODE:-https://rpc.testnet.osmosis.zone:443}"
-fi
+# Use RPC node URL from environment (set by deploy_all.sh) or default
+NODE_URL="${OSMOSIS_NODE:-https://rpc.testnet.osmosis.zone:443}"
 
 RES=$(osmosisd tx wasm store "$CODE_PATH" \
       --from privachain-main --chain-id "$CHAIN" \

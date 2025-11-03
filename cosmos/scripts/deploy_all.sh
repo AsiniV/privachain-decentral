@@ -19,6 +19,18 @@ if [[ -z "${COSMOS_MNEMONIC:-}" ]]; then
   exit 1
 fi
 
+# Export chain configuration for child scripts
+# Select appropriate RPC node based on chain
+# NOTE: Only osmosis-1 (mainnet) and osmo-test-5 (testnet) are currently supported
+if [[ "$CHAIN" == "osmosis-1" ]]; then
+  export OSMOSIS_NODE="${OSMOSIS_NODE:-https://rpc.osmosis.zone:443}"
+elif [[ "$CHAIN" == "osmo-test-5" ]]; then
+  export OSMOSIS_NODE="${OSMOSIS_NODE:-https://rpc.testnet.osmosis.zone:443}"
+else
+  echo "⚠️  Unknown chain '$CHAIN', using default testnet RPC"
+  export OSMOSIS_NODE="${OSMOSIS_NODE:-https://rpc.testnet.osmosis.zone:443}"
+fi
+
 # Import wallet (idempotent - will not duplicate)
 echo "Setting up wallet..."
 if [[ "$DRY" != "--dry-run" ]]; then

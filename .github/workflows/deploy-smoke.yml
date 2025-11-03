@@ -153,7 +153,7 @@ jobs:
           set -e
           echo "Installing Filebase CLI via npm..."
           # Try npm installation first (recommended method)
-          if npm install -g @filebase/cli 2>&1; then
+          if npm install -g @filebase/cli; then
             echo "✅ Filebase CLI installed via npm"
             # Verify installation
             if command -v filebase &> /dev/null; then

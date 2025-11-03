@@ -18,12 +18,8 @@ fi
 
 # Instantiate contract
 KEYRING_BACKEND="${KEYRING_BACKEND:-test}"
-# Select appropriate RPC node based on chain
-if [[ "$CHAIN" == "osmosis-1" ]]; then
-  NODE_URL="${OSMOSIS_NODE:-https://rpc.osmosis.zone:443}"
-else
-  NODE_URL="${OSMOSIS_NODE:-https://rpc.testnet.osmosis.zone:443}"
-fi
+# Use RPC node URL from environment (set by deploy_all.sh) or default
+NODE_URL="${OSMOSIS_NODE:-https://rpc.testnet.osmosis.zone:443}"
 
 RES=$(osmosisd tx wasm instantiate "$CODE_ID" "$INIT" \
   --label privachain_zk_verifier --from privachain-main \
