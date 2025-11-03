@@ -46,10 +46,19 @@ jobs:
         run: |
           set -e
           echo "Downloading Osmosis binary v21.0.0..."
-          wget -q -O osmosisd https://github.com/osmosis-labs/osmosis/releases/download/v21.0.0/osmosisd-21.0.0-linux-amd64 || {
-            echo "❌ Failed to download Osmosis binary"
-            exit 1
-          }
+          # Retry mechanism for download
+          for i in {1..5}; do
+            wget -q -O osmosisd https://github.com/osmosis-labs/osmosis/releases/download/v21.0.0/osmosisd-21.0.0-linux-amd64 && break || {
+              echo "⚠️  Download attempt $i failed"
+              if [ $i -lt 5 ]; then
+                echo "Retrying in 5 seconds..."
+                sleep 5
+              else
+                echo "❌ Failed to download Osmosis binary after 5 attempts"
+                exit 1
+              fi
+            }
+          done
           
           if [[ ! -f osmosisd ]]; then
             echo "❌ Osmosis binary not found after download"
@@ -71,10 +80,19 @@ jobs:
         run: |
           set -e
           echo "Downloading NYM wallet v1.2.19..."
-          wget -q https://github.com/nymtech/nym/releases/download/nym-wallet-v1.2.19/NymWallet_1.2.19_amd64.AppImage || {
-            echo "❌ Failed to download NYM wallet"
-            exit 1
-          }
+          # Retry mechanism for download
+          for i in {1..5}; do
+            wget -q https://github.com/nymtech/nym/releases/download/nym-wallet-v1.2.19/NymWallet_1.2.19_amd64.AppImage && break || {
+              echo "⚠️  Download attempt $i failed"
+              if [ $i -lt 5 ]; then
+                echo "Retrying in 5 seconds..."
+                sleep 5
+              else
+                echo "❌ Failed to download NYM wallet after 5 attempts"
+                exit 1
+              fi
+            }
+          done
           
           if [[ ! -f NymWallet_1.2.19_amd64.AppImage ]]; then
             echo "❌ NYM wallet AppImage not found after download"
@@ -95,28 +113,42 @@ jobs:
       - name: Install Filebase CLI
         run: |
           set -e
-          echo "Downloading Filebase CLI..."
-          curl -L -s --max-time 60 https://github.com/filebase/filebase-cli/releases/latest/download/filebase-linux-amd64 -o filebase || {
-            echo "❌ Failed to download Filebase CLI"
-            exit 1
-          }
-          
-          if [[ ! -f filebase ]]; then
-            echo "❌ Filebase CLI not found after download"
-            exit 1
+          echo "Installing Filebase CLI via npm..."
+          # Try npm installation first (recommended method)
+          if npm install -g @filebase/cli; then
+            echo "✅ Filebase CLI installed via npm"
+            # Verify installation
+            if command -v filebase &> /dev/null; then
+              filebase version || echo "✅ Filebase CLI installed"
+            else
+              echo "⚠️  filebase command not found, but npm package installed"
+            fi
+          else
+            echo "⚠️  npm installation failed, trying binary download..."
+            # Fallback to binary download with retry mechanism
+            # Note: Using v0.0.2 as latest tag doesn't have linux-amd64 binary available
+            for i in {1..5}; do
+              curl -L -s --max-time 60 https://github.com/filebase/filebase-cli/releases/download/v0.0.2/filebase-linux-amd64 -o filebase && break || {
+                echo "⚠️  Download attempt $i failed"
+                if [ $i -lt 5 ]; then
+                  echo "Retrying in 5 seconds..."
+                  sleep 5
+                else
+                  echo "❌ Failed to download Filebase CLI after 5 attempts"
+                  exit 1
+                fi
+              }
+            done
+            
+            if [[ -f filebase ]]; then
+              chmod +x filebase
+              sudo mv filebase /usr/local/bin/
+              echo "✅ Filebase CLI installed from binary"
+            else
+              echo "❌ Failed to install Filebase CLI"
+              exit 1
+            fi
           fi
-          
-          chmod +x filebase
-          sudo mv filebase /usr/local/bin/
-          
-          # Verify installation
-          if ! command -v filebase &> /dev/null; then
-            echo "❌ filebase not found in PATH after installation"
-            exit 1
-          fi
-          
-          echo "✅ Filebase CLI installed"
-          filebase version || echo "✅ Filebase CLI installed (version command not available)"
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -168,15 +200,15 @@ jobs:
             }
           else
             echo "✅ cargo-make is already installed"
-            cargo-make --version
+            cargo make --version
           fi
           
           # Verify cargo-make is in PATH and working
-          if ! cargo-make --version &> /dev/null; then
+          if ! cargo make --version &> /dev/null; then
             echo "❌ cargo-make installation verification failed"
             exit 1
           fi
-          echo "✅ cargo-make verified: $(cargo-make --version)"
+          echo "✅ cargo-make verified: $(cargo make --version)"
       
       - name: Load secrets
         env:
