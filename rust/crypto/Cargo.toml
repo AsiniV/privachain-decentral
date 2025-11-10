@@ -7,6 +7,13 @@ edition = "2021"
 privachain_messenger = { path = "../../messenger" }
 serde = { version = "1.0", features = ["derive"] }
 anyhow = "1.0"
+# Post-quantum crypto dependencies (optional)
+pqcrypto-kyber = { version = "0.8", optional = true }
+pqcrypto-traits = { version = "0.3", optional = true }
+
+[features]
+default = []
+post-quantum = ["dep:pqcrypto-kyber", "dep:pqcrypto-traits"]
 
 [lib]
 crate-type = ["rlib"]
