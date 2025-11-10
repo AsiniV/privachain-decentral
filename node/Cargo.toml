@@ -21,11 +21,8 @@ sha2 = "0.10"
 hex = "0.4"
 base64 = "0.22"
 
-# Mixnet stack (using latest available versions) - optional
-# Note: Specification called for 0.27 but actual latest on crates.io are older
-# nym-sphinx and nym-client-core not available on crates.io yet
-# This provides structural support for mixnet - full integration pending availability
-nym-crypto = { version = "0.4", optional = true }
+# I2P integration - optional
+privachain_i2p = { path = "../rust/i2p", optional = true }
 
 # ZK-proof dependencies (v4.0) - optional
 ark-groth16 = { version = "0.4", optional = true }
@@ -40,8 +37,8 @@ name = "privachain_node"
 crate-type = ["cdylib", "rlib"]
 
 [features]
-default = ["mixnet-default", "post-quantum"]
-mixnet-default = ["dep:nym-crypto"]
+default = ["i2p-default", "post-quantum"]
+i2p-default = ["dep:privachain_i2p"]
 fallback-tor = []
 post-quantum = []
 zk-proofs = ["dep:ark-groth16", "dep:ark-bls12-381", "dep:ark-ff", "dep:ark-serialize", "dep:ark-std", "dep:rand"]

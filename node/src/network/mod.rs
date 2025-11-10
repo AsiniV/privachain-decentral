@@ -1,8 +1,8 @@
-#[cfg(feature = "mixnet-default")]
-pub mod mixnet_transport;
+#[cfg(feature = "i2p-default")]
+pub mod i2p_transport;
 
-#[cfg(feature = "mixnet-default")]
-pub use mixnet_transport::MixnetTransport;
+#[cfg(feature = "i2p-default")]
+pub use i2p_transport::I2pTransport;
 
 #[cfg(feature = "post-quantum")]
 pub mod pq_discovery;
