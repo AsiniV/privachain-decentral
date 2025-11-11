@@ -7,7 +7,7 @@ This directory contains a comprehensive one-button orchestration system for depl
 The deployment system orchestrates:
 1. **Cosmos smart-contracts** (ZK verifier + anon resolver) to Osmosis mainnet
 2. **IPFS CAR files** to Filebase (paid tier)
-3. **NYM bandwidth credentials** purchase
+3. **I2P tunnel configuration** for anonymous networking
 4. **Real-endpoint smoke tests** (no stubs, no mocks)
 
 All deployments are **idempotent** - you can run them N times without duplicating resources.
@@ -25,10 +25,21 @@ wget -q -O osmosisd https://github.com/osmosis-labs/osmosis/releases/download/v2
 chmod +x osmosisd && sudo mv osmosisd /usr/local/bin
 osmosisd version     # Should show: 21.0.0
 
-# 3. Install NYM wallet (AppImage)
-wget https://github.com/nymtech/nym/releases/download/v1.2.0/nym-wallet_1.2.0_amd64.AppImage
-chmod +x nym-wallet_1.2.0_amd64.AppImage
-sudo mv nym-wallet_1.2.0_amd64.AppImage /usr/local/bin/nym-wallet
+# 3. Install I2P router (i2pd)
+sudo apt install -y i2pd
+
+# Configure SAM bridge
+sudo mkdir -p /etc/i2pd
+cat << 'EOF' | sudo tee /etc/i2pd/i2pd.conf > /dev/null
+[sam]
+enabled = true
+address = 127.0.0.1
+port = 7656
+EOF
+
+# Start i2pd service
+sudo systemctl enable --now i2pd
+sudo systemctl status i2pd
 
 # 4. Install Filebase CLI (S3-compatible)
 curl -L https://github.com/filebase/filebase-cli/releases/latest/download/filebase-linux-amd64 -o filebase
@@ -49,14 +60,14 @@ Set these environment variables before running deployments:
 export COSMOS_MNEMONIC="word1 word2 ... word24"
 export FILEBASE_KEY="your-filebase-access-key"
 export FILEBASE_SECRET="your-filebase-secret-key"
-export NYM_BANDWIDTH_CRED="your-nym-credential"
+export I2P_SAM_HOST="127.0.0.1:7656"  # optional, defaults to 127.0.0.1:7656
 export ZK_VERIFICATION_KEY="your-zk-verification-key"  # optional
 
 # For local testing (safe to use)
 export COSMOS_MNEMONIC="test test test test test test test test test test test junk"
 export FILEBASE_KEY="test-key"
 export FILEBASE_SECRET="test-secret"
-export NYM_BANDWIDTH_CRED="test-cred"
+export I2P_SAM_HOST="127.0.0.1:7656"
 ```
 
 **⚠️ Security Warning:** 
@@ -94,9 +105,6 @@ privachain-decentral/
 │   ├── out/                    # Generated CAR files (gitignored)
 │   └── scripts/
 │       └── upload_car.sh       # Upload to Filebase
-├── nym/
-│   └── scripts/
-│       └── buy_bw.sh           # Purchase bandwidth
 └── scripts/
     ├── full_deploy.sh          # Single entry-point orchestrator
     └── smoke_real.sh           # Real-endpoint tests
@@ -140,19 +148,22 @@ This script:
 - Uploads timestamped CAR file (format: `app-vYYYY-MM-DD.car`, e.g., `app-v2025-10-28.car`)
 - Outputs `IPFS_ROOT_CID`
 
-### 3. NYM Bandwidth
+### 3. I2P Tunnel Configuration
 
-Purchase NYM bandwidth credentials:
+The I2P router (i2pd) should be running with SAM bridge enabled. Verify:
 
 ```bash
-# Dry-run
-./nym/scripts/buy_bw.sh --dry-run
+# Check i2pd is running
+sudo systemctl status i2pd
 
-# Actual purchase
-./nym/scripts/buy_bw.sh
+# Verify SAM bridge is listening
+netstat -tuln | grep 7656
+# or
+ss -tuln | grep 7656
+
+# Configure custom SAM host (optional)
+export I2P_SAM_HOST="127.0.0.1:7656"
 ```
-
-This burns 1,000 NYM tokens for bandwidth.
 
 ### 4. Smoke Tests
 
@@ -165,7 +176,7 @@ Run tests against real endpoints:
 Tests include:
 - Cosmos contract queries
 - IPFS gateway reachability
-- NYM mixnet latency
+- I2P SAM bridge connectivity
 - ZK proof verification
 - Bundle size guard (<53MB)
 
@@ -183,7 +194,7 @@ Required GitHub Secrets:
 - `COSMOS_MNEMONIC`
 - `FILEBASE_KEY`
 - `FILEBASE_SECRET`
-- `NYM_BANDWIDTH_CRED`
+- `I2P_SAM_HOST` (optional, defaults to 127.0.0.1:7656)
 - `ZK_VERIFICATION_KEY` (optional)
 
 ### Manual Workflow Dispatch
@@ -228,9 +239,14 @@ Check that `COSMOS_MNEMONIC` is a valid 12 or 24-word BIP-39 phrase.
 
 Verify Filebase credentials and network connectivity.
 
-### "NYM wallet command failed"
+### "I2P SAM bridge connection failed"
 
-Ensure nym-wallet is installed and `NYM_BANDWIDTH_CRED` is valid.
+Ensure i2pd is installed and running with SAM bridge enabled on port 7656:
+```bash
+sudo systemctl status i2pd
+# Check SAM bridge is listening
+netstat -tuln | grep 7656
+```
 
 ## Development Workflow
 
@@ -239,7 +255,7 @@ Ensure nym-wallet is installed and `NYM_BANDWIDTH_CRED` is valid.
 export COSMOS_MNEMONIC="test test test test test test test test test test test junk"
 export FILEBASE_KEY="test-key"
 export FILEBASE_SECRET="test-secret"
-export NYM_BANDWIDTH_CRED="test-cred"
+export I2P_SAM_HOST="127.0.0.1:7656"
 
 # 2. Test with dry-run (fast, no cost)
 ./scripts/full_deploy.sh --dry-run
