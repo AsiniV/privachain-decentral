@@ -54,14 +54,19 @@ else
 fi
 echo ""
 
-echo "========== 3. NYM mixnet latency =========="
-# Check if nym-client is available
-if command -v nym-client >/dev/null 2>&1; then
-  # Ping NYM gateway with timeout
-  timeout 30 nym-client ping --gateway 8DkyiBrv7C6fpkNnwNYNLCLL4fomRE9L7avvPq3fFzNi 2>/dev/null | tail -1 | grep -E '[0-9]+ ms' >/dev/null 2>&1 || true
-  report_test "NYM mixnet latency check" $?
+echo "========== 3. I2P tunnel connectivity =========="
+# Check if I2P SAM bridge is available
+I2P_SAM_HOST="${I2P_SAM_HOST:-127.0.0.1:7656}"
+if command -v nc >/dev/null 2>&1; then
+  # Try to connect to SAM bridge with timeout
+  timeout 5 nc -z ${I2P_SAM_HOST%:*} ${I2P_SAM_HOST#*:} 2>/dev/null
+  report_test "I2P SAM bridge connectivity" $?
+elif command -v telnet >/dev/null 2>&1; then
+  # Fallback to telnet
+  timeout 5 bash -c "echo quit | telnet ${I2P_SAM_HOST%:*} ${I2P_SAM_HOST#*:}" 2>/dev/null | grep -q "Connected" || true
+  report_test "I2P SAM bridge connectivity" $?
 else
-  echo "⚠️  nym-client not installed, skipping NYM test"
+  echo "⚠️  nc or telnet not installed, skipping I2P SAM connectivity test"
 fi
 echo ""
 

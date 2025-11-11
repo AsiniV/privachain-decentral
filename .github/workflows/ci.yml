@@ -255,7 +255,7 @@ jobs:
             echo "- ✅ **Secret Scanning**: Automated detection enabled"
             echo "- 🔒 **v4.0 ZK Proofs**: Feature-gated, off by default"
             echo "- ✅ **v3.0 Post-Quantum Crypto**: Real implementations with pqc_kyber/dilithium"
-            echo "- ✅ **v2.0 Mixnet**: Default transport with NYM"
+            echo "- ✅ **v2.0 Mixnet**: Default transport with I2P"
             echo "- 🚧 **Phase**: Currently in Phase 0 (Stabilization)"
             echo ""
             echo "See [Security Placeholders](./docs/security/placeholders.md) for detailed status."

@@ -95,58 +95,46 @@ jobs:
           
           echo "✅ Osmosis binary installed: $(osmosisd version)"
       
-      - name: Install NYM wallet
+      - name: Install I2P router (i2pd)
         run: |
           set -e
-          echo "Downloading NYM wallet v1.2.19..."
-          # Retry mechanism for download
-          success=false
-          for i in {1..5}; do
-            # Show errors on last attempt, otherwise suppress to avoid noise
-            if [ "$i" -eq 5 ]; then
-              if wget https://github.com/nymtech/nym/releases/download/nym-wallet-v1.2.19/NymWallet_1.2.19_amd64.AppImage 2>&1; then
-                success=true
-                break
-              fi
-            else
-              if wget -q https://github.com/nymtech/nym/releases/download/nym-wallet-v1.2.19/NymWallet_1.2.19_amd64.AppImage; then
-                success=true
-                break
-              fi
-            fi
-            echo "⚠️  Download attempt $i failed"
-            if [ "$i" -lt 5 ]; then
-              echo "Retrying in 5 seconds..."
-              sleep 5
-            fi
-          done
+          echo "Installing i2pd I2P router..."
           
-          if [ "$success" = false ]; then
-            echo "❌ Failed to download NYM wallet after 5 attempts"
+          # Add i2pd repository
+          sudo apt update || {
+            echo "❌ apt update failed"
             exit 1
-          fi
+          }
           
-          if [[ ! -f NymWallet_1.2.19_amd64.AppImage ]]; then
-            echo "❌ NYM wallet AppImage not found after download"
+          # Install i2pd
+          sudo apt install -y i2pd || {
+            echo "❌ Failed to install i2pd"
             exit 1
+          }
+          
+          # Configure SAM bridge
+          echo "Configuring SAM bridge..."
+          sudo mkdir -p /etc/i2pd
+          cat << 'EOFCONFIG' | sudo tee /etc/i2pd/i2pd.conf > /dev/null
+          [sam]
+          enabled = true
+          address = 127.0.0.1
+          port = 7656
+          EOFCONFIG
+          
+          # Start i2pd service
+          sudo systemctl start i2pd || {
+            echo "⚠️  Failed to start i2pd service, trying manual start"
+            sudo i2pd --daemon --sam.enabled=true --sam.address=127.0.0.1 --sam.port=7656 &
+            sleep 5
+          }
+          
+          # Verify SAM bridge is listening
+          if netstat -tuln 2>/dev/null | grep -q ":7656" || ss -tuln 2>/dev/null | grep -q ":7656"; then
+            echo "✅ I2P router installed and SAM bridge running on port 7656"
+          else
+            echo "⚠️  SAM bridge may not be running on port 7656"
           fi
-          
-          # Verify the downloaded file is not empty
-          if [[ ! -s NymWallet_1.2.19_amd64.AppImage ]]; then
-            echo "❌ NYM wallet AppImage is empty (size: $(stat -c%s NymWallet_1.2.19_amd64.AppImage 2>/dev/null || echo 0) bytes)"
-            exit 1
-          fi
-          
-          chmod +x NymWallet_1.2.19_amd64.AppImage
-          sudo mv NymWallet_1.2.19_amd64.AppImage /usr/local/bin/nym-wallet
-          
-          # Verify installation
-          if [[ ! -x /usr/local/bin/nym-wallet ]]; then
-            echo "❌ nym-wallet not executable after installation"
-            exit 1
-          fi
-          
-          echo "✅ NYM wallet installed at /usr/local/bin/nym-wallet"
       
       - name: Install Filebase CLI
         run: |
@@ -274,10 +262,9 @@ jobs:
           chmod +x scripts/full_deploy.sh scripts/smoke_real.sh
           chmod +x cosmos/scripts/*.sh
           chmod +x ipfs/scripts/*.sh
-          chmod +x nym/scripts/*.sh
           
           # Verify critical scripts exist
-          for script in scripts/full_deploy.sh scripts/smoke_real.sh cosmos/scripts/deploy_all.sh ipfs/scripts/upload_car.sh nym/scripts/buy_bw.sh; do
+          for script in scripts/full_deploy.sh scripts/smoke_real.sh cosmos/scripts/deploy_all.sh ipfs/scripts/upload_car.sh; do
             if [[ ! -f "$script" ]]; then
               echo "❌ Critical script not found: $script"
               exit 1
@@ -291,7 +278,7 @@ jobs:
           COSMOS_MNEMONIC: ${{ secrets.COSMOS_MNEMONIC || 'test test test test test test test test test test test junk' }}
           FILEBASE_KEY: ${{ secrets.FILEBASE_KEY || 'test-key' }}
           FILEBASE_SECRET: ${{ secrets.FILEBASE_SECRET || 'test-secret' }}
-          NYM_BANDWIDTH_CRED: ${{ secrets.NYM_BANDWIDTH_CRED || 'test-cred' }}
+          I2P_SAM_HOST: ${{ secrets.I2P_SAM_HOST || '127.0.0.1:7656' }}
           ZK_VERIFICATION_KEY: ${{ secrets.ZK_VERIFICATION_KEY || '' }}
         run: |
           set -e
@@ -307,7 +294,7 @@ jobs:
           COSMOS_MNEMONIC: ${{ secrets.COSMOS_MNEMONIC }}
           FILEBASE_KEY: ${{ secrets.FILEBASE_KEY }}
           FILEBASE_SECRET: ${{ secrets.FILEBASE_SECRET }}
-          NYM_BANDWIDTH_CRED: ${{ secrets.NYM_BANDWIDTH_CRED }}
+          I2P_SAM_HOST: ${{ secrets.I2P_SAM_HOST }}
           ZK_VERIFICATION_KEY: ${{ secrets.ZK_VERIFICATION_KEY }}
         run: |
           set -e
@@ -323,7 +310,7 @@ jobs:
           COSMOS_MNEMONIC: ${{ secrets.COSMOS_MNEMONIC }}
           FILEBASE_KEY: ${{ secrets.FILEBASE_KEY }}
           FILEBASE_SECRET: ${{ secrets.FILEBASE_SECRET }}
-          NYM_BANDWIDTH_CRED: ${{ secrets.NYM_BANDWIDTH_CRED }}
+          I2P_SAM_HOST: ${{ secrets.I2P_SAM_HOST }}
           ZK_VERIFICATION_KEY: ${{ secrets.ZK_VERIFICATION_KEY }}
         run: |
           set -e
