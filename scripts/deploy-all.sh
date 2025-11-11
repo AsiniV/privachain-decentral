@@ -17,7 +17,7 @@ echo "Privachain v3.0 Deployment - Post-Quantum Edition"
 echo "=================================================="
 
 # Parse command line arguments
-FEATURES="mixnet-default"
+FEATURES="i2p-default"
 while [[ $# -gt 0 ]]; do
     case $1 in
         --features)
@@ -107,9 +107,9 @@ echo -e "${BLUE}To start the node:${NC}"
 echo "  ./target/release/privachain-node --listen /ip4/0.0.0.0/tcp/33333"
 echo ""
 if [[ "$FEATURES" == *"post-quantum"* ]]; then
-    echo -e "${BLUE}To purchase PQ bandwidth:${NC}"
-    echo "  export NYM_PQ_MNEMONIC=\"word1 word2 ... word24\""
-    echo "  ./target/release/privachain-node --buy-pq-bandwidth 100"
+    echo -e "${BLUE}To configure I2P with post-quantum features:${NC}"
+    echo "  export I2P_SAM_HOST=\"127.0.0.1:7656\""
+    echo "  ./target/release/privachain-node --tunnel i2p"
     echo ""
 fi
 echo "=================================================="
