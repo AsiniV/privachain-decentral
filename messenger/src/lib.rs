@@ -16,7 +16,7 @@ pub mod file_transfer;
 pub mod webrtc_p2p;
 pub mod video_quality_optimizer;
 pub mod retract;
-pub mod nym_sender;
+pub mod i2p_sender;  // Replaced nym_sender
 pub mod global_dpi_test;
 pub mod onion_integration;
 pub mod keplr_ops;

@@ -132,3 +132,6 @@ pub mod dr {
             .map_err(|e| anyhow::anyhow!("Failed to establish inbound: {}", e))
     }
 }
+
+// Post-quantum cryptography module
+pub mod pq;

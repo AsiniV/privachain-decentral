@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # scripts/full_deploy.sh
 # One-button orchestration for full deployment
-# Usage:  ./scripts/full_deploy.sh  [--dry-run]  [--mainnet]
+# Usage:  ./scripts/full_deploy.sh  [--dry-run]  [--mainnet]  [--tunnel i2p|none]
 
 set -euo pipefail
 
 # Parse arguments
 DRY_RUN=""
 CHAIN="osmo-test-5"   # default to test-net
+TUNNEL="i2p"          # default to I2P tunnel
 
 for arg in "$@"; do
   case $arg in
@@ -19,6 +20,10 @@ for arg in "$@"; do
       CHAIN="osmosis-1"
       shift
       ;;
+    --tunnel)
+      TUNNEL="$2"
+      shift 2
+      ;;
     *)
       ;;
   esac
@@ -28,6 +33,7 @@ echo "================================================================"
 echo "PrivaChain Full Deployment Orchestration"
 echo "================================================================"
 echo "Chain: $CHAIN"
+echo "Tunnel: $TUNNEL"
 echo "Dry Run: ${DRY_RUN:-false}"
 echo "================================================================"
 echo ""
@@ -48,8 +54,10 @@ if [[ -z "${FILEBASE_SECRET:-}" ]]; then
   MISSING_VARS+=("FILEBASE_SECRET")
 fi
 
-if [[ -z "${NYM_BANDWIDTH_CRED:-}" ]]; then
-  MISSING_VARS+=("NYM_BANDWIDTH_CRED")
+# I2P SAM host is optional, defaults to 127.0.0.1:7656
+if [[ "$TUNNEL" == "i2p" && -z "${I2P_SAM_HOST:-}" ]]; then
+  echo "ℹ️  I2P_SAM_HOST not set, using default: 127.0.0.1:7656"
+  export I2P_SAM_HOST="127.0.0.1:7656"
 fi
 
 if [[ ${#MISSING_VARS[@]} -gt 0 ]]; then
@@ -74,11 +82,7 @@ echo "========== 2. Upload IPFS CAR ===================================="
 "${BASH_SOURCE%/*}/../ipfs/scripts/upload_car.sh" "$DRY_RUN"
 
 echo ""
-echo "========== 3. Buy NYM bandwidth =================================="
-"${BASH_SOURCE%/*}/../nym/scripts/buy_bw.sh" "$DRY_RUN"
-
-echo ""
-echo "========== 4. Smoke vs REAL endpoints ============================"
+echo "========== 3. Smoke vs REAL endpoints ============================"
 if [[ "$DRY_RUN" != "--dry-run" ]]; then
   "${BASH_SOURCE%/*}/smoke_real.sh"
 else
@@ -88,4 +92,5 @@ fi
 echo ""
 echo "================================================================"
 echo "✅ All deployed & tested – zero regressions"
+echo "✅ Tunnel mode: $TUNNEL"
 echo "================================================================"

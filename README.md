@@ -17,8 +17,8 @@ Currently implemented features are in various stages of completion as part of th
 - 🚧 **Search**: Index structure present, ZK inclusion proofs pending
 - 🚧 **Video**: WebRTC signaling present, E2E encryption layer pending
 - ✅ **Tor Integration**: Real Tor anonymization for P2P node (native only, see [TOR_INTEGRATION.md](./TOR_INTEGRATION.md))
-- ❌ **Mixnet Integration**: Configuration present, Nym integration pending
-- ❌ **Post-Quantum Crypto**: Placeholder implementations only
+- ✅ **I2P Integration**: SAMv3 tunnel layer for metadata protection (see [node/I2P_INTEGRATION.md](./node/I2P_INTEGRATION.md))
+- ✅ **Post-Quantum Crypto**: Kyber-1024 KEM and Dilithium-5 signatures implemented
 
 See [docs/status.md](docs/status.md) for detailed feature matrix and [docs/claims_and_limitations.md](docs/claims_and_limitations.md) for security disclaimers.
 
