@@ -10,10 +10,11 @@ anyhow = "1.0"
 # Post-quantum crypto dependencies (optional)
 pqcrypto-kyber = { version = "0.8", optional = true }
 pqcrypto-traits = { version = "0.3", optional = true }
+pqcrypto-dilithium = { version = "0.5", optional = true }
 
 [features]
 default = []
-post-quantum = ["dep:pqcrypto-kyber", "dep:pqcrypto-traits"]
+post-quantum = ["dep:pqcrypto-kyber", "dep:pqcrypto-traits", "dep:pqcrypto-dilithium"]
 
 [lib]
 crate-type = ["rlib"]

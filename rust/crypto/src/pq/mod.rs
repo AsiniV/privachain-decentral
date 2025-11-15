@@ -12,6 +12,9 @@ pub mod dilithium;
 #[cfg(feature = "post-quantum")]
 pub use kyber::{KyberKem, KyberPublicKey, KyberSecretKey, KyberCiphertext};
 
+#[cfg(feature = "post-quantum")]
+pub use dilithium::Dilithium5;
+
 // Stub implementations when PQ feature is disabled
 #[cfg(not(feature = "post-quantum"))]
 pub mod kyber {

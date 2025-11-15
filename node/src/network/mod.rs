@@ -15,3 +15,5 @@ pub use pq_discovery::PqDiscovery;
 
 #[cfg(feature = "post-quantum")]
 pub use pq_fallback::{downgrade_if_needed, peer_supports_pq};
+
+pub mod transport;

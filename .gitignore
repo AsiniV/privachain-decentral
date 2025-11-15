@@ -92,3 +92,6 @@ cosmos/contract/*.wasm
 # Local databases
 *.db
 vault.db
+
+# I2P daemon source (downloaded during build)
+rust/i2pd-sys/i2pd/

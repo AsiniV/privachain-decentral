@@ -11,6 +11,8 @@ pub mod client;
 pub mod error;
 pub mod keys;
 pub mod session;
+pub mod launcher;
+pub mod latency;
 
 pub use client::I2pClient;
 pub use error::{I2pError, I2pResult};

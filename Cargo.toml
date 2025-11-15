@@ -14,6 +14,7 @@ members = [
     "rust/search",
     "rust/node",
     "rust/i2p",
+    "rust/i2pd-sys",
     "src/render/gecko_engine"
 ]
 resolver = "2"

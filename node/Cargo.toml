@@ -24,6 +24,9 @@ base64 = "0.22"
 # I2P integration - optional
 privachain_i2p = { path = "../rust/i2p", optional = true }
 
+# Crypto integration for PQ features
+privachain_crypto = { path = "../rust/crypto", optional = true }
+
 # ZK-proof dependencies (v4.0) - optional
 ark-groth16 = { version = "0.4", optional = true }
 ark-bls12-381 = { version = "0.4", optional = true }
@@ -40,7 +43,7 @@ crate-type = ["cdylib", "rlib"]
 default = ["i2p-default", "post-quantum"]
 i2p-default = ["dep:privachain_i2p"]
 fallback-tor = []
-post-quantum = []
+post-quantum = ["dep:privachain_crypto", "privachain_crypto?/post-quantum"]
 zk-proofs = ["dep:ark-groth16", "dep:ark-bls12-381", "dep:ark-ff", "dep:ark-serialize", "dep:ark-std", "dep:rand"]
 
 [[bin]]
