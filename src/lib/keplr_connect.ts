@@ -3,27 +3,6 @@
 // Provides functions for connecting to Keplr wallet extension and managing
 // Cosmos blockchain operations directly from the browser
 
-// Keplr wallet interface extension
-interface KeplrWindow extends Window {
-  keplr?: {
-    enable: (chainId: string) => Promise<void>
-    getOfflineSigner: (chainId: string) => {
-      getAccounts: () => Promise<Array<{ address: string; algo: string; pubkey: Uint8Array }>>
-    }
-    signAndBroadcast: (
-      chainId: string,
-      msgs: unknown[],
-      fee: { amount: Array<{ denom: string; amount: string }>; gas: string }
-    ) => Promise<{ transactionHash: string }>
-    experimentalSuggestChain: (chainInfo: Record<string, unknown>) => Promise<void>
-  }
-}
-
-declare const window: KeplrWindow
-
-// Type alias for compatibility
-type KeplrWin = Window & { keplr?: KeplrWindow['keplr'] };
-
 // Environment-based configuration
 const CHAIN_ID = import.meta.env.VITE_COSMOS_CHAIN_ID || 'provider';
 const RPC = import.meta.env.VITE_COSMOS_RPC || 'https://cosmoshub-testnet.rpc.kjnodes.com';
@@ -31,8 +10,14 @@ const LCD = import.meta.env.VITE_COSMOS_LCD || 'https://cosmoshub-testnet.api.kj
 const IS_PROD = import.meta.env.PROD;
 const DEV_RELAYER = import.meta.env.VITE_COSMOS_RELAYER_MNEMONIC;
 
+// DEPRECATED: Direct mnemonic access is deprecated in favor of Keplr integration
+// Use the new useKeplr hook and ConnectKeplr component instead
 if (IS_PROD && DEV_RELAYER) {
   throw new Error('Prod build must not include dev relayer mnemonic');
+}
+
+if (DEV_RELAYER) {
+  console.warn('[DEPRECATED] VITE_COSMOS_RELAYER_MNEMONIC is deprecated. Please use Keplr wallet integration instead.');
 }
 
 // Chain configuration - matches priva-config.toml
@@ -91,12 +76,11 @@ export function isKeplrInstalled(): boolean {
  * @throws Error if Keplr is not installed or failed to enable
  */
 export async function keplrEnable(): Promise<void> {
-  const w = window as KeplrWin;
-  if (!w.keplr) {
+  if (!window.keplr) {
     throw new Error('Keplr not installed');
   }
   try {
-    await w.keplr.enable(CHAIN_ID);
+    await window.keplr.enable(CHAIN_ID);
   } catch (error) {
     throw new Error(`Failed to enable Keplr: ${(error as Error).message}`);
   }
@@ -161,23 +145,19 @@ export async function getCurrentKeplrAddress(): Promise<string | null> {
  * @param msgs - Array of Cosmos messages
  * @param memo - Optional memo for the transaction
  * @returns Promise<string> - Transaction hash
+ * @deprecated Use the useKeplr hook and sendWithSponsor instead
  */
 export async function signAndBroadcastKeplr(msgs: unknown[], memo: string = ""): Promise<string> {
   if (!isKeplrInstalled()) {
     throw new Error("Keplr extension not found")
   }
 
+  console.warn('[DEPRECATED] signAndBroadcastKeplr is deprecated. Use useKeplr hook and sendWithSponsor instead.');
+
   try {
-    const result = await window.keplr!.signAndBroadcast(
-      CHAIN_CONFIG.chainId,
-      msgs,
-      { 
-        amount: [{ denom: "uatom", amount: "1000" }], 
-        gas: "500000" 
-      }
-    )
-    
-    return result.transactionHash
+    // This is a legacy function that should be replaced with proper CosmJS integration
+    // For now, we'll throw an error directing users to the new approach
+    throw new Error("Please use the useKeplr hook and sendWithSponsor function for transaction signing");
   } catch (error) {
     console.error('Failed to sign and broadcast transaction:', error)
     throw error

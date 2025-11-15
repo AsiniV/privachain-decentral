@@ -8,14 +8,17 @@ let wallet: DirectSecp256k1HdWallet | null = null;
 export async function getSigningClient() {
   if (client) return client;
   
-  // Use import.meta.env for Vite environment variables
+  // DEPRECATED: Direct mnemonic access is deprecated in favor of Keplr integration
+  // Use the new useKeplr hook and sendWithSponsor function instead
   const mnemonic = import.meta.env.VITE_COSMOS_RELAYER_MNEMONIC || import.meta.env.COSMOS_RELAYER_MNEMONIC;
   const rpc = import.meta.env.VITE_COSMOS_RPC || import.meta.env.COSMOS_RPC || 'https://rpc.theta-testnet.polypore.xyz:443';
   
   if (!mnemonic) {
-    console.warn('No COSMOS_RELAYER_MNEMONIC found, using mock client');
+    console.warn('[DEPRECATED] No COSMOS_RELAYER_MNEMONIC found. Please use Keplr wallet integration instead.');
     return null;
   }
+  
+  console.warn('[DEPRECATED] getSigningClient() with direct mnemonic is deprecated. Use Keplr integration instead.');
   
   wallet = await DirectSecp256k1HdWallet.fromMnemonic(
     mnemonic,

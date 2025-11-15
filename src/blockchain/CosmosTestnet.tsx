@@ -2,15 +2,6 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback 
 import { useKV } from '../hooks/useKV'
 import { toast } from 'sonner'
 
-// Keplr wallet interface extension
-interface KeplrWindow extends Window {
-  keplr?: {
-    experimentalSuggestChain: (chainInfo: unknown) => Promise<void>
-  }
-}
-
-declare const window: KeplrWindow
-
 // Cosmos Testnet Configuration
 interface TestnetConfig {
   chainId: string
@@ -253,7 +244,6 @@ export function CosmosTestnetProvider({ children }: { children: ReactNode }) {
           currencies: config.currencies,
           feeCurrencies: config.feeCurrencies,
           stakeCurrency: config.stakeCurrency,
-          coinType: config.bip44.coinType,
         })
         
         toast.success('Cosmos Hub Testnet added to Keplr wallet')
