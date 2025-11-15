@@ -18,4 +18,19 @@ pub struct Args {
     #[cfg(feature = "post-quantum")]
     #[arg(long, env = "BUY_PQ_BANDWIDTH")]
     pub buy_pq_bandwidth: Option<u64>,
+
+    /// Tunnel mode: auto (default), i2p, or none
+    #[arg(long, default_value = "auto", env = "PRIVACHAIN_TUNNEL")]
+    pub tunnel: String,
+}
+
+impl Args {
+    /// Parse tunnel mode from string
+    pub fn tunnel_mode(&self) -> crate::network::transport::TunnelMode {
+        match self.tunnel.to_lowercase().as_str() {
+            "i2p" => crate::network::transport::TunnelMode::I2p,
+            "none" | "clear" => crate::network::transport::TunnelMode::Clear,
+            _ => crate::network::transport::TunnelMode::Auto,
+        }
+    }
 }
