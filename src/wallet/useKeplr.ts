@@ -21,11 +21,17 @@ export function useKeplr(net: 'mainnet' | 'testnet' = 'testnet') {
     
     (async () => {
       try {
+        const keplr = window.keplr;
+        if (!keplr) {
+          setError('Keplr not found');
+          return;
+        }
+        
         const chainInfo = net === 'testnet' ? testnetChain : mainnetChain;
-        await window.keplr.experimentalSuggestChain(chainInfo);
-        await window.keplr.enable(chainInfo.chainId);
+        await keplr.experimentalSuggestChain(chainInfo);
+        await keplr.enable(chainInfo.chainId);
 
-        const offlineSigner = window.keplr.getOfflineSigner(chainInfo.chainId);
+        const offlineSigner = keplr.getOfflineSigner(chainInfo.chainId);
         const stargate = await SigningStargateClient.connectWithSigner(
           chainInfo.rpc,
           offlineSigner,
