@@ -84,18 +84,23 @@ export class VideoSignalingContract {
 
   /**
    * Initialize blockchain connection
+   * @deprecated This class uses direct mnemonic access. Use Keplr integration instead.
    */
   private async initializeBlockchain() {
     try {
       // Initialize read-only client for queries
       this.client = await CosmWasmClient.connect(COSMOS_CONFIG.rpcEndpoint)
       
-      // Check for environment variables for wallet
+      // DEPRECATED: Check for environment variables for wallet
+      // In production, use Keplr wallet integration instead
       const mnemonic = process.env.DEVELOPER_MNEMONIC || process.env.VITE_DEVELOPER_MNEMONIC
       
       if (!mnemonic) {
+        console.warn('[DEPRECATED] DEVELOPER_MNEMONIC not found. Use Keplr wallet integration instead.');
         throw new Error('DEVELOPER_MNEMONIC environment variable is required for video signaling')
       }
+      
+      console.warn('[DEPRECATED] VideoSignalingContract using direct mnemonic. Migrate to Keplr integration.');
       
       this.wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
         prefix: COSMOS_CONFIG.addressPrefix

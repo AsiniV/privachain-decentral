@@ -31,8 +31,14 @@ const LCD = import.meta.env.VITE_COSMOS_LCD || 'https://cosmoshub-testnet.api.kj
 const IS_PROD = import.meta.env.PROD;
 const DEV_RELAYER = import.meta.env.VITE_COSMOS_RELAYER_MNEMONIC;
 
+// DEPRECATED: Direct mnemonic access is deprecated in favor of Keplr integration
+// Use the new useKeplr hook and ConnectKeplr component instead
 if (IS_PROD && DEV_RELAYER) {
   throw new Error('Prod build must not include dev relayer mnemonic');
+}
+
+if (DEV_RELAYER) {
+  console.warn('[DEPRECATED] VITE_COSMOS_RELAYER_MNEMONIC is deprecated. Please use Keplr wallet integration instead.');
 }
 
 // Chain configuration - matches priva-config.toml
