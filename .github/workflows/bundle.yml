@@ -44,10 +44,11 @@ jobs:
 
       - name: Reproducible build environment
         run: |
-          export SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)
+          SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)
+          export SOURCE_DATE_EPOCH
           export RUSTFLAGS="-C metadata=privachain -C extra-filename="
-          echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> $GITHUB_ENV
-          echo "RUSTFLAGS=$RUSTFLAGS" >> $GITHUB_ENV
+          echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> "$GITHUB_ENV"
+          echo "RUSTFLAGS=$RUSTFLAGS" >> "$GITHUB_ENV"
 
       - name: Build release binary
         run: |
@@ -78,7 +79,7 @@ jobs:
           # Strip debug from .so files
           find target/release -name '*.so' -exec objcopy --strip-debug {} \;
           # Save debug symbols path
-          echo "PRIVACHAIN_DEBUG=target/release/privachain-node.debug" >> $GITHUB_ENV
+          echo "PRIVACHAIN_DEBUG=target/release/privachain-node.debug" >> "$GITHUB_ENV"
 
       - name: Create icon and desktop file
         run: |
@@ -179,27 +180,34 @@ jobs:
 
       - name: Build summary
         run: |
-          echo "## 📦 Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Binary Sizes" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| File | Size |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|------|" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## 📦 Build Summary"
+            echo ""
+            echo "### Binary Sizes"
+            echo ""
+            echo "| File | Size |"
+            echo "|------|------|"
+          } >> "$GITHUB_STEP_SUMMARY"
           if [ -f target/release/privachain-node ]; then
-            SIZE=$(ls -lh target/release/privachain-node | awk '{print $5}')
-            echo "| privachain-node | $SIZE |" >> $GITHUB_STEP_SUMMARY
+            SIZE=$(stat -c%s target/release/privachain-node 2>/dev/null || stat -f%z target/release/privachain-node 2>/dev/null)
+            SIZE_HR=$(numfmt --to=iec-i --suffix=B "$SIZE" 2>/dev/null || echo "${SIZE} bytes")
+            echo "| privachain-node | $SIZE_HR |" >> "$GITHUB_STEP_SUMMARY"
           fi
           if [ -f target/release/libprivachain_dr_ffi.so ]; then
-            SIZE=$(ls -lh target/release/libprivachain_dr_ffi.so | awk '{print $5}')
-            echo "| libprivachain_dr_ffi.so | $SIZE |" >> $GITHUB_STEP_SUMMARY
+            SIZE=$(stat -c%s target/release/libprivachain_dr_ffi.so 2>/dev/null || stat -f%z target/release/libprivachain_dr_ffi.so 2>/dev/null)
+            SIZE_HR=$(numfmt --to=iec-i --suffix=B "$SIZE" 2>/dev/null || echo "${SIZE} bytes")
+            echo "| libprivachain_dr_ffi.so | $SIZE_HR |" >> "$GITHUB_STEP_SUMMARY"
           fi
           if [ -f dist/privachain-linux-x86_64.AppImage ]; then
-            SIZE=$(ls -lh dist/privachain-linux-x86_64.AppImage | awk '{print $5}')
-            echo "| AppImage | $SIZE |" >> $GITHUB_STEP_SUMMARY
+            SIZE=$(stat -c%s dist/privachain-linux-x86_64.AppImage 2>/dev/null || stat -f%z dist/privachain-linux-x86_64.AppImage 2>/dev/null)
+            SIZE_HR=$(numfmt --to=iec-i --suffix=B "$SIZE" 2>/dev/null || echo "${SIZE} bytes")
+            echo "| AppImage | $SIZE_HR |" >> "$GITHUB_STEP_SUMMARY"
           fi
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Build optimizations applied:" >> $GITHUB_STEP_SUMMARY
-          echo "- Strip symbols removed" >> $GITHUB_STEP_SUMMARY
-          echo "- UPX compression applied" >> $GITHUB_STEP_SUMMARY
-          echo "- Debug info extracted separately" >> $GITHUB_STEP_SUMMARY
-          echo "- LTO and size optimizations enabled" >> $GITHUB_STEP_SUMMARY
+          {
+            echo ""
+            echo "✅ Build optimizations applied:"
+            echo "- Strip symbols removed"
+            echo "- UPX compression applied"
+            echo "- Debug info extracted separately"
+            echo "- LTO and size optimizations enabled"
+          } >> "$GITHUB_STEP_SUMMARY"
