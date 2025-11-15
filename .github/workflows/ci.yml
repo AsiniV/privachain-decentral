@@ -218,7 +218,7 @@ jobs:
           SIZE=$(stat -c%s ./target/release/privachain-node 2>/dev/null || stat -f%z ./target/release/privachain-node 2>/dev/null)
           SIZE_MB=$((SIZE / 1024 / 1024))
           echo "Binary size with zk-proofs: ${SIZE_MB}MB"
-          if [ $SIZE -lt 53000000 ]; then
+          if [ "$SIZE" -lt 53000000 ]; then
             echo "✅ Binary size within budget: ${SIZE_MB}MB < 53MB"
           else
             echo "❌ Binary size exceeds budget: ${SIZE_MB}MB >= 53MB"
