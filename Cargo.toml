@@ -8,6 +8,7 @@ members = [
     "contracts/mail",
     "contracts/pq-verifier",
     "contracts/reputation",
+    "contracts/gas-sponsor",
     "dpi-bypass",
     "packages/resolver/wasm",
     "node",
