@@ -11,13 +11,18 @@
 
 import {execSync} from 'node:child_process';
 import {readFileSync, readdirSync, existsSync} from 'node:fs';
-import {join} from 'node:path';
+import {join, dirname} from 'node:path';
+import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {
   SigningCosmWasmClient,
 } from '@cosmjs/cosmwasm-stargate';
 import {DirectSecp256k1HdWallet} from '@cosmjs/proto-signing';
 import {GasPrice} from '@cosmjs/stargate';
+
+/* ---------- ES module helpers ---------- */
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 /* ---------- Checksum util ---------- */
 const calculateChecksum = (data: Uint8Array): string => {
@@ -110,7 +115,7 @@ async function build(): Promise<Record<string, string>> {
           throw new Error(`Built WASM not found for ${c}`);
         }
       }
-    } catch (e) {
+    } catch {
       log(`Docker build failed for ${c}, trying cargo build …`);
       // Fallback to cargo build
       // Check if contract has pq feature
