@@ -1,0 +1,47 @@
+[package]
+name = "reputation"
+version = "0.1.0"
+authors = ["PrivaChain Team <team@privachain.org>"]
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+opt-level = 3
+debug = false
+rpath = false
+lto = true
+debug-assertions = false
+codegen-units = 1
+panic = 'abort'
+incremental = false
+overflow-checks = true
+
+[features]
+# for unit-tests off-chain
+default = []
+pq = []
+library = []
+
+[package.metadata.scripts]
+optimize = """docker run --rm -v "$(pwd)":/code \
+  --mount type=volume,source="$(basename "$(pwd)")_cache",target=/target \
+  --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
+  cosmwasm/optimizer:0.16.0
+"""
+
+[dependencies]
+cosmwasm-schema = "1.5.11"
+cosmwasm-std = "1.5.11"
+cw-storage-plus = "1.2.0"
+cw2 = "1.1.2"
+schemars = "0.8"
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+thiserror = "1.0"
+# post-quantum crypto (static)
+oqs-sys = { git = "https://github.com/open-quantum-safe/liboqs-rust", tag = "v0.8.0" }
+sha2 = "0.10"
+
+[dev-dependencies]
+cw-multi-test = "0.16.5"

@@ -7,6 +7,7 @@ members = [
     "contracts/recovery_code",
     "contracts/mail",
     "contracts/pq-verifier",
+    "contracts/reputation",
     "dpi-bypass",
     "packages/resolver/wasm",
     "node",
