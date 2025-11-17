@@ -24,7 +24,7 @@ mod tests {
         let mut app = mock_app();
         let pq_verifier_id = app.store_code(contract_template());
 
-        let msg = InstantiateMsg {};
+        let msg = InstantiateMsg { code_id: pq_verifier_id };
         let pq_verifier_contract_addr = app
             .instantiate_contract(
                 pq_verifier_id,

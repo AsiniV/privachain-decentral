@@ -6,15 +6,18 @@ pub enum ContractError {
     #[error("{0}")]
     Std(#[from] StdError),
 
-    #[error("Invalid Dilithium-5 signature")]
+    #[error("Wrong pubkey length: expected 2592, got {0}")]
+    WrongPubKeyLen(usize),
+
+    #[error("Wrong signature length: expected 4595, got {0}")]
+    WrongSigLen(usize),
+
+    #[error("Wrong hash length: expected 32, got {0}")]
+    WrongHashLen(usize),
+
+    #[error("Invalid signature")]
     InvalidSignature,
 
-    #[error("Wrong pubkey length (expected 2592 B)")]
-    WrongPubKeyLen,
-
-    #[error("Wrong signature length")]
-    WrongSigLen,
-
-    #[error("Wrong message hash length (expected 32 B)")]
-    WrongHashLen,
+    #[error("Liboqs internal error: {0}")]
+    LiboqsError(String),
 }
