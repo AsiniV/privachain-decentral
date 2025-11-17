@@ -2,7 +2,9 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Binary;
 
 #[cw_serde]
-pub struct InstantiateMsg {}
+pub struct InstantiateMsg {
+    pub code_id: u64,
+}
 
 #[cw_serde]
 pub enum ExecuteMsg {
