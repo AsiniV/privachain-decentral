@@ -1,11 +1,12 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+use cosmwasm_std::{to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Order, Response, StdResult, Uint128};
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, ReputationResponse};
-use crate::state::{Reputation, REPUTATION};
+use crate::msg::{ExecuteMsg, HistoryEntry, HistoryResponse, InstantiateMsg, QueryMsg, ReputationResponse};
+use crate::state::{Reputation, ReputationRecord, COUNTER, HISTORY, REPUTATION};
+use cw_storage_plus::Bound;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:reputation";
@@ -28,7 +29,7 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
@@ -37,28 +38,52 @@ pub fn execute(
             score,
             dilithium_pk,
             dilithium_sig,
-        } => execute_update(deps, info, score, dilithium_pk, dilithium_sig),
+        } => execute_update(deps, env, info, score, dilithium_pk, dilithium_sig),
     }
 }
 
 fn execute_update(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     score: u32,
     dilithium_pk: Binary,
     dilithium_sig: Binary,
 ) -> Result<Response, ContractError> {
-    // Validate score
+    // --- 1. length & zero check (only in pq mode) ----------------------------
+    #[cfg(feature = "pq")]
+    {
+        if dilithium_sig.len() != 4595 {
+            return Err(ContractError::WrongSigLen(dilithium_sig.len()));
+        }
+        if dilithium_sig.as_slice().iter().all(|&b| b == 0) {
+            return Err(ContractError::ZeroInput);
+        }
+    }
+
+    // --- 2. score range ------------------------------------
     if score > 100 {
         return Err(ContractError::InvalidScore);
     }
 
-    // Validate pubkey length
+    // --- 3. Validate pubkey length -------------------------
     if dilithium_pk.len() != 2592 {
         return Err(ContractError::WrongPubKeyLen);
     }
 
-    // Create message to hash: concatenate sender address and score
+    // --- 4. self-only guard (feature) ----------------------
+    #[cfg(feature = "self_only")]
+    {
+        use sha2::{Digest, Sha256};
+        let pk_hash = Sha256::digest(dilithium_pk.as_slice());
+        let addr_bytes = &pk_hash[0..20];
+        let expected_addr = deps.api.addr_validate(&hex::encode(addr_bytes))?;
+        if info.sender != expected_addr {
+            return Err(ContractError::Unauthorized);
+        }
+    }
+
+    // --- 5. Create message to hash --------------------------
     let mut message = info.sender.as_bytes().to_vec();
     message.extend_from_slice(&score.to_be_bytes());
 
@@ -67,53 +92,40 @@ fn execute_update(
     let mut hasher = Sha256::new();
     hasher.update(&message);
     let hash = hasher.finalize();
-
-    // Verify Dilithium-5 signature
-    let pk_slice = dilithium_pk.as_slice();
-    let sig_slice = dilithium_sig.as_slice();
-
-    let mut pk_arr = [0u8; 2592];
-    pk_arr.copy_from_slice(pk_slice);
-
     let mut hash_arr = [0u8; 32];
     hash_arr.copy_from_slice(hash.as_slice());
 
-    #[cfg(feature = "pq")]
-    {
-        unsafe {
-            use oqs_sys::sig::{OQS_SIG_dilithium_5, OQS_SIG_free, OQS_SIG_verify};
+    // --- 6. verify signature (reuse pq-verifier logic) -----
+    pq_verify_sig(dilithium_pk.clone(), dilithium_sig.clone(), Binary::from(hash_arr.to_vec()))?;
 
-            let sig_ptr = OQS_SIG_dilithium_5();
-            if sig_ptr.is_null() {
-                return Err(ContractError::InvalidSignature);
-            }
+    // --- 7. save history (non-breaking) --------------------
+    let counter = COUNTER.may_load(deps.storage)?.unwrap_or_default() + Uint128::from(1u32);
+    COUNTER.save(deps.storage, &counter)?;
+    
+    // Create a pseudo tx_hash from block height and tx index
+    let tx_hash = env.transaction
+        .as_ref()
+        .map(|t| {
+            let mut hash = Vec::with_capacity(32);
+            hash.extend_from_slice(&env.block.height.to_be_bytes());
+            hash.extend_from_slice(&t.index.to_be_bytes());
+            // Pad to 32 bytes
+            hash.resize(32, 0);
+            hash
+        })
+        .unwrap_or_else(|| vec![0u8; 32]);
+    
+    HISTORY.save(
+        deps.storage,
+        (&info.sender, counter.u128() as u32),
+        &ReputationRecord {
+            score,
+            timestamp: env.block.time,
+            tx_hash,
+        },
+    )?;
 
-            let result = OQS_SIG_verify(
-                sig_ptr,
-                hash_arr.as_ptr(),
-                hash_arr.len(),
-                sig_slice.as_ptr(),
-                sig_slice.len(),
-                pk_arr.as_ptr(),
-            );
-
-            OQS_SIG_free(sig_ptr);
-
-            if result != 0 {
-                return Err(ContractError::InvalidSignature);
-            }
-        }
-    }
-
-    #[cfg(not(feature = "pq"))]
-    {
-        // In non-PQ mode (for testing), we just check basic length constraints
-        if dilithium_sig.len() < 100 {
-            return Err(ContractError::WrongSigLen);
-        }
-    }
-
-    // Store reputation
+    // --- 8. overwrite current score (old behaviour) --------
     let reputation = Reputation {
         score,
         dilithium_pk,
@@ -127,12 +139,63 @@ fn execute_update(
         .add_attribute("score", score.to_string()))
 }
 
+/// Post-quantum signature verification helper
+#[cfg(feature = "pq")]
+fn pq_verify_sig(pk: Binary, sig: Binary, hash: Binary) -> Result<(), ContractError> {
+    unsafe {
+        use oqs_sys::sig::{OQS_SIG_dilithium_5, OQS_SIG_free, OQS_SIG_verify};
+
+        let scheme = OQS_SIG_dilithium_5();
+        if scheme.is_null() {
+            return Err(ContractError::LiboqsError("null scheme".into()));
+        }
+
+        let pk_slice = pk.as_slice();
+        let sig_slice = sig.as_slice();
+        let hash_slice = hash.as_slice();
+
+        let mut pk_arr = [0u8; 2592];
+        pk_arr.copy_from_slice(pk_slice);
+
+        let rc = OQS_SIG_verify(
+            scheme,
+            hash_slice.as_ptr(),
+            hash_slice.len(),
+            sig_slice.as_ptr(),
+            sig_slice.len(),
+            pk_arr.as_ptr(),
+        );
+
+        OQS_SIG_free(scheme);
+
+        if rc != 0 {
+            return Err(ContractError::InvalidSignature);
+        }
+        Ok(())
+    }
+}
+
+/// Mock mode - no actual verification
+#[cfg(not(feature = "pq"))]
+fn pq_verify_sig(_pk: Binary, sig: Binary, _hash: Binary) -> Result<(), ContractError> {
+    // In non-PQ mode (for testing), we just check basic length constraints
+    if sig.len() < 100 {
+        return Err(ContractError::WrongSigLen(sig.len()));
+    }
+    Ok(())
+}
+
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetReputation { address } => {
             to_json_binary(&query_reputation(deps, address)?)
         }
+        QueryMsg::GetHistory {
+            address,
+            start_after,
+            limit,
+        } => to_json_binary(&query_history(deps, address, start_after, limit)?),
     }
 }
 
@@ -153,11 +216,54 @@ fn query_reputation(deps: Deps, address: String) -> StdResult<ReputationResponse
     })
 }
 
+fn query_history(
+    deps: Deps,
+    address: String,
+    start_after: Option<u32>,
+    limit: Option<u32>,
+) -> StdResult<HistoryResponse> {
+    let addr = deps.api.addr_validate(&address)?;
+    let limit = limit.unwrap_or(10).min(30) as usize;
+    let start = start_after.map(|s| Bound::exclusive(s));
+
+    let entries: Vec<_> = HISTORY
+        .prefix(&addr)
+        .range(deps.storage, start, None, Order::Ascending)
+        .take(limit)
+        .map(|item| {
+            let (idx, rec) = item?;
+            Ok(HistoryEntry {
+                index: idx,
+                score: rec.score,
+                timestamp: rec.timestamp,
+                tx_hash: rec.tx_hash,
+            })
+        })
+        .collect::<StdResult<_>>()?;
+    Ok(HistoryResponse { entries })
+}
+
+/// Migration entry point for contract upgrades
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(deps: DepsMut, _env: Env, _msg: cosmwasm_std::Empty) -> Result<Response, ContractError> {
+    // Verify we're migrating from version 0.1.0
+    let version = cw2::get_contract_version(deps.storage)?;
+    if version.contract != CONTRACT_NAME {
+        return Err(ContractError::Std(cosmwasm_std::StdError::generic_err(
+            "Cannot migrate from different contract type",
+        )));
+    }
+    
+    // Set new version
+    cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    
+    Ok(Response::new().add_attribute("action", "migrate"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-    use cosmwasm_std::Addr;
 
     #[test]
     fn proper_initialization() {
@@ -177,6 +283,7 @@ mod tests {
 
         let res = execute_update(
             deps.as_mut(),
+            mock_env(),
             info,
             101, // Invalid score > 100
             Binary::from(vec![0u8; 2592]),
@@ -192,6 +299,7 @@ mod tests {
 
         let res = execute_update(
             deps.as_mut(),
+            mock_env(),
             info,
             50,
             Binary::from(vec![0u8; 100]), // Wrong length
@@ -222,6 +330,7 @@ mod tests {
         let info = mock_info("user1", &[]);
         let res = execute_update(
             deps.as_mut(),
+            mock_env(),
             info.clone(),
             75,
             Binary::from(vec![0u8; 2592]),
@@ -233,5 +342,123 @@ mod tests {
         let res = query_reputation(deps.as_ref(), "user1".to_string()).unwrap();
         assert_eq!(res.score, 75);
         assert_eq!(res.dilithium_pk.len(), 2592);
+    }
+
+    // KAT tests with test data
+    const PK: &[u8] = include_bytes!("../test-data/dil5-pk.bin"); // 2592
+    const SIG: &[u8] = include_bytes!("../test-data/dil5-sig.bin"); // 4595
+
+    #[test]
+    #[cfg(feature = "pq")]
+    fn wrong_sig_len_fails() {
+        // This test only makes sense with pq feature enabled
+        let mut deps = mock_dependencies();
+        let err = execute_update(
+            deps.as_mut(),
+            mock_env(),
+            mock_info("sender", &[]),
+            50,
+            Binary::from(PK.to_vec()),
+            Binary::from(vec![0; 4000]), // bad length
+        )
+        .unwrap_err();
+        assert!(matches!(err, ContractError::WrongSigLen(4000)));
+    }
+
+    #[test]
+    #[cfg(not(feature = "pq"))]
+    fn wrong_sig_len_fails_mock() {
+        // In mock mode, only very short signatures fail
+        let mut deps = mock_dependencies();
+        let err = execute_update(
+            deps.as_mut(),
+            mock_env(),
+            mock_info("sender", &[]),
+            50,
+            Binary::from(PK.to_vec()),
+            Binary::from(vec![0; 50]), // too short even for mock
+        )
+        .unwrap_err();
+        assert!(matches!(err, ContractError::WrongSigLen(50)));
+    }
+
+    #[test]
+    #[cfg(feature = "pq")]
+    fn zero_sig_fails() {
+        // This test only makes sense with pq feature enabled
+        let mut deps = mock_dependencies();
+        let err = execute_update(
+            deps.as_mut(),
+            mock_env(),
+            mock_info("sender", &[]),
+            50,
+            Binary::from(PK.to_vec()),
+            Binary::from(vec![0; 4595]), // all-zero
+        )
+        .unwrap_err();
+        assert!(matches!(err, ContractError::ZeroInput));
+    }
+
+    #[test]
+    fn zero_sig_mock_mode_ok() {
+        // In mock mode, zero signature with correct length should pass basic checks
+        let mut deps = mock_dependencies();
+        // Note: without pq feature, we don't check for zero-filled signatures
+        let res = execute_update(
+            deps.as_mut(),
+            mock_env(),
+            mock_info("sender", &[]),
+            50,
+            Binary::from(PK.to_vec()),
+            Binary::from(vec![0; 4595]), // all-zero but valid length in mock mode
+        );
+        // In mock mode, this should succeed as we don't enforce zero-input check
+        assert!(res.is_ok());
+    }
+
+    #[test]
+    fn mock_mode_ok() {
+        let mut deps = mock_dependencies();
+        let res = execute_update(
+            deps.as_mut(),
+            mock_env(),
+            mock_info("sender", &[]),
+            100,
+            Binary::from(PK.to_vec()),
+            Binary::from(SIG.to_vec()),
+        )
+        .unwrap();
+        assert_eq!(res.attributes[2].value, "100");
+    }
+
+    #[test]
+    fn test_history_query() {
+        let mut deps = mock_dependencies();
+        
+        // First instantiate
+        let msg = InstantiateMsg {};
+        let info = mock_info("creator", &[]);
+        instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        // Add multiple updates
+        let info = mock_info("user1", &[]);
+        for score in [50, 60, 70] {
+            execute_update(
+                deps.as_mut(),
+                mock_env(),
+                info.clone(),
+                score,
+                Binary::from(vec![0u8; 2592]),
+                Binary::from(vec![1u8; 4595]),
+            )
+            .unwrap();
+        }
+
+        // Query history
+        let res = query_history(deps.as_ref(), "user1".to_string(), None, None).unwrap();
+        assert_eq!(res.entries.len(), 3);
+        assert_eq!(res.entries[0].score, 50);
+        assert_eq!(res.entries[1].score, 60);
+        assert_eq!(res.entries[2].score, 70);
     }
 }
