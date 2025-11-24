@@ -722,7 +722,7 @@ pub fn execute_relay_deliver(
 
 pub fn execute_domain_renew(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     domain: String,
     years: u32,
@@ -861,7 +861,7 @@ pub fn query_emails(
     }
 
     let limit = limit.unwrap_or(30).min(100) as usize;
-    let start = start_after.map(|id| Bound::exclusive(id));
+    let start = start_after.map(Bound::exclusive);
 
     // Query from EMAILS_BY_ID with pagination
     let emails: Result<Vec<EmailInfo>, ContractError> = EMAILS_BY_ID
