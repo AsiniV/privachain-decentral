@@ -934,7 +934,7 @@ mod tests {
             execute_register(
                 deps.as_mut(),
                 env.clone(),
-                mock_info(&format!("user{}", i), &coins(10_000, "uatom")),
+                mock_info(&format!("user{i}"), &coins(10_000, "uatom")),
                 domain,
                 owner_pubkey,
                 zk_commitment,
