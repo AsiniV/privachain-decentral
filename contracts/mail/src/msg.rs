@@ -3,14 +3,18 @@ use cosmwasm_std::{Addr, Binary, Uint128};
 
 #[cw_serde]
 pub struct InstantiateMsg {
-    /// Admin address for contract upgrades
+    /// Admin address for contract upgrades (owner)
     pub admin: Option<String>,
-    /// Cost to register a .prv domain in PRIV tokens
+    /// Configurable denom (replaces hard-coded "upriv")
+    pub denom: String,
+    /// Cost to register a .prv domain
     pub domain_registration_fee: Uint128,
-    /// Cost to send an email in PRIV tokens (anti-spam)
+    /// Cost to send an email (anti-spam)
     pub email_fee: Uint128,
     /// Minimum proof-of-work difficulty for emails
     pub pow_difficulty: u32,
+    /// Reward per delivered email (for relay nodes)
+    pub relay_reward: Uint128,
 }
 
 #[cw_serde]
@@ -65,6 +69,23 @@ pub enum ExecuteMsg {
         /// Evidence of spam/malicious behavior
         evidence: Binary,
     },
+    /// Relay delivers an email (new)
+    RelayDeliver {
+        /// Email ID to mark as delivered
+        email_id: u64,
+    },
+    /// Renew domain registration (new)
+    DomainRenew {
+        /// Domain to renew
+        domain: String,
+        /// Number of years to renew
+        years: u32,
+    },
+    /// Owner withdraws collected fees (new)
+    WithdrawFees {
+        /// Amount to withdraw
+        amount: Uint128,
+    },
 }
 
 #[cw_serde]
@@ -77,9 +98,11 @@ pub enum QueryMsg {
     /// Get emails for a domain (only domain owner can query)
     #[returns(EmailsResponse)]
     GetEmails { 
-        domain: String, 
+        domain: String,
+        /// Caller address for ownership verification
+        caller: String,
         /// Optional pagination
-        start_after: Option<String>,
+        start_after: Option<u64>,
         limit: Option<u32>,
     },
     
@@ -171,28 +194,34 @@ pub struct RelaysResponse {
 
 #[cw_serde]
 pub struct ConfigResponse {
-    /// Contract admin
-    pub admin: Option<Addr>,
+    /// Contract owner (was admin)
+    pub owner: Option<Addr>,
+    /// Configurable denom
+    pub denom: String,
     /// Domain registration fee
     pub domain_registration_fee: Uint128,
     /// Email sending fee
     pub email_fee: Uint128,
     /// Proof-of-work difficulty
     pub pow_difficulty: u32,
-    /// Total domains registered (u32 for gas optimization)
+    /// Relay reward per delivery
+    pub relay_reward: Uint128,
+    /// Total domains registered (u32 for gas optimization) - DEPRECATED
     pub total_domains: u32,
-    /// Total emails sent (u32 for gas optimization)
+    /// Total emails sent (u32 for gas optimization) - DEPRECATED
     pub total_emails: u32,
 }
 
 #[cw_serde]
 pub struct StatsResponse {
-    /// Total domains registered (u32 for gas optimization)
-    pub total_domains: u32,
-    /// Active domains (u32 for gas optimization)
-    pub active_domains: u32,
-    /// Total emails sent (u32 for gas optimization)
-    pub total_emails: u32,
+    /// Total domains registered (u64 for O(1) stats)
+    pub total_domains: u64,
+    /// Active domains (u64 for O(1) stats)
+    pub active_domains: u64,
+    /// Total emails sent (u64 for O(1) stats)
+    pub total_emails: u64,
+    /// Total emails delivered (new)
+    pub total_delivered: u64,
     /// Total relay nodes (u32 for gas optimization)
     pub total_relays: u32,
     /// Active relay nodes (u32 for gas optimization)

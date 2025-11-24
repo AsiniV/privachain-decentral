@@ -1,19 +1,21 @@
 use cosmwasm_std::{
     entry_point, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
-    StdError, Uint128, Addr, BankMsg, Coin, Order,
+    StdError, Uint128, Addr, BankMsg, Coin, Order, coins,
 };
-use cw2::set_contract_version;
+use cw_storage_plus::Bound;
+use cw2::{set_contract_version, get_contract_version};
 use sha2::{Sha256, Digest};
 use log::{error, info};
 
 use crate::error::ContractError;
 use crate::msg::{
     ConfigResponse, DomainResponse, EmailInfo, EmailsResponse, ExecuteMsg, InstantiateMsg,
-    QueryMsg, RelayResponse, RelaysResponse, StatsResponse,
+    QueryMsg, RelayResponse, RelaysResponse, StatsResponse, MigrateMsg,
 };
 use crate::state::{
     Config, Domain, Email, RelayNode, CONFIG, DOMAINS, EMAILS, DOMAIN_EMAILS, 
     RELAYS, RELAYS_BY_LOCATION, SPAM_REPORTS, USED_NONCES, RATE_LIMIT,
+    EMAIL_SEQ, EMAILS_BY_ID, STATS, Stats,
 };
 
 // Contract metadata
@@ -32,29 +34,40 @@ pub fn instantiate(
     
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    let admin = msg
+    let owner = msg
         .admin
         .map(|a| deps.api.addr_validate(&a))
         .transpose()?;
 
     let config = Config {
-        admin,
+        owner,
+        denom: msg.denom.clone(),
         domain_registration_fee: msg.domain_registration_fee,
         email_fee: msg.email_fee,
         pow_difficulty: msg.pow_difficulty,
+        relay_reward: msg.relay_reward,
         total_domains: 0,
         total_emails: 0,
     };
 
     CONFIG.save(deps.storage, &config)?;
 
+    // Initialize stats
+    STATS.save(deps.storage, &Stats {
+        active_domains: 0,
+        total_emails: 0,
+        total_delivered: 0,
+    })?;
+
     info!("Instantiate completed successfully");
     Ok(Response::new()
         .add_attribute("method", "instantiate")
         .add_attribute("owner", info.sender)
+        .add_attribute("denom", msg.denom)
         .add_attribute("domain_fee", msg.domain_registration_fee)
         .add_attribute("email_fee", msg.email_fee)
-        .add_attribute("pow_difficulty", msg.pow_difficulty.to_string()))
+        .add_attribute("pow_difficulty", msg.pow_difficulty.to_string())
+        .add_attribute("relay_reward", msg.relay_reward))
 }
 
 #[entry_point]
@@ -123,6 +136,27 @@ pub fn execute(
             let result = execute_report_spam(deps, info, target, evidence);
             if let Err(ref e) = result {
                 error!("Error in report_spam: {e}");
+            }
+            result
+        },
+        ExecuteMsg::RelayDeliver { email_id } => {
+            let result = execute_relay_deliver(deps, env, info, email_id);
+            if let Err(ref e) = result {
+                error!("Error in relay_deliver: {e}");
+            }
+            result
+        },
+        ExecuteMsg::DomainRenew { domain, years } => {
+            let result = execute_domain_renew(deps, env, info, domain, years);
+            if let Err(ref e) = result {
+                error!("Error in domain_renew: {e}");
+            }
+            result
+        },
+        ExecuteMsg::WithdrawFees { amount } => {
+            let result = execute_withdraw_fees(deps, env, info, amount);
+            if let Err(ref e) = result {
+                error!("Error in withdraw_fees: {e}");
             }
             result
         },
@@ -198,12 +232,15 @@ pub fn execute_register_domain(
     let payment = info
         .funds
         .iter()
-        .find(|coin| coin.denom == "upriv")
+        .find(|coin| coin.denom == config.denom)
         .map(|coin| coin.amount)
         .unwrap_or_else(Uint128::zero);
 
     if payment < config.domain_registration_fee {
-        return Err(ContractError::InsufficientFunds {});
+        return Err(ContractError::InsufficientFundsDetailed {
+            need: config.domain_registration_fee,
+            have: payment,
+        });
     }
 
     // ✅ H3: Rate limiting for domain registration (60 seconds between domain registrations per address)
@@ -274,6 +311,10 @@ pub fn execute_register_domain(
     hasher.update(&zk_proof);
     let owner_hash = Binary::from(hasher.finalize().to_vec());
 
+    // Convert zk_proof to string for storage
+    let zk_proof_str = String::from_utf8(zk_proof.to_vec())
+        .unwrap_or_else(|_| hex::encode(&zk_proof));
+
     let domain_info = Domain {
         owner_hash,
         owner: info.sender.clone(),
@@ -285,14 +326,20 @@ pub fn execute_register_domain(
         reputation: 50, // Start with neutral reputation
         emails_received: 0,
         spam_reports: 0,
+        zk_proof: zk_proof_str,
     };
 
     DOMAINS.save(deps.storage, &domain, &domain_info)?;
 
-    // Update config
+    // Update config and stats
     let mut config = CONFIG.load(deps.storage)?;
     config.total_domains += 1;
     CONFIG.save(deps.storage, &config)?;
+
+    STATS.update(deps.storage, |mut s| -> StdResult<_> {
+        s.active_domains += 1;
+        Ok(s)
+    })?;
 
     Ok(Response::new()
         // ✅ M2: Comprehensive event logging 
@@ -368,12 +415,15 @@ pub fn execute_send_email(
     let payment = info
         .funds
         .iter()
-        .find(|coin| coin.denom == "upriv")
+        .find(|coin| coin.denom == config.denom)
         .map(|coin| coin.amount)
         .unwrap_or_else(Uint128::zero);
 
     if payment < config.email_fee {
-        return Err(ContractError::InsufficientFunds {});
+        return Err(ContractError::InsufficientFundsDetailed {
+            need: config.email_fee,
+            have: payment,
+        });
     }
 
     // Verify recipient domain exists and check expiration
@@ -399,38 +449,50 @@ pub fn execute_send_email(
     }
     USED_NONCES.save(deps.storage, nonce, &true)?;
 
-    // Generate unique email ID
-    let email_id = generate_email_id(&env, &info.sender, &content_cid);
-
     // Generate sender alias if not provided
     let alias = sender_alias.unwrap_or_else(|| {
         generate_sender_alias(&info.sender, &recipient_domain)
     });
 
+    // Get next email ID from sequence
+    let email_id = EMAIL_SEQ.may_load(deps.storage)?.unwrap_or_default() + 1;
+    EMAIL_SEQ.save(deps.storage, &email_id)?;
+
     let email = Email {
-        id: email_id.clone(),
+        id: email_id.to_string(),
+        from_domain: "".to_string(), // Anonymous sender
+        to_local: "".to_string(), // Will be derived from recipient_domain
         recipient_domain: recipient_domain.clone(),
         sender_alias: alias.clone(),
         content_cid: content_cid.clone(),
         timestamp: env.block.time.seconds(),
         delivered: false,
+        delivered_by: None,
         relay_path: vec![],
     };
 
-    // Store email
-    EMAILS.save(deps.storage, (&recipient_domain, &email_id), &email)?;
+    // Store email by ID for relay delivery
+    EMAILS_BY_ID.save(deps.storage, email_id, &email)?;
+
+    // Store email by domain for queries
+    EMAILS.save(deps.storage, (&recipient_domain, &email.id), &email)?;
 
     // Update domain emails index
     let mut domain_emails = DOMAIN_EMAILS
         .may_load(deps.storage, &recipient_domain)?
         .unwrap_or_default();
-    domain_emails.push(email_id.clone());
+    domain_emails.push(email.id.clone());
     DOMAIN_EMAILS.save(deps.storage, &recipient_domain, &domain_emails)?;
 
     // Update stats
     let mut config = CONFIG.load(deps.storage)?;
     config.total_emails += 1;
     CONFIG.save(deps.storage, &config)?;
+
+    STATS.update(deps.storage, |mut s| -> StdResult<_> {
+        s.total_emails += 1;
+        Ok(s)
+    })?;
 
     Ok(Response::new()
         // ✅ M2: Comprehensive event logging 
@@ -439,7 +501,7 @@ pub fn execute_send_email(
                 .add_attribute("method", "send_email")
                 .add_attribute("from", info.sender.to_string())
                 .add_attribute("recipient", &recipient_domain)
-                .add_attribute("email_id", &email_id)
+                .add_attribute("email_id", &email.id)
                 .add_attribute("sender_fee", payment.to_string())
                 .add_attribute("sender_alias", &alias)
                 .add_attribute("content_cid", &content_cid)
@@ -448,7 +510,7 @@ pub fn execute_send_email(
         )
         .add_attribute("method", "send_email")
         .add_attribute("recipient", &recipient_domain)
-        .add_attribute("email_id", &email_id)
+        .add_attribute("email_id", &email.id)
         .add_attribute("sender_fee", payment)
         .add_attribute("sender_alias", &alias)
         .add_attribute("content_cid", &content_cid)
@@ -560,6 +622,7 @@ pub fn execute_claim_relay_rewards(
     deps: DepsMut,
     info: MessageInfo,
 ) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
     let mut relay = RELAYS.load(deps.storage, &info.sender)?;
 
     if relay.pending_rewards.is_zero() {
@@ -575,7 +638,7 @@ pub fn execute_claim_relay_rewards(
     let payout = BankMsg::Send {
         to_address: info.sender.to_string(),
         amount: vec![Coin {
-            denom: "upriv".to_string(),
+            denom: config.denom,
             amount: rewards,
         }],
     };
@@ -609,12 +672,149 @@ pub fn execute_report_spam(
         .add_attribute("target", &target))
 }
 
+pub fn execute_relay_deliver(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    email_id: u64,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    
+    let mut email = EMAILS_BY_ID
+        .may_load(deps.storage, email_id)?
+        .ok_or(ContractError::EmailNotFound {})?;
+    
+    if email.delivered {
+        return Err(ContractError::AlreadyDelivered {});
+    }
+
+    let mut relay = RELAYS
+        .may_load(deps.storage, &info.sender)?
+        .ok_or(ContractError::RelayNotRegistered {})?;
+
+    // Mark delivered
+    email.delivered = true;
+    email.delivered_by = Some(info.sender.clone());
+    EMAILS_BY_ID.save(deps.storage, email_id, &email)?;
+
+    // Also update in domain emails
+    EMAILS.save(deps.storage, (&email.recipient_domain, &email.id), &email)?;
+
+    // Reward relay
+    relay.emails_relayed += 1;
+    relay.successful_deliveries += 1;
+    relay.pending_rewards += config.relay_reward;
+    RELAYS.save(deps.storage, &info.sender, &relay)?;
+
+    // Update stats
+    STATS.update(deps.storage, |mut s| -> StdResult<_> {
+        s.total_delivered += 1;
+        Ok(s)
+    })?;
+
+    Ok(Response::new()
+        .add_attribute("action", "relay_deliver")
+        .add_attribute("email_id", email_id.to_string())
+        .add_attribute("reward", config.relay_reward))
+}
+
+pub fn execute_domain_renew(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    domain: String,
+    years: u32,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    
+    let mut dom = DOMAINS
+        .may_load(deps.storage, &domain)?
+        .ok_or(ContractError::DomainNotFound {})?;
+    
+    if info.sender != dom.owner {
+        return Err(ContractError::NotDomainOwner {});
+    }
+
+    let cost = config.domain_registration_fee
+        .checked_mul(Uint128::from(years))
+        .map_err(|_| ContractError::Std(StdError::generic_err("Overflow in cost calculation")))?;
+    
+    let payment = info
+        .funds
+        .iter()
+        .find(|coin| coin.denom == config.denom)
+        .map(|coin| coin.amount)
+        .unwrap_or_else(Uint128::zero);
+
+    if payment < cost {
+        return Err(ContractError::InsufficientFundsDetailed {
+            need: cost,
+            have: payment,
+        });
+    }
+
+    let seconds_to_add = 31536000u64
+        .checked_mul(years as u64)
+        .ok_or(ContractError::Std(StdError::generic_err("Overflow in year calculation")))?;
+    
+    dom.expires_at = dom.expires_at
+        .checked_add(seconds_to_add)
+        .ok_or(ContractError::Std(StdError::generic_err("Overflow in expiration calculation")))?;
+    
+    DOMAINS.save(deps.storage, &domain, &dom)?;
+
+    Ok(Response::new()
+        .add_attribute("action", "domain_renew")
+        .add_attribute("domain", domain)
+        .add_attribute("years", years.to_string())
+        .add_attribute("new_expires_at", dom.expires_at.to_string()))
+}
+
+pub fn execute_withdraw_fees(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    amount: Uint128,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    
+    if Some(info.sender.clone()) != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+    
+    if amount.is_zero() {
+        return Err(ContractError::InvalidAmount {});
+    }
+
+    let balance = deps
+        .querier
+        .query_balance(env.contract.address, config.denom.clone())?
+        .amount;
+    
+    if balance < amount {
+        return Err(ContractError::InsufficientPool {
+            need: amount,
+            have: balance,
+        });
+    }
+
+    let msg = BankMsg::Send {
+        to_address: config.owner.unwrap().to_string(),
+        amount: coins(amount.u128(), config.denom),
+    };
+
+    Ok(Response::new()
+        .add_message(msg)
+        .add_attribute("action", "withdraw_fees")
+        .add_attribute("amount", amount))
+}
+
 #[entry_point]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetDomain { domain } => to_json_binary(&query_domain(deps, domain)?),
-        QueryMsg::GetEmails { domain, start_after, limit } => {
-            to_json_binary(&query_emails(deps, domain, start_after, limit).map_err(|e| StdError::generic_err(e.to_string()))?)
+        QueryMsg::GetEmails { domain, caller, start_after, limit } => {
+            to_json_binary(&query_emails(deps, domain, caller, start_after, limit).map_err(|e| StdError::generic_err(e.to_string()))?)
         },
         QueryMsg::GetRelay { address } => to_json_binary(&query_relay(deps, address)?),
         QueryMsg::GetRelays { location, start_after, limit } => {
@@ -643,20 +843,33 @@ pub fn query_domain(deps: Deps, domain: String) -> StdResult<DomainResponse> {
 pub fn query_emails(
     deps: Deps,
     domain: String,
-    _start_after: Option<String>,
+    caller: String,
+    start_after: Option<u64>,
     limit: Option<u32>,
 ) -> Result<EmailsResponse, ContractError> {
-    let email_ids = DOMAIN_EMAILS
-        .may_load(deps.storage, &domain)?
-        .unwrap_or_default();
+    // Verify caller is domain owner
+    let caller_addr = deps.api.addr_validate(&caller)?;
+    let dom = DOMAINS.load(deps.storage, &domain)?;
     
-    let limit = limit.unwrap_or(50) as usize;
-    let emails: Result<Vec<EmailInfo>, crate::ContractError> = email_ids
-        .iter()
+    if caller_addr != dom.owner {
+        return Err(ContractError::NotDomainOwner {});
+    }
+
+    let limit = limit.unwrap_or(30).min(100) as usize;
+    let start = start_after.map(|id| Bound::exclusive(id));
+
+    // Query from EMAILS_BY_ID with pagination
+    let emails: Result<Vec<EmailInfo>, ContractError> = EMAILS_BY_ID
+        .range(deps.storage, start, None, Order::Ascending)
+        .filter(|item| {
+            item.as_ref()
+                .map(|(_, e)| e.recipient_domain == domain)
+                .unwrap_or(false)
+        })
         .take(limit)
-        .map(|id| {
-            let email = EMAILS.load(deps.storage, (&domain, id))?;
-            Ok::<EmailInfo, crate::ContractError>(EmailInfo {
+        .map(|res| {
+            let (_, email) = res?;
+            Ok(EmailInfo {
                 id: email.id,
                 sender_alias: email.sender_alias,
                 content_cid: email.content_cid,
@@ -778,31 +991,21 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
     
     Ok(ConfigResponse {
-        admin: config.admin,
+        owner: config.owner,
+        denom: config.denom,
         domain_registration_fee: config.domain_registration_fee,
         email_fee: config.email_fee,
         pow_difficulty: config.pow_difficulty,
+        relay_reward: config.relay_reward,
         total_domains: config.total_domains,
         total_emails: config.total_emails,
     })
 }
 
 pub fn query_stats(deps: Deps) -> StdResult<StatsResponse> {
-    let config = CONFIG.load(deps.storage)?;
+    let stats = STATS.load(deps.storage)?;
     
-    // Count active domains
-    let active_domains = DOMAINS
-        .range(deps.storage, None, None, Order::Ascending)
-        .filter_map(|item| {
-            if let Ok((_, domain)) = item {
-                if domain.active { Some(1) } else { None }
-            } else {
-                None
-            }
-        })
-        .count() as u32;
-
-    // Count active relays
+    // Count active relays (O(n) but less frequent)
     let active_relays = RELAYS
         .range(deps.storage, None, None, Order::Ascending)
         .filter_map(|item| {
@@ -819,9 +1022,10 @@ pub fn query_stats(deps: Deps) -> StdResult<StatsResponse> {
         .count() as u32;
 
     Ok(StatsResponse {
-        total_domains: config.total_domains,
-        active_domains,
-        total_emails: config.total_emails,
+        total_domains: stats.active_domains, // Use stats counter
+        active_domains: stats.active_domains,
+        total_emails: stats.total_emails,
+        total_delivered: stats.total_delivered,
         total_relays,
         active_relays,
     })
@@ -829,8 +1033,17 @@ pub fn query_stats(deps: Deps) -> StdResult<StatsResponse> {
 
 // Helper functions
 
+/// Compute target = 2^(128 - difficulty); hash must be < target (target-based PoW)
 fn verify_pow(proof: &Binary, difficulty: u32) -> bool {
+    if difficulty == 0 {
+        return true; // no-PoW mode
+    }
+    
     if proof.len() < 32 {
+        return false;
+    }
+    
+    if difficulty > 128 {
         return false;
     }
     
@@ -838,14 +1051,24 @@ fn verify_pow(proof: &Binary, difficulty: u32) -> bool {
     hasher.update(proof);
     let hash = hasher.finalize();
     
-    // Check if hash has required number of leading zeros
-    // ✅ Use checked arithmetic to prevent overflow
-    let leading_zeros = hash.iter().take_while(|&&b| b == 0).count()
-        .checked_mul(8)
-        .unwrap_or(0);
-    leading_zeros >= difficulty as usize
+    // Convert first 16 bytes of hash to u128 for comparison
+    let mut hash_bytes = [0u8; 16];
+    hash_bytes.copy_from_slice(&hash[..16]);
+    let hash_val = u128::from_be_bytes(hash_bytes);
+    
+    // Calculate target = 2^(128 - difficulty)
+    let target = if difficulty < 128 {
+        1u128 << (128 - difficulty)
+    } else {
+        1u128 // difficulty == 128 means target is 1
+    };
+    
+    // Hash must be less than target
+    hash_val < target
 }
 
+// Kept for backward compatibility but no longer used
+#[allow(dead_code)]
 fn generate_email_id(env: &Env, sender: &Addr, content_cid: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(env.block.time.seconds().to_be_bytes());
@@ -861,6 +1084,54 @@ fn generate_sender_alias(sender: &Addr, recipient_domain: &str) -> String {
     format!("{}.prv", &hex::encode(hasher.finalize())[..12])
 }
 
+#[entry_point]
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    let version = get_contract_version(deps.storage)?;
+    
+    // Only allow migration from v0.1.0
+    if version.contract != CONTRACT_NAME {
+        return Err(ContractError::Unauthorized {});
+    }
+    
+    if version.version != "0.1.0" {
+        return Err(ContractError::Std(StdError::generic_err(
+            "Can only migrate from v0.1.0"
+        )));
+    }
+    
+    // Load old config structure (assuming it exists)
+    let old_config = CONFIG.load(deps.storage)?;
+    
+    // Create new config with denom and relay_reward
+    let new_config = Config {
+        owner: old_config.owner,
+        denom: "upriv".to_string(), // Default to "upriv" for backward compatibility
+        domain_registration_fee: old_config.domain_registration_fee,
+        email_fee: old_config.email_fee,
+        pow_difficulty: old_config.pow_difficulty,
+        relay_reward: Uint128::new(1000), // Default relay reward
+        total_domains: old_config.total_domains,
+        total_emails: old_config.total_emails,
+    };
+    
+    CONFIG.save(deps.storage, &new_config)?;
+    
+    // Initialize stats from existing counters
+    STATS.save(deps.storage, &Stats {
+        active_domains: old_config.total_domains as u64,
+        total_emails: old_config.total_emails as u64,
+        total_delivered: 0, // Start at 0 for new counter
+    })?;
+    
+    // Set new contract version
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    
+    Ok(Response::new()
+        .add_attribute("action", "migrate")
+        .add_attribute("from_version", "0.1.0")
+        .add_attribute("to_version", CONTRACT_VERSION))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -873,9 +1144,11 @@ mod tests {
 
         let msg = InstantiateMsg {
             admin: None,
+            denom: "ujuno".to_string(),
             domain_registration_fee: Uint128::from(1000u128),
             email_fee: Uint128::from(10u128),
             pow_difficulty: 4,
+            relay_reward: Uint128::from(100u128),
         };
         let info = mock_info("creator", &coins(1000, "earth"));
         let res = instantiate(deps.as_mut(), mock_env(), info, msg);
@@ -892,16 +1165,42 @@ mod tests {
 
     #[test]
     fn test_pow_verification() {
-        // Test proof of work verification
-        // The function hashes the proof, so we need a proof that when hashed has leading zeros
+        // Test proof of work verification with target-based approach
         let proof = Binary::from(vec![0u8; 32]); // This will get hashed
         let result = verify_pow(&proof, 1);
-        // We can't guarantee what the hash will be, so let's just test that the function runs
-        // and returns a boolean (the function itself verifies this by returning bool)
         let _ = result; // Just verify the function compiles and runs
         
         // Test with too short proof
         let short_proof = Binary::from(vec![0u8; 16]); // Less than 32 bytes
         assert!(!verify_pow(&short_proof, 1));
+        
+        // Test no-PoW mode (difficulty 0)
+        assert!(verify_pow(&proof, 0));
+        
+        // Test invalid difficulty > 128
+        assert!(!verify_pow(&proof, 129));
+    }
+
+    #[test]
+    fn test_configurable_denom() {
+        let mut deps = mock_dependencies();
+
+        // Test with custom denom
+        let msg = InstantiateMsg {
+            admin: None,
+            denom: "uatom".to_string(),
+            domain_registration_fee: Uint128::from(5000u128),
+            email_fee: Uint128::from(50u128),
+            pow_difficulty: 8,
+            relay_reward: Uint128::from(200u128),
+        };
+        let info = mock_info("creator", &coins(1000, "earth"));
+        let res = instantiate(deps.as_mut(), mock_env(), info, msg);
+        
+        assert!(res.is_ok());
+        
+        // Verify config has correct denom
+        let query_res = query(deps.as_ref(), mock_env(), QueryMsg::GetConfig {});
+        assert!(query_res.is_ok());
     }
 }
