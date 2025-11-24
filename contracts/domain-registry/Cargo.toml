@@ -1,6 +1,6 @@
 [package]
 name = "privachain-domain-registry"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["PrivaChain Team <dev@privachain.network>"]
 edition = "2021"
 description = "Real .prv domain registry contract with ZK proof validation - NO STUBS"

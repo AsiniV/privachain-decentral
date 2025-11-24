@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Binary, Timestamp};
+use cosmwasm_std::{Addr, Binary, Timestamp, Uint128};
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -6,9 +6,11 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
     pub admin: Addr,
-    pub registration_cost: u128,
+    pub registration_cost: Uint128,
+    pub denom: String,                      // configurable denom (was hard-coded "uatom")
     pub max_domain_length: u32,
     pub domain_expiration_seconds: u64,
+    pub registration_cooldown: u64,         // rate limit in seconds
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -50,8 +52,12 @@ pub const DOMAINS: Map<String, DomainRecord> = Map::new("domains");
 // Map: owner_pubkey_hex -> Vec<domain_hash> (for efficient lookup)
 pub const DOMAINS_BY_OWNER: Map<String, Vec<String>> = Map::new("domains_by_owner");
 
-// Map: expiration_timestamp -> Vec<domain_hash> (for cleanup)
+// Expiry index for efficient range queries (fixes O(n·s) bug)
+// Key is expiry timestamp in seconds, value is list of domain hashes
 pub const DOMAINS_BY_EXPIRY: Map<u64, Vec<String>> = Map::new("domains_by_expiry");
 
 // Map: date (YYYY-MM-DD) -> registration_count (for daily stats)
 pub const DAILY_REGISTRATIONS: Map<String, u64> = Map::new("daily_registrations");
+
+// Rate limit: sender -> last registration timestamp
+pub const COOLDOWN: Map<&Addr, Timestamp> = Map::new("cooldown");

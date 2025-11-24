@@ -2,13 +2,14 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
-    Timestamp,
+    Timestamp, Uint128, coin, coins, BankMsg, Order, Storage,
 };
 use cw2::set_contract_version;
+use cw_storage_plus::Bound;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, MigrateMsg};
-use crate::state::{Config, DomainRecord, ContractStats, CONFIG, STATS, DOMAINS, DOMAINS_BY_OWNER, DOMAINS_BY_EXPIRY, DAILY_REGISTRATIONS};
+use crate::state::{Config, DomainRecord, ContractStats, CONFIG, STATS, DOMAINS, DOMAINS_BY_OWNER, DOMAINS_BY_EXPIRY, DAILY_REGISTRATIONS, COOLDOWN};
 use crate::crypto::{verify_zk_proof, verify_signature};
 
 const CONTRACT_NAME: &str = "privachain-domain-registry";
@@ -26,6 +27,10 @@ pub fn instantiate(
     let admin = deps.api.addr_validate(&msg.admin)?;
     
     // Validate configuration parameters
+    if msg.registration_cost.is_zero() {
+        return Err(ContractError::InvalidCost);
+    }
+    
     if msg.max_domain_length == 0 || msg.max_domain_length > 64 {
         return Err(ContractError::ConfigError {
             reason: "max_domain_length must be between 1 and 64".to_string(),
@@ -41,8 +46,10 @@ pub fn instantiate(
     let config = Config {
         admin,
         registration_cost: msg.registration_cost,
+        denom: msg.denom.clone(),
         max_domain_length: msg.max_domain_length,
         domain_expiration_seconds: msg.domain_expiration_seconds,
+        registration_cooldown: msg.registration_cooldown.unwrap_or(3600), // 1 hour default
     };
     CONFIG.save(deps.storage, &config)?;
 
@@ -58,7 +65,8 @@ pub fn instantiate(
     Ok(Response::new()
         .add_attribute("method", "instantiate")
         .add_attribute("admin", config.admin)
-        .add_attribute("registration_cost", config.registration_cost.to_string()))
+        .add_attribute("denom", config.denom)
+        .add_attribute("registration_cost", config.registration_cost))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -95,6 +103,8 @@ pub fn execute(
             max_domain_length,
             new_admin,
         } => execute_update_config(deps, env, info, registration_cost, max_domain_length, new_admin),
+        ExecuteMsg::PruneExpired { limit } => execute_prune_expired(deps, env, info, limit),
+        ExecuteMsg::Withdraw { amount, denom } => execute_withdraw(deps, env, info, amount, denom),
     }
 }
 
@@ -147,19 +157,35 @@ fn execute_register(
         return Err(ContractError::DomainExists { domain: domain_hash });
     }
     
-    // Verify payment
+    // --- 1. payment check (single denom) -------------------
+    let cost = coin(config.registration_cost.u128(), config.denom.clone());
     let payment = info
         .funds
         .iter()
-        .find(|coin| coin.denom == "uatom")
-        .map(|coin| coin.amount.u128())
-        .unwrap_or(0);
-        
-    if payment < config.registration_cost {
-        return Err(ContractError::InsufficientPayment {
-            got: payment,
-            need: config.registration_cost,
+        .find(|c| c.denom == config.denom)
+        .map(|c| c.amount)
+        .unwrap_or_default();
+    
+    if payment < cost.amount {
+        return Err(ContractError::InsufficientFunds {
+            need: cost.amount,
+            have: payment,
         });
+    }
+    
+    // --- 2. rate limit ------------------------------------
+    if let Some(last) = COOLDOWN.may_load(deps.storage, &info.sender)? {
+        let elapsed = env.block.time.seconds().saturating_sub(last.seconds());
+        if elapsed < config.registration_cooldown {
+            return Err(ContractError::RateLimited {
+                remaining: config.registration_cooldown - elapsed,
+            });
+        }
+    }
+    
+    // --- 3. ZK proof length sanity ------------------------
+    if zk_proof.len() > 4096 {
+        return Err(ContractError::ZkProofTooLong);
     }
     
     // NO STUB: Verify ZK proof (real cryptographic verification)
@@ -194,13 +220,16 @@ fn execute_register(
     owner_domains.push(domain_hash.clone());
     DOMAINS_BY_OWNER.save(deps.storage, owner_key, &owner_domains)?;
     
-    // Update expiry index
+    // Update expiry index with u64 key
     let expiry_key = expires_at.seconds();
     let mut expiry_domains = DOMAINS_BY_EXPIRY
         .may_load(deps.storage, expiry_key)?
         .unwrap_or_default();
     expiry_domains.push(domain_hash.clone());
     DOMAINS_BY_EXPIRY.save(deps.storage, expiry_key, &expiry_domains)?;
+    
+    // rate limit stamp
+    COOLDOWN.save(deps.storage, &info.sender, &env.block.time)?;
     
     // Update statistics
     update_registration_stats(deps.storage, &env.block.time)?;
@@ -236,14 +265,14 @@ fn execute_renew(
     let payment = info
         .funds
         .iter()
-        .find(|coin| coin.denom == "uatom")
-        .map(|coin| coin.amount.u128())
-        .unwrap_or(0);
+        .find(|c| c.denom == config.denom)
+        .map(|c| c.amount)
+        .unwrap_or_default();
         
     if payment < config.registration_cost {
-        return Err(ContractError::InsufficientPayment {
-            got: payment,
+        return Err(ContractError::InsufficientFunds {
             need: config.registration_cost,
+            have: payment,
         });
     }
     
@@ -380,7 +409,7 @@ fn execute_update_config(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    registration_cost: Option<u128>,
+    registration_cost: Option<Uint128>,
     max_domain_length: Option<u32>,
     new_admin: Option<String>,
 ) -> Result<Response, ContractError> {
@@ -395,6 +424,9 @@ fn execute_update_config(
     
     // Update config fields
     if let Some(cost) = registration_cost {
+        if cost.is_zero() {
+            return Err(ContractError::InvalidCost);
+        }
         config.registration_cost = cost;
     }
     
@@ -418,8 +450,97 @@ fn execute_update_config(
         .add_attribute("admin", config.admin))
 }
 
+fn execute_prune_expired(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    limit: Option<u32>,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    if info.sender != config.admin {
+        return Err(ContractError::Unauthorized {
+            reason: "only admin can prune expired domains".to_string(),
+        });
+    }
+
+    let limit = limit.unwrap_or(50).min(100) as usize;
+    let now = env.block.time.seconds();
+    let mut pruned = 0u32;
+
+    // scan expiry index up to 'now' using u64 keys
+    let keys: Vec<u64> = DOMAINS_BY_EXPIRY
+        .keys(deps.storage, None, Some(Bound::inclusive(now)), Order::Ascending)
+        .take(limit)
+        .collect::<StdResult<Vec<_>>>()?;
+
+    for ts in keys {
+        let list = DOMAINS_BY_EXPIRY.load(deps.storage, ts)?;
+        for domain in list {
+            let mut dom = DOMAINS.load(deps.storage, domain.clone())?;
+            if dom.is_active && dom.expires_at.seconds() <= now {
+                dom.is_active = false;
+                DOMAINS.save(deps.storage, domain.clone(), &dom)?;
+                
+                // Update stats
+                let mut stats = STATS.load(deps.storage)?;
+                stats.active_domains = stats.active_domains.saturating_sub(1);
+                stats.expired_domains += 1;
+                STATS.save(deps.storage, &stats)?;
+                
+                pruned += 1;
+            }
+        }
+        // remove empty expiry bucket
+        DOMAINS_BY_EXPIRY.remove(deps.storage, ts);
+    }
+
+    Ok(Response::new()
+        .add_attribute("action", "prune_expired")
+        .add_attribute("pruned", pruned.to_string()))
+}
+
+fn execute_withdraw(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    amount: Uint128,
+    denom: String,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    if info.sender != config.admin {
+        return Err(ContractError::Unauthorized {
+            reason: "only admin can withdraw".to_string(),
+        });
+    }
+    if amount.is_zero() {
+        return Err(ContractError::InvalidAmount);
+    }
+
+    let balance = deps
+        .querier
+        .query_balance(env.contract.address, denom.clone())?
+        .amount;
+    if balance < amount {
+        return Err(ContractError::InsufficientFunds {
+            need: amount,
+            have: balance,
+        });
+    }
+
+    let msg = BankMsg::Send {
+        to_address: config.admin.to_string(),
+        amount: coins(amount.u128(), denom.clone()),
+    };
+
+    Ok(Response::new()
+        .add_message(msg)
+        .add_attribute("action", "withdraw")
+        .add_attribute("amount", amount)
+        .add_attribute("denom", denom))
+}
+
 fn update_registration_stats(
-    storage: &mut dyn cosmwasm_std::Storage,
+    storage: &mut dyn Storage,
     timestamp: &Timestamp,
 ) -> StdResult<()> {
     let mut stats = STATS.load(storage)?;
@@ -514,40 +635,51 @@ fn query_expiring_soon(
     start_after: Option<String>,
     limit: Option<u32>,
 ) -> StdResult<crate::msg::ExpiringDomainsResponse> {
-    let cutoff_time = env.block.time.plus_seconds(within_seconds);
-    let mut all_expiring_domains = Vec::new();
-    
-    // Collect domains expiring within the timeframe
-    let current_time = env.block.time.seconds();
-    let end_time = cutoff_time.seconds();
-    
-    for timestamp in current_time..=end_time {
-        if let Ok(domain_hashes) = DOMAINS_BY_EXPIRY.load(deps.storage, timestamp) {
-            for hash in domain_hashes {
-                if let Ok(domain) = DOMAINS.load(deps.storage, hash) {
-                    all_expiring_domains.push(crate::msg::DomainInfoResponse {
-                        domain_hash: domain.domain_hash,
-                        owner_pubkey: domain.owner_pubkey,
-                        registered_at: domain.registered_at,
-                        expires_at: domain.expires_at,
-                        metadata: domain.metadata,
-                        is_active: domain.is_active,
-                    });
+    let limit = limit.unwrap_or(30).min(100) as usize;
+    let current = env.block.time.seconds();
+    let end = current + within_seconds;
+
+    // --- 1. collect expiry keys in range (FIXES O(n·s) BUG) ---
+    let expiry_keys: Vec<u64> = DOMAINS_BY_EXPIRY
+        .keys(
+            deps.storage,
+            Some(Bound::inclusive(current)),
+            Some(Bound::inclusive(end)),
+            Order::Ascending,
+        )
+        .collect::<StdResult<Vec<_>>>()?;
+
+    // --- 2. flatten domain names --------------------------
+    let mut domain_names = Vec::new();
+    for ts in expiry_keys {
+        let list = DOMAINS_BY_EXPIRY.load(deps.storage, ts)?;
+        for d in list {
+            if start_after.as_ref().is_none_or(|s| d > *s) {
+                domain_names.push(d);
+                if domain_names.len() >= limit {
+                    break;
                 }
             }
         }
+        if domain_names.len() >= limit {
+            break;
+        }
     }
-    
-    // Apply pagination
-    let start_idx = start_after
-        .and_then(|domain| all_expiring_domains.iter().position(|d| d.domain_hash == domain))
-        .map(|pos| pos + 1)
-        .unwrap_or(0);
-    
-    let limit = limit.unwrap_or(30) as usize;
-    let end_idx = std::cmp::min(start_idx + limit, all_expiring_domains.len());
-    
-    let domains = all_expiring_domains[start_idx..end_idx].to_vec();
+
+    // --- 3. load full objects -----------------------------
+    let mut domains = Vec::new();
+    for hash in domain_names {
+        if let Ok(domain) = DOMAINS.load(deps.storage, hash) {
+            domains.push(crate::msg::DomainInfoResponse {
+                domain_hash: domain.domain_hash,
+                owner_pubkey: domain.owner_pubkey,
+                registered_at: domain.registered_at,
+                expires_at: domain.expires_at,
+                metadata: domain.metadata,
+                is_active: domain.is_active,
+            });
+        }
+    }
     
     Ok(crate::msg::ExpiringDomainsResponse { domains })
 }
@@ -559,8 +691,10 @@ fn query_config(deps: Deps) -> StdResult<crate::msg::ConfigResponse> {
     Ok(crate::msg::ConfigResponse {
         admin: config.admin,
         registration_cost: config.registration_cost,
+        denom: config.denom,
         max_domain_length: config.max_domain_length,
         domain_expiration_seconds: config.domain_expiration_seconds,
+        registration_cooldown: config.registration_cooldown,
         total_domains: stats.total_domains,
     })
 }
@@ -593,6 +727,329 @@ fn query_verify_proof(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-    Ok(Response::default())
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    // Check if we're migrating from v0.1.0
+    let contract_version = cw2::get_contract_version(deps.storage)?;
+    
+    if contract_version.contract != CONTRACT_NAME {
+        return Err(ContractError::Unauthorized {
+            reason: "Cannot migrate from different contract".to_string(),
+        });
+    }
+
+    // Only support migration from v0.1.0
+    if contract_version.version == "0.1.0" {
+        // For migration from v0.1.0, we need to update the config structure
+        // The old config used u128 for registration_cost, new uses Uint128
+        // The old config didn't have denom and registration_cooldown fields
+        
+        // Load the existing config as the new type (it should already be stored correctly)
+        // We just need to add the new fields if they're missing
+        let mut config = CONFIG.load(deps.storage)?;
+        
+        // Ensure denom is set (default to "uatom" for backward compatibility)
+        if config.denom.is_empty() {
+            config.denom = "uatom".to_string();
+        }
+        
+        // Ensure registration_cooldown is set (default to 3600 seconds)
+        if config.registration_cooldown == 0 {
+            config.registration_cooldown = 3600;
+        }
+        
+        CONFIG.save(deps.storage, &config)?;
+        
+        // Update contract version
+        cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+        
+        Ok(Response::new()
+            .add_attribute("action", "migrate")
+            .add_attribute("from_version", "0.1.0")
+            .add_attribute("to_version", CONTRACT_VERSION))
+    } else {
+        // Already at correct version or unsupported version
+        cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+        Ok(Response::new()
+            .add_attribute("action", "migrate")
+            .add_attribute("version", CONTRACT_VERSION))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+    use cosmwasm_std::{coins, Timestamp};
+
+    fn setup_contract(deps: DepsMut, denom: &str) {
+        let msg = InstantiateMsg {
+            admin: "admin".to_string(),
+            registration_cost: Uint128::new(10_000),
+            denom: denom.to_string(),
+            max_domain_length: 32,
+            domain_expiration_seconds: 86400,
+            registration_cooldown: Some(3600),
+        };
+        instantiate(deps, mock_env(), mock_info("creator", &[]), msg).unwrap();
+    }
+
+    #[test]
+    fn test_instantiate_with_configurable_denom() {
+        let mut deps = mock_dependencies();
+        let msg = InstantiateMsg {
+            admin: "admin".to_string(),
+            registration_cost: Uint128::new(1_000),
+            denom: "uosmo".to_string(),
+            max_domain_length: 32,
+            domain_expiration_seconds: 86400,
+            registration_cooldown: None, // Should default to 3600
+        };
+        let res = instantiate(deps.as_mut(), mock_env(), mock_info("creator", &[]), msg).unwrap();
+        assert_eq!(res.attributes.len(), 4);
+        
+        // Check config
+        let config = CONFIG.load(&deps.storage).unwrap();
+        assert_eq!(config.denom, "uosmo");
+        assert_eq!(config.registration_cooldown, 3600);
+    }
+
+    #[test]
+    fn test_register_with_wrong_denom() {
+        let mut deps = mock_dependencies();
+        setup_contract(deps.as_mut(), "uosmo");
+        
+        let domain_hash = "a".repeat(64);
+        let owner_pubkey = Binary::from(vec![1u8; 32]);
+        let zk_commitment = Binary::from(vec![2u8; 32]);
+        
+        // Create valid proof
+        let mut proof_data = Vec::new();
+        proof_data.extend_from_slice(&[1u8; 32]);
+        proof_data.extend_from_slice(&[2u8; 64]);
+        proof_data.extend_from_slice(&[3u8; 32]);
+        let zk_proof = Binary::from(proof_data);
+        
+        // Try to register with wrong denom
+        let err = execute_register(
+            deps.as_mut(),
+            mock_env(),
+            mock_info("user", &coins(10_000, "uatom")),
+            domain_hash,
+            owner_pubkey,
+            zk_commitment,
+            zk_proof,
+            12345,
+        )
+        .unwrap_err();
+        
+        assert!(matches!(err, ContractError::InsufficientFunds { .. }));
+    }
+
+    #[test]
+    fn test_rate_limiting() {
+        let mut deps = mock_dependencies();
+        setup_contract(deps.as_mut(), "uatom");
+        
+        let mut env = mock_env();
+        let domain1 = "a".repeat(64);
+        let domain2 = "b".repeat(64);
+        let owner_pubkey = Binary::from(vec![1u8; 32]);
+        let zk_commitment = Binary::from(vec![2u8; 32]);
+        
+        // Create valid proof
+        let mut proof_data = Vec::new();
+        proof_data.extend_from_slice(&[1u8; 32]);
+        proof_data.extend_from_slice(&[2u8; 64]);
+        proof_data.extend_from_slice(&[3u8; 32]);
+        let zk_proof = Binary::from(proof_data);
+        
+        // First registration should succeed
+        execute_register(
+            deps.as_mut(),
+            env.clone(),
+            mock_info("user", &coins(10_000, "uatom")),
+            domain1,
+            owner_pubkey.clone(),
+            zk_commitment.clone(),
+            zk_proof.clone(),
+            12345,
+        )
+        .unwrap();
+        
+        // Second registration immediately after should fail
+        let err = execute_register(
+            deps.as_mut(),
+            env.clone(),
+            mock_info("user", &coins(10_000, "uatom")),
+            domain2.clone(),
+            owner_pubkey.clone(),
+            zk_commitment.clone(),
+            zk_proof.clone(),
+            12346,
+        )
+        .unwrap_err();
+        
+        assert!(matches!(err, ContractError::RateLimited { .. }));
+        
+        // After cooldown period, should succeed
+        env.block.time = env.block.time.plus_seconds(3601);
+        execute_register(
+            deps.as_mut(),
+            env,
+            mock_info("user", &coins(10_000, "uatom")),
+            domain2,
+            owner_pubkey,
+            zk_commitment,
+            zk_proof,
+            12346,
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn test_expiring_soon_bounded_query() {
+        let mut deps = mock_dependencies();
+        setup_contract(deps.as_mut(), "uatom");
+        
+        let mut env = mock_env();
+        env.block.time = Timestamp::from_seconds(1000000);
+        
+        // Register 3 domains with different expiry times
+        for (i, ch) in ['a', 'b', 'c'].iter().enumerate() {
+            let domain = ch.to_string().repeat(64);
+            let owner_pubkey = Binary::from(vec![i as u8 + 1; 32]);
+            let zk_commitment = Binary::from(vec![i as u8 + 2; 32]);
+            
+            let mut proof_data = Vec::new();
+            proof_data.extend_from_slice(&[1u8; 32]);
+            proof_data.extend_from_slice(&[2u8; 64]);
+            proof_data.extend_from_slice(&[3u8; 32]);
+            let zk_proof = Binary::from(proof_data);
+            
+            // Advance time between registrations to avoid rate limiting
+            if i > 0 {
+                env.block.time = env.block.time.plus_seconds(3600);
+            }
+            
+            execute_register(
+                deps.as_mut(),
+                env.clone(),
+                mock_info(&format!("user{i}"), &coins(10_000, "uatom")),
+                domain,
+                owner_pubkey,
+                zk_commitment,
+                zk_proof,
+                12345 + i as u64,
+            )
+            .unwrap();
+        }
+        
+        // Query expiring in 100000 seconds should return all 3
+        let res = query_expiring_soon(deps.as_ref(), env, 100000, None, None).unwrap();
+        assert_eq!(res.domains.len(), 3);
+    }
+
+    #[test]
+    fn test_prune_expired() {
+        let mut deps = mock_dependencies();
+        setup_contract(deps.as_mut(), "uatom");
+        
+        let mut env = mock_env();
+        env.block.time = Timestamp::from_seconds(1000000);
+        
+        // Register a domain
+        let domain = "a".repeat(64);
+        let owner_pubkey = Binary::from(vec![1u8; 32]);
+        let zk_commitment = Binary::from(vec![2u8; 32]);
+        
+        let mut proof_data = Vec::new();
+        proof_data.extend_from_slice(&[1u8; 32]);
+        proof_data.extend_from_slice(&[2u8; 64]);
+        proof_data.extend_from_slice(&[3u8; 32]);
+        let zk_proof = Binary::from(proof_data);
+        
+        execute_register(
+            deps.as_mut(),
+            env.clone(),
+            mock_info("user", &coins(10_000, "uatom")),
+            domain.clone(),
+            owner_pubkey,
+            zk_commitment,
+            zk_proof,
+            12345,
+        )
+        .unwrap();
+        
+        // Check domain is active
+        let domain_info = query_domain(deps.as_ref(), domain.clone()).unwrap();
+        assert!(domain_info.is_active);
+        
+        // Move time past expiration
+        env.block.time = env.block.time.plus_seconds(86400 + 1);
+        
+        // Non-admin cannot prune
+        let err = execute_prune_expired(
+            deps.as_mut(),
+            env.clone(),
+            mock_info("user", &[]),
+            None,
+        )
+        .unwrap_err();
+        assert!(matches!(err, ContractError::Unauthorized { .. }));
+        
+        // Admin can prune
+        let res = execute_prune_expired(
+            deps.as_mut(),
+            env.clone(),
+            mock_info("admin", &[]),
+            None,
+        )
+        .unwrap();
+        assert!(res.attributes.iter().any(|a| a.key == "pruned"));
+        
+        // Check domain is now inactive
+        let domain_info = query_domain(deps.as_ref(), domain).unwrap();
+        assert!(!domain_info.is_active);
+    }
+
+    #[test]
+    fn test_withdraw_funds() {
+        let mut deps = mock_dependencies();
+        setup_contract(deps.as_mut(), "uatom");
+        
+        let env = mock_env();
+        
+        // Non-admin cannot withdraw
+        let err = execute_withdraw(
+            deps.as_mut(),
+            env.clone(),
+            mock_info("user", &[]),
+            Uint128::new(1000),
+            "uatom".to_string(),
+        )
+        .unwrap_err();
+        assert!(matches!(err, ContractError::Unauthorized { .. }));
+        
+        // Zero amount should fail
+        let err = execute_withdraw(
+            deps.as_mut(),
+            env.clone(),
+            mock_info("admin", &[]),
+            Uint128::zero(),
+            "uatom".to_string(),
+        )
+        .unwrap_err();
+        assert!(matches!(err, ContractError::InvalidAmount));
+        
+        // Admin can withdraw (will fail due to insufficient balance in mock)
+        let err = execute_withdraw(
+            deps.as_mut(),
+            env,
+            mock_info("admin", &[]),
+            Uint128::new(1000),
+            "uatom".to_string(),
+        )
+        .unwrap_err();
+        assert!(matches!(err, ContractError::InsufficientFunds { .. }));
+    }
 }
