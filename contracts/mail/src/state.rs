@@ -143,6 +143,8 @@ pub const STATS: Item<Stats> = Item::new("stats");
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Stats {
+    /// Total domains registered (including inactive)
+    pub total_domains: u64,
     /// Number of active domains
     pub active_domains: u64,
     /// Total emails sent

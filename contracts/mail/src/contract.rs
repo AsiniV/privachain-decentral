@@ -54,6 +54,7 @@ pub fn instantiate(
 
     // Initialize stats
     STATS.save(deps.storage, &Stats {
+        total_domains: 0,
         active_domains: 0,
         total_emails: 0,
         total_delivered: 0,
@@ -337,6 +338,7 @@ pub fn execute_register_domain(
     CONFIG.save(deps.storage, &config)?;
 
     STATS.update(deps.storage, |mut s| -> StdResult<_> {
+        s.total_domains += 1;
         s.active_domains += 1;
         Ok(s)
     })?;
@@ -798,8 +800,11 @@ pub fn execute_withdraw_fees(
         });
     }
 
+    let owner_addr = config.owner
+        .ok_or(ContractError::Unauthorized {})?;
+
     let msg = BankMsg::Send {
-        to_address: config.owner.unwrap().to_string(),
+        to_address: owner_addr.to_string(),
         amount: coins(amount.u128(), config.denom),
     };
 
@@ -1022,7 +1027,7 @@ pub fn query_stats(deps: Deps) -> StdResult<StatsResponse> {
         .count() as u32;
 
     Ok(StatsResponse {
-        total_domains: stats.active_domains, // Use stats counter
+        total_domains: stats.total_domains,
         active_domains: stats.active_domains,
         total_emails: stats.total_emails,
         total_delivered: stats.total_delivered,
@@ -1118,7 +1123,8 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
     
     // Initialize stats from existing counters
     STATS.save(deps.storage, &Stats {
-        active_domains: old_config.total_domains as u64,
+        total_domains: old_config.total_domains as u64,
+        active_domains: old_config.total_domains as u64, // Assume all active during migration
         total_emails: old_config.total_emails as u64,
         total_delivered: 0, // Start at 0 for new counter
     })?;
