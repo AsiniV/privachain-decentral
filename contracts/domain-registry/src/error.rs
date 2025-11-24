@@ -71,7 +71,4 @@ pub enum ContractError {
 
     #[error("ZK proof too long")]
     ZkProofTooLong,
-
-    #[error("Domain already exists")]
-    DomainAlreadyExists,
 }

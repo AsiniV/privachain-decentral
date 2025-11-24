@@ -13,7 +13,7 @@ use crate::state::{Config, DomainRecord, ContractStats, CONFIG, STATS, DOMAINS, 
 use crate::crypto::{verify_zk_proof, verify_signature};
 
 const CONTRACT_NAME: &str = "privachain-domain-registry";
-const CONTRACT_VERSION: &str = "0.2.0";
+const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -154,7 +154,7 @@ fn execute_register(
     
     // Verify domain doesn't already exist
     if DOMAINS.has(deps.storage, domain_hash.clone()) {
-        return Err(ContractError::DomainAlreadyExists);
+        return Err(ContractError::DomainExists { domain: domain_hash });
     }
     
     // --- 1. payment check (single denom) -------------------
@@ -654,7 +654,7 @@ fn query_expiring_soon(
     for ts in expiry_keys {
         let list = DOMAINS_BY_EXPIRY.load(deps.storage, ts)?;
         for d in list {
-            if start_after.is_none() || d > start_after.clone().unwrap() {
+            if start_after.as_ref().is_none_or(|s| d > *s) {
                 domain_names.push(d);
                 if domain_names.len() >= limit {
                     break;
