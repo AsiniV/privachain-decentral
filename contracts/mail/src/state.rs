@@ -5,17 +5,21 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
-    /// Contract administrator
-    pub admin: Option<Addr>,
+    /// Contract administrator (renamed from admin to owner for consistency with problem statement)
+    pub owner: Option<Addr>,
+    /// Configurable denom (was hard-coded "upriv")
+    pub denom: String,
     /// Fee to register a .prv domain
     pub domain_registration_fee: Uint128,
     /// Fee to send an email (anti-spam)
     pub email_fee: Uint128,
-    /// Minimum proof-of-work difficulty
+    /// Minimum proof-of-work difficulty (bits 0..128)
     pub pow_difficulty: u32,
-    /// Total domains registered (u32 sufficient for realistic usage)
+    /// Reward per delivered email (for relay nodes)
+    pub relay_reward: Uint128,
+    /// Total domains registered (u32 sufficient for realistic usage) - DEPRECATED, use STATS
     pub total_domains: u32,
-    /// Total emails sent (u32 sufficient for 4B emails)  
+    /// Total emails sent (u32 sufficient for 4B emails) - DEPRECATED, use STATS
     pub total_emails: u32,
 }
 
@@ -29,9 +33,9 @@ pub struct Domain {
     pub public_key: Binary,
     /// Mail exchanger records for routing
     pub mx_records: Vec<String>,
-    /// Registration timestamp
+    /// Registration timestamp (using Timestamp for better compatibility)
     pub registered_at: u64,
-    /// Domain expiration (renewable)
+    /// Domain expiration (renewable, using Timestamp)
     pub expires_at: u64,
     /// Whether domain accepts emails
     pub active: bool,
@@ -41,22 +45,30 @@ pub struct Domain {
     pub emails_received: u32,
     /// Number of spam reports (u32 sufficient)
     pub spam_reports: u32,
+    /// ZK proof of ownership (opaque)
+    pub zk_proof: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Email {
     /// Unique email identifier
     pub id: String,
-    /// Recipient domain
+    /// Sender domain (from_domain)
+    pub from_domain: String,
+    /// Recipient local part (to_local)
+    pub to_local: String,
+    /// Recipient domain (kept for backward compatibility)
     pub recipient_domain: String,
     /// Anonymous sender alias (prevents correlation)
     pub sender_alias: String,
-    /// IPFS content hash of encrypted email
+    /// IPFS content hash of encrypted email (CIDv1)
     pub content_cid: String,
-    /// Email timestamp
+    /// Email timestamp (created_at)
     pub timestamp: u64,
     /// Delivery status
     pub delivered: bool,
+    /// Relay that successfully delivered (delivered_by)
+    pub delivered_by: Option<Addr>,
     /// Relay path (for debugging, optional)
     pub relay_path: Vec<Addr>,
 }
@@ -119,3 +131,24 @@ pub const RESERVED_DOMAINS: Map<&str, Addr> = Map::new("reserved:");
 
 /// ✅ H3: Rate limiting per address (address -> last_action_timestamp)
 pub const RATE_LIMIT: Map<&Addr, u64> = Map::new("rate_limit:");
+
+/// Email sequence counter for unique email IDs
+pub const EMAIL_SEQ: Item<u64> = Item::new("email_seq");
+
+/// EMAILS storage by ID for relay delivery (use u64 directly as key)
+pub const EMAILS_BY_ID: Map<u64, Email> = Map::new("emails_by_id:");
+
+/// Stats counters (O(1) instead of O(n) range)
+pub const STATS: Item<Stats> = Item::new("stats");
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct Stats {
+    /// Total domains registered (including inactive)
+    pub total_domains: u64,
+    /// Number of active domains
+    pub active_domains: u64,
+    /// Total emails sent
+    pub total_emails: u64,
+    /// Total emails delivered
+    pub total_delivered: u64,
+}

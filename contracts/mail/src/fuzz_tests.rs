@@ -16,10 +16,12 @@ fn fuzz_register_domain_edge_cases() {
 
     let owner = Addr::unchecked("owner");
     let inst_msg = InstantiateMsg {
+        denom: "ujuno".to_string(),
         admin: None,
         domain_registration_fee: Uint128::from(1000u128),
         email_fee: Uint128::from(10u128),
         pow_difficulty: 4,
+        relay_reward: Uint128::from(100u128),
     };
 
     let contract_addr = app
@@ -88,10 +90,12 @@ fn fuzz_zk_proof_validation() {
     let env = mock_env();
     
     let msg = InstantiateMsg {
+        denom: "ujuno".to_string(),
         admin: None,
         domain_registration_fee: Uint128::from(1000u128),
         email_fee: Uint128::from(10u128),
         pow_difficulty: 4,
+        relay_reward: Uint128::from(100u128),
     };
 
     let info = mock_info("owner", &[]);
@@ -135,10 +139,12 @@ fn fuzz_payment_validation() {
 
     let owner = Addr::unchecked("owner");
     let inst_msg = InstantiateMsg {
+        denom: "ujuno".to_string(),
         admin: None,
         domain_registration_fee: Uint128::from(1000u128),
         email_fee: Uint128::from(10u128),
         pow_difficulty: 4,
+        relay_reward: Uint128::from(100u128),
     };
 
     let contract_addr = app
@@ -193,10 +199,12 @@ fn fuzz_concurrent_operations() {
 
     let owner = Addr::unchecked("owner");
     let inst_msg = InstantiateMsg {
+        denom: "ujuno".to_string(),
         admin: None,
         domain_registration_fee: Uint128::from(1000u128),
         email_fee: Uint128::from(10u128),
         pow_difficulty: 4,
+        relay_reward: Uint128::from(100u128),
     };
 
     let contract_addr = app
@@ -258,10 +266,12 @@ fn fuzz_basic_functionality() {
     let env = mock_env();
     
     let msg = InstantiateMsg {
+        denom: "ujuno".to_string(),
         admin: None,
         domain_registration_fee: Uint128::from(1000u128),
         email_fee: Uint128::from(10u128),
         pow_difficulty: 4,
+        relay_reward: Uint128::from(100u128),
     };
 
     // Initialize contract

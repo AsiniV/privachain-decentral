@@ -1,4 +1,4 @@
-use cosmwasm_std::StdError;
+use cosmwasm_std::{StdError, Uint128};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -62,4 +62,31 @@ pub enum ContractError {
 
     #[error("Rate limit exceeded")]
     RateLimitExceeded {},
+
+    #[error("Unsupported denom: expected {expected}, got {got}")]
+    UnsupportedDenom { expected: String, got: String },
+
+    #[error("Insufficient funds: need {need}, have {have}")]
+    InsufficientFundsDetailed { need: Uint128, have: Uint128 },
+
+    #[error("Email not found")]
+    EmailNotFound {},
+
+    #[error("Not domain owner")]
+    NotDomainOwner {},
+
+    #[error("Invalid PoW: hash >= target")]
+    InvalidPow {},
+
+    #[error("Relay not registered")]
+    RelayNotRegistered {},
+
+    #[error("Email already delivered")]
+    AlreadyDelivered {},
+
+    #[error("Amount must be > 0")]
+    InvalidAmount {},
+
+    #[error("Insufficient pool: need {need}, have {have}")]
+    InsufficientPool { need: Uint128, have: Uint128 },
 }
