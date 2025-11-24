@@ -73,7 +73,8 @@ fn execute_fund_pool(deps: DepsMut, info: MessageInfo) -> Result<Response, Contr
 
     let mut attrs = vec![attr("action", "fund_pool"), attr("funder", info.sender)];
 
-    // accept ONLY config.denom
+    // accept ONLY config.denom and sum the amounts
+    let mut total = Uint128::zero();
     for coin in &info.funds {
         if coin.denom != cfg.denom {
             return Err(ContractError::UnsupportedDenom {
@@ -81,11 +82,9 @@ fn execute_fund_pool(deps: DepsMut, info: MessageInfo) -> Result<Response, Contr
                 got: coin.denom.clone(),
             });
         }
-        attrs.push(attr("amount", coin.amount));
+        total += coin.amount;
     }
-    // total transferred
-    let total: Uint128 = info.funds.iter().map(|c| c.amount).sum();
-    attrs.push(attr("total", total));
+    attrs.push(attr("amount", total));
 
     Ok(Response::new().add_attributes(attrs))
 }
@@ -242,8 +241,12 @@ fn query_balance(deps: Deps, env: Env) -> StdResult<BalanceResponse> {
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, ContractError> {
-    // v0.1.0 → v0.2.0
-    // Note: In production, you would want to handle version mismatch more gracefully
+    // Migration from v0.1.0 → v0.2.0
+    // v0.1.0 had Config { owner, grant_amount, max_requests_per_day }
+    // v0.2.0 adds denom field to Config
+    // Note: This migration assumes that v0.1.0 contracts were using "uatom" as the denom
+    // For production use, a migration message could accept the denom to set
+    
     let version = cw2::get_contract_version(deps.storage)?;
     if version.contract != CONTRACT_NAME {
         return Err(ContractError::Std(cosmwasm_std::StdError::generic_err(
@@ -251,8 +254,18 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: Empty) -> Result<Response, Contra
         )));
     }
     
-    cw2::set_contract_version(deps.storage, CONTRACT_NAME, "0.2.0")?;
-    Ok(Response::new().add_attribute("action", "migrate"))
+    // Only allow migration from v0.1.0
+    if version.version != "0.1.0" {
+        return Err(ContractError::Std(cosmwasm_std::StdError::generic_err(
+            format!("Can only migrate from v0.1.0, found {}", version.version),
+        )));
+    }
+    
+    cw2::set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    Ok(Response::new()
+        .add_attribute("action", "migrate")
+        .add_attribute("from_version", "0.1.0")
+        .add_attribute("to_version", CONTRACT_VERSION))
 }
 
 #[cfg(test)]
