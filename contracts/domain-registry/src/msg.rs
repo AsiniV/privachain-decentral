@@ -1,16 +1,20 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, Binary, Timestamp};
+use cosmwasm_std::{Addr, Binary, Timestamp, Uint128};
 
 #[cw_serde]
 pub struct InstantiateMsg {
     /// Admin address that can update contract parameters
     pub admin: String,
-    /// Cost in uatom to register a domain (anti-spam)
-    pub registration_cost: u128,
+    /// Cost to register a domain (anti-spam)
+    pub registration_cost: Uint128,
+    /// Denomination for registration cost (e.g., "uatom", "uosmo")
+    pub denom: String,
     /// Maximum domain name length
     pub max_domain_length: u32,
     /// Domain expiration period in seconds
     pub domain_expiration_seconds: u64,
+    /// Registration cooldown in seconds (rate limiting), defaults to 3600
+    pub registration_cooldown: Option<u64>,
 }
 
 #[cw_serde]
@@ -58,11 +62,23 @@ pub enum ExecuteMsg {
     /// Admin-only: Update contract parameters
     UpdateConfig {
         /// New registration cost (optional)
-        registration_cost: Option<u128>,
+        registration_cost: Option<Uint128>,
         /// New max domain length (optional)
         max_domain_length: Option<u32>,
         /// New admin (optional)
         new_admin: Option<String>,
+    },
+    /// Admin-only: Prune expired domains
+    PruneExpired {
+        /// Maximum number of domains to prune in one call
+        limit: Option<u32>,
+    },
+    /// Admin-only: Withdraw trapped funds
+    Withdraw {
+        /// Amount to withdraw
+        amount: Uint128,
+        /// Denomination to withdraw
+        denom: String,
     },
 }
 
@@ -129,9 +145,11 @@ pub struct ExpiringDomainsResponse {
 #[cw_serde]
 pub struct ConfigResponse {
     pub admin: Addr,
-    pub registration_cost: u128,
+    pub registration_cost: Uint128,
+    pub denom: String,
     pub max_domain_length: u32,
     pub domain_expiration_seconds: u64,
+    pub registration_cooldown: u64,
     pub total_domains: u64,
 }
 

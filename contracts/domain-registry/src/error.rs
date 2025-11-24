@@ -1,4 +1,4 @@
-use cosmwasm_std::StdError;
+use cosmwasm_std::{StdError, Uint128};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -47,4 +47,31 @@ pub enum ContractError {
 
     #[error("Invalid input for {field}: {reason}")]
     InvalidInput { field: String, reason: String },
+
+    #[error("Unsupported denom: expected {expected}, got {got}")]
+    UnsupportedDenom { expected: String, got: String },
+
+    #[error("Registration cost must be > 0")]
+    InvalidCost,
+
+    #[error("Metadata too long: max {max} bytes")]
+    MetadataTooLong { max: usize },
+
+    #[error("Rate limited: wait {remaining} seconds")]
+    RateLimited { remaining: u64 },
+
+    #[error("No funds sent")]
+    NoFunds,
+
+    #[error("Invalid amount")]
+    InvalidAmount,
+
+    #[error("Insufficient funds: need {need}, have {have}")]
+    InsufficientFunds { need: Uint128, have: Uint128 },
+
+    #[error("ZK proof too long")]
+    ZkProofTooLong,
+
+    #[error("Domain already exists")]
+    DomainAlreadyExists,
 }
