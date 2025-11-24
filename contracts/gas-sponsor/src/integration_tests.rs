@@ -2,8 +2,8 @@
 mod tests {
     use crate::helpers::GasSponsorContract;
     use crate::msg::{ExecuteMsg, InstantiateMsg};
-    use cosmwasm_std::{Addr, Coin, Empty, Uint128};
-    use cw_multi_test::{App, AppBuilder, BankKeeper, Contract, ContractWrapper, Executor};
+    use cosmwasm_std::{Addr, Empty, Uint128};
+    use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 
     pub fn contract_template() -> Box<dyn Contract<Empty>> {
         let contract = ContractWrapper::new(
@@ -27,6 +27,7 @@ mod tests {
         let msg = InstantiateMsg {
             grant_amount: Uint128::new(1000),
             max_requests_per_day: 5,
+            denom: "uatom".to_string(),
         };
         let gas_sponsor_contract_addr = app
             .instantiate_contract(
@@ -49,16 +50,11 @@ mod tests {
 
         #[test]
         fn test_fund_pool() {
-            let (mut app, gas_sponsor_contract) = proper_instantiate();
+            let (_app, gas_sponsor_contract) = proper_instantiate();
 
             let msg = ExecuteMsg::FundPool {};
-            let cosmos_msg = gas_sponsor_contract.call(msg).unwrap();
+            let _cosmos_msg = gas_sponsor_contract.call(msg).unwrap();
             
-            // Send with funds
-            let result = app.execute(
-                Addr::unchecked(ADMIN),
-                cosmos_msg,
-            );
             // In mock, this will fail without proper bank setup, but that's OK for basic test
             // Just verify the message was created properly
         }

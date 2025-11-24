@@ -5,6 +5,7 @@ use cosmwasm_std::Uint128;
 pub struct InstantiateMsg {
     pub grant_amount: Uint128,
     pub max_requests_per_day: u32,
+    pub denom: String,              // NEW: Configurable denom
 }
 
 #[cw_serde]
@@ -18,6 +19,8 @@ pub enum ExecuteMsg {
         grant_amount: Option<Uint128>,
         max_requests_per_day: Option<u32>,
     },
+    /// Withdraw funds (owner only) - NEW
+    Withdraw { amount: Uint128 },
 }
 
 #[cw_serde]
@@ -36,9 +39,11 @@ pub struct ConfigResponse {
     pub owner: String,
     pub grant_amount: Uint128,
     pub max_requests_per_day: u32,
+    pub denom: String,              // NEW: Include denom in response
 }
 
 #[cw_serde]
 pub struct BalanceResponse {
     pub balance: Uint128,
+    pub denom: String,              // NEW: Include denom in response
 }
