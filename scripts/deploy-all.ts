@@ -115,6 +115,26 @@ const CONTRACT_CONFIGS: Record<string, ContractConfig> = {
   },
 };
 
+/* ---------- Contract instantiation configuration ---------- */
+const INSTANTIATE_CONFIG = {
+  mail: {
+    post_price: "1000",          // ujuno
+    proof_of_work_difficulty: 4,
+    max_recipients: 50
+  },
+  'domain-registry': {
+    base_price: "1000000",       // 1 JUNO for .prv
+    registration_period: 31536000, // 1 year in seconds
+    renewal_grace_period: 2592000  // 30 days in seconds
+  },
+  'gas-sponsor': {
+    daily_quota: {messages: 200, emails: 50, video_minutes: 120}
+  }
+};
+
+/* ---------- Verification constants ---------- */
+const TEST_DOMAIN = "test.prv";
+
 /* ---------- Util ---------- */
 const sh = (cmd: string, cwd = REPO_ROOT) =>
   execSync(cmd, {cwd, stdio: 'inherit'});
@@ -151,7 +171,7 @@ async function buildContract(contract: string, contractDir: string): Promise<voi
   const config = CONTRACT_CONFIGS[contract];
   
   try {
-    // Try optimised WASM build with Docker (if available)
+    // Try optimized WASM build with Docker (if available)
     sh(
       'docker run --rm -v "$(pwd)":/code ' +
         '--mount type=volume,source=registry_cache,target=/usr/local/cargo/registry ' +
@@ -161,7 +181,7 @@ async function buildContract(contract: string, contractDir: string): Promise<voi
       REPO_ROOT,
     );
 
-    // Copy artefact from optimizer output (typically at repo root artifacts/)
+    // Copy artifact from optimizer output (typically at repo root artifacts/)
     const wasmName = config?.wasmName ?? `${contract.replace(/-/g, '_')}.wasm`;
     const sourceWasm = join(REPO_ROOT, 'artifacts', wasmName);
     const targetWasm = join(ARTEFACT_DIR, `${contract}-pq.wasm`);
@@ -199,6 +219,8 @@ async function buildContract(contract: string, contractDir: string): Promise<voi
 
 async function buildParallel(): Promise<Record<string, string>> {
   log('Building all contracts in parallel...');
+  
+  // Clean artifacts directory before starting parallel builds
   sh('rm -rf artifacts && mkdir -p artifacts');
 
   const contractsToBuild = argv.contracts.filter(c => CONTRACTS.includes(c));
@@ -291,34 +313,20 @@ type DeployInfo = {
 function getInstantiateMsg(contract: string, senderAddress: string): any {
   switch (contract) {
     case 'mail':
-      return {
-        post_price: "1000",
-        proof_of_work_difficulty: 4,
-        max_recipients: 50
-      };
+      return {...INSTANTIATE_CONFIG.mail};
     case 'domain-registry':
-      return {
-        base_price: "1000000",
-        registration_period: 31536000,
-        renewal_grace_period: 2592000
-      };
+      return {...INSTANTIATE_CONFIG['domain-registry']};
     case 'gas-sponsor':
       return {
-        daily_quota: {messages: 200, emails: 50, video_minutes: 120},
+        ...INSTANTIATE_CONFIG['gas-sponsor'],
         sponsor_address: senderAddress
       };
     case 'pq-verifier':
-      return {
-        admin: senderAddress
-      };
+      return {admin: senderAddress};
     case 'reputation':
-      return {
-        admin: senderAddress
-      };
+      return {admin: senderAddress};
     case 'did-registry':
-      return {
-        admin: senderAddress
-      };
+      return {admin: senderAddress};
     default:
       return {};
   }
@@ -415,21 +423,27 @@ async function verifyAllContracts(
           const mailConfig = await client.queryContractSmart(info.address, {
             get_config: {}
           });
-          if (!mailConfig.post_price) throw new Error('Mail config invalid');
+          if (!mailConfig.post_price) {
+            throw new Error(`Mail config validation failed: post_price is missing or invalid (got: ${JSON.stringify(mailConfig)})`);
+          }
           break;
         }
         case 'domain-registry': {
           const domainPrice = await client.queryContractSmart(info.address, {
-            get_domain_price: {domain: "test.prv"}
+            get_domain_price: {domain: TEST_DOMAIN}
           });
-          if (!domainPrice.amount) throw new Error('Domain price invalid');
+          if (!domainPrice.amount) {
+            throw new Error(`Domain registry validation failed: price amount is missing for ${TEST_DOMAIN} (got: ${JSON.stringify(domainPrice)})`);
+          }
           break;
         }
         case 'gas-sponsor': {
           const sponsorConfig = await client.queryContractSmart(info.address, {
             config: {}
           });
-          if (!sponsorConfig.daily_quota) throw new Error('Sponsor config invalid');
+          if (!sponsorConfig.daily_quota) {
+            throw new Error(`Gas sponsor config validation failed: daily_quota is missing (got: ${JSON.stringify(sponsorConfig)})`);
+          }
           break;
         }
       }
