@@ -167,16 +167,12 @@ async function build(): Promise<Record<string, string>> {
     } catch {
       log(`Docker build failed for ${c}, trying cargo build …`);
       // Fallback to cargo build
-      // Check if contract has pq feature from Cargo.toml
-      const cargoToml = readFileSync(join(dir, 'Cargo.toml'), 'utf-8');
-      const hasPqFeature = cargoToml.includes('[features]') && cargoToml.includes('pq');
-      
-      // Use config features if available, otherwise detect from Cargo.toml
-      const features = config?.features || (hasPqFeature ? '--features pq' : '');
+      // Use features from config (all contracts are now explicitly configured)
+      const features = config?.features ?? '';
 
       sh(`cargo build --release --target wasm32-unknown-unknown ${features}`, dir);
 
-      // Use config wasmName if available
+      // Use wasmName from config
       const wasmName = config?.wasmName ?? `${c.replace(/-/g, '_')}.wasm`;
       const targetWasm = join(ARTEFACT_DIR, `${c}-pq.wasm`);
       const cargoWasm = join(dir, 'target', 'wasm32-unknown-unknown', 'release', wasmName);
