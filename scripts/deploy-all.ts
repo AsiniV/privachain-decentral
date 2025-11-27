@@ -336,13 +336,18 @@ function getInstantiateMsg(contract: string, senderAddress: string, codeId?: num
     case 'reputation':
       return {};
     case 'did-registry':
-      // DID registry requires multi-sig setup with admins array, threshold, and vk
-      // Using sender as the only admin with threshold 1 for testing
-      // vk is a placeholder empty verifying key
+      // DID registry requires multi-sig setup with at least 2 unique admins
+      // Using sender + a deterministic secondary admin derived from sender
+      // vk is stored directly as bytes, not base64 encoded in the contract
       return {
-        admins: [senderAddress, senderAddress], // Need at least 2 admins per contract
+        admins: [
+          senderAddress,
+          // Create a secondary admin by modifying the last char of sender address
+          // This ensures we have 2 unique valid-format addresses
+          senderAddress.slice(0, -1) + (senderAddress.endsWith('a') ? 'b' : 'a')
+        ],
         threshold: 1,
-        vk: Buffer.from([]).toString('base64') // Empty verifying key for testing
+        vk: '' // Empty binary for verifying key placeholder
       };
     default:
       return {};
@@ -454,7 +459,7 @@ async function functionalTest(
           const cfg = await client.queryContractSmart(info.address, {
             get_config: {}
           });
-          if (typeof cfg.email_fee !== 'string' && typeof cfg.domain_registration_fee !== 'string') {
+          if (typeof cfg.email_fee !== 'string' || typeof cfg.domain_registration_fee !== 'string') {
             throw new Error(`Mail config validation failed: fee fields missing (got: ${JSON.stringify(cfg)})`);
           }
           log(`  ✅ mail config OK (${cfg.denom || 'upriv'})`);
