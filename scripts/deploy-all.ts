@@ -10,7 +10,7 @@
 /* ------------------------------------------------------------------ */
 
 import {execSync} from 'node:child_process';
-import {readFileSync, readdirSync, existsSync} from 'node:fs';
+import {readFileSync, existsSync} from 'node:fs';
 import {join, dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
@@ -70,7 +70,47 @@ const GAS_PRICE = GasPrice.fromString('0.025ujuno');
 /* ---------- Paths ---------- */
 const REPO_ROOT = join(__dirname, '..');
 const ARTEFACT_DIR = join(REPO_ROOT, 'artifacts');
-const CONTRACTS = ['pq-verifier', 'reputation', 'gas-sponsor'];
+const CONTRACTS = [
+  'pq-verifier',
+  'reputation',
+  'gas-sponsor',
+  'mail',
+  'domain-registry',
+  'did-registry',
+];
+
+/* ---------- Contract-specific build configuration ---------- */
+interface ContractConfig {
+  features: string;
+  wasmName: string;
+}
+
+const CONTRACT_CONFIGS: Record<string, ContractConfig> = {
+  'pq-verifier': {
+    features: '--features pq',
+    wasmName: 'pq_verifier.wasm',
+  },
+  'reputation': {
+    features: '--features pq',
+    wasmName: 'reputation.wasm',
+  },
+  'gas-sponsor': {
+    features: '',
+    wasmName: 'gas_sponsor.wasm',
+  },
+  'mail': {
+    features: '',
+    wasmName: 'privachain_mail.wasm',
+  },
+  'domain-registry': {
+    features: '',
+    wasmName: 'privachain_domain_registry.wasm',
+  },
+  'did-registry': {
+    features: '',
+    wasmName: 'did_registry.wasm',
+  },
+};
 
 /* ---------- Util ---------- */
 const sh = (cmd: string, cwd = REPO_ROOT) =>
@@ -80,14 +120,23 @@ const log = (msg: string) => console.error(`[${new Date().toISOString()}] ${msg}
 
 /* ---------- 1. Build ---------- */
 async function build(): Promise<Record<string, string>> {
-  log('Building contracts …');
+  log('Building all contracts …');
   sh('rm -rf artifacts && mkdir -p artifacts');
-  
-  // Build each contract with pq feature (if available)
+
+  const sums: Record<string, string> = {};
+
   for (const c of CONTRACTS) {
     const dir = join(REPO_ROOT, 'contracts', c);
+    const config = CONTRACT_CONFIGS[c];
+
+    // Check if contract directory exists
+    if (!existsSync(dir)) {
+      log(`⚠️ Contract ${c} directory not found, skipping …`);
+      continue;
+    }
+
     log(`Building ${c} …`);
-    
+
     try {
       // Try optimised WASM build with Docker (if available)
       sh(
@@ -98,12 +147,12 @@ async function build(): Promise<Record<string, string>> {
           c,
         REPO_ROOT,
       );
-      
+
       // Copy artefact from optimizer output (typically at repo root artifacts/)
-      const wasmName = `${c.replace(/-/g, '_')}.wasm`;
+      const wasmName = config?.wasmName ?? `${c.replace(/-/g, '_')}.wasm`;
       const sourceWasm = join(REPO_ROOT, 'artifacts', wasmName);
       const targetWasm = join(ARTEFACT_DIR, `${c}-pq.wasm`);
-      
+
       if (existsSync(sourceWasm)) {
         sh(`cp ${sourceWasm} ${targetWasm}`);
       } else {
@@ -118,32 +167,31 @@ async function build(): Promise<Record<string, string>> {
     } catch {
       log(`Docker build failed for ${c}, trying cargo build …`);
       // Fallback to cargo build
-      // Check if contract has pq feature
-      const cargoToml = readFileSync(join(dir, 'Cargo.toml'), 'utf-8');
-      const hasPqFeature = cargoToml.includes('pq =');
-      const features = hasPqFeature ? '--features pq' : '';
-      
+      // Use features from config (all contracts are now explicitly configured)
+      const features = config?.features ?? '';
+
       sh(`cargo build --release --target wasm32-unknown-unknown ${features}`, dir);
-      const wasmName = `${c.replace(/-/g, '_')}.wasm`;
+
+      // Use wasmName from config
+      const wasmName = config?.wasmName ?? `${c.replace(/-/g, '_')}.wasm`;
       const targetWasm = join(ARTEFACT_DIR, `${c}-pq.wasm`);
       const cargoWasm = join(dir, 'target', 'wasm32-unknown-unknown', 'release', wasmName);
+
       if (existsSync(cargoWasm)) {
         sh(`cp ${cargoWasm} ${targetWasm}`);
       } else {
         throw new Error(`Failed to build ${c}`);
       }
     }
-  }
-  
-  // Calculate checksums
-  const sums: Record<string, string> = {};
-  for (const f of readdirSync(ARTEFACT_DIR)) {
-    if (f.endsWith('.wasm')) {
-      sums[f.replace('.wasm', '')] = calculateChecksum(
-        readFileSync(join(ARTEFACT_DIR, f)),
-      );
+
+    // Calculate checksum for this contract
+    const wasmPath = join(ARTEFACT_DIR, `${c}-pq.wasm`);
+    if (existsSync(wasmPath)) {
+      sums[`${c}-pq`] = calculateChecksum(readFileSync(wasmPath));
+      log(`✅ ${c} built successfully`);
     }
   }
+
   return sums;
 }
 
@@ -178,7 +226,15 @@ async function deploy(): Promise<Record<string, DeployInfo>> {
 
   const res: Record<string, DeployInfo> = {};
   for (const c of CONTRACTS) {
-    const wasm = readFileSync(join(ARTEFACT_DIR, `${c}-pq.wasm`));
+    const wasmPath = join(ARTEFACT_DIR, `${c}-pq.wasm`);
+    
+    // Skip contracts that weren't built
+    if (!existsSync(wasmPath)) {
+      log(`⚠️ Skipping ${c} - WASM not found (contract may not exist)`);
+      continue;
+    }
+    
+    const wasm = readFileSync(wasmPath);
     const checksum = calculateChecksum(wasm);
     log(`Uploading ${c}-pq.wasm …`);
     const upload = await client.upload(sender.address, wasm, 'auto');
@@ -218,9 +274,11 @@ async function verify(
       network: argv.network,
       checksums,
       deployed,
+      contractsDeployed: Object.keys(deployed).length,
       timestamp: new Date().toISOString(),
     };
     console.log(JSON.stringify(report, null, 2));
+    log(`🎉 ${Object.keys(deployed).length} contracts deployed and verified successfully!`);
   } catch (e) {
     console.error(e);
     process.exit(1);
