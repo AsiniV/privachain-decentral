@@ -3,10 +3,9 @@
 /*  PrivaChain PQ – deploy-all.ts                                     */
 /*  1. build → 2. test → 3. deploy → 4. verify → 5. functional tests  */
 /*  Usage:                                                              */
-/*   TESTNET_MNEMONIC="..."                                           */
-/*   MAINNET_MNEMONIC="..."                                           */
-/*   npm i -g tsx                                                     */
-/*   tsx scripts/deploy-all.ts --network=testnet | jq .               */
+/*   1. Create .env file with TESTNET_MNEMONIC and/or MAINNET_MNEMONIC*/
+/*   2. Run: npm run deploy:testnet  (or deploy:mainnet)              */
+/*   Alternatively: tsx scripts/deploy-all.ts --network=testnet | jq .*/
 /* ------------------------------------------------------------------ */
 
 import * as dotenv from 'dotenv';
