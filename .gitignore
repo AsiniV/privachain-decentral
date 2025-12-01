@@ -29,8 +29,6 @@ dist-ssr
 .env.production
 .env.staging
 *.env
-!.env.template
-!.env.example
 **/agent-eval-report*
 packages
 !packages/resolver/

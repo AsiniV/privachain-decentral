@@ -9,6 +9,9 @@
 /*   tsx scripts/deploy-all.ts --network=testnet | jq .               */
 /* ------------------------------------------------------------------ */
 
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 import {execSync} from 'node:child_process';
 import {readFileSync, existsSync} from 'node:fs';
 import {join, dirname} from 'node:path';
