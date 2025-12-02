@@ -17,3 +17,10 @@ pub use pq_discovery::PqDiscovery;
 pub use pq_fallback::{downgrade_if_needed, peer_supports_pq};
 
 pub mod transport;
+
+// QUIC transport for low-latency UDP-based connections
+#[cfg(feature = "quic-ech")]
+pub mod quic_transport;
+
+#[cfg(feature = "quic-ech")]
+pub use quic_transport::{build_quic_transport, QuicConfig};

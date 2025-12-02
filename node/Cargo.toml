@@ -20,6 +20,8 @@ futures = "0.3"
 sha2 = "0.10"
 hex = "0.4"
 base64 = "0.22"
+reqwest = { version = "0.12", features = ["json", "multipart"] }
+thiserror = "1.0"
 
 # I2P integration - optional
 privachain_i2p = { path = "../rust/i2p", optional = true }
@@ -35,6 +37,12 @@ ark-serialize = { version = "0.4", optional = true }
 ark-std = { version = "0.4", optional = true }
 rand = { version = "0.8", optional = true }
 
+# QUIC + ECH dependencies - optional (enabled via quic-ech feature)
+libp2p-quic = { version = "0.10", features = ["tokio"], optional = true }
+rustls = { version = "0.23", features = ["ring"], optional = true }
+hpke = { version = "0.12", optional = true }
+tokio-rustls = { version = "0.26", optional = true }
+
 [lib]
 name = "privachain_node"
 crate-type = ["cdylib", "rlib"]
@@ -45,6 +53,9 @@ i2p-default = ["dep:privachain_i2p"]
 fallback-tor = []
 post-quantum = ["dep:privachain_crypto", "privachain_crypto?/post-quantum"]
 zk-proofs = ["dep:ark-groth16", "dep:ark-bls12-381", "dep:ark-ff", "dep:ark-serialize", "dep:ark-std", "dep:rand"]
+# QUIC + ECH feature: Enables QUIC transport with ECH (Encrypted Client Hello) support
+# Usage: cargo build --features quic-ech
+quic-ech = ["dep:libp2p-quic", "dep:rustls", "dep:hpke", "dep:tokio-rustls"]
 
 [[bin]]
 name = "privachain-node"

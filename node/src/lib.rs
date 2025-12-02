@@ -18,3 +18,11 @@ pub mod crypto;
 
 #[cfg(all(not(target_arch = "wasm32"), feature = "zk-proofs"))]
 pub mod zk;
+
+// ECH (Encrypted Client Hello) module for QUIC+ECH integration
+#[cfg(all(not(target_arch = "wasm32"), feature = "quic-ech"))]
+pub mod ech;
+
+// IPFS module with QUIC+ECH fetch support
+#[cfg(not(target_arch = "wasm32"))]
+pub mod ipfs;
