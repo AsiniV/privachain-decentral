@@ -82,6 +82,7 @@ async fn main() -> Result<()> {
     let local_peer_id = local_key.public().to_peer_id();
 
     // Transport: Default=Mixnet, Fallback=Tor, or TCP if no features
+    // When quic-ech feature is enabled, QUIC is stacked on top of the base transport
     let transport = if args.fallback {
         #[cfg(feature = "fallback-tor")]
         {
@@ -98,11 +99,28 @@ async fn main() -> Result<()> {
             let tcp_transport = libp2p::tcp::tokio::Transport::new(libp2p::tcp::Config::default());
             
             // Combine Tor and TCP transports - Tor will be tried first
-            OrTransport::new(tor_transport, tcp_transport)
+            let base_transport = OrTransport::new(tor_transport, tcp_transport)
                 .upgrade(libp2p::core::upgrade::Version::V1)
                 .authenticate(libp2p::noise::Config::new(&local_key)?)
                 .multiplex(libp2p::yamux::Config::default())
-                .boxed()
+                .boxed();
+            
+            // Add QUIC transport if quic-ech feature is enabled
+            #[cfg(feature = "quic-ech")]
+            {
+                info!("Adding QUIC+ECH transport layer...");
+                let quic_transport = network::build_quic_transport(&local_key)?;
+                libp2p::core::transport::OrTransport::new(quic_transport, base_transport)
+                    .map(|either, _| match either {
+                        futures::future::Either::Left(conn) => conn,
+                        futures::future::Either::Right(conn) => conn,
+                    })
+                    .boxed()
+            }
+            #[cfg(not(feature = "quic-ech"))]
+            {
+                base_transport
+            }
         }
         #[cfg(not(feature = "fallback-tor"))]
         {
@@ -121,21 +139,56 @@ async fn main() -> Result<()> {
             // For now, still use TCP transport but log that mixnet is initialized
             // Full libp2p adapter integration would go here
             info!("Building TCP transport with mixnet wrapper...");
-            libp2p::tcp::tokio::Transport::new(libp2p::tcp::Config::default())
+            let base_transport = libp2p::tcp::tokio::Transport::new(libp2p::tcp::Config::default())
                 .upgrade(libp2p::core::upgrade::Version::V1)
                 .authenticate(libp2p::noise::Config::new(&local_key)?)
                 .multiplex(libp2p::yamux::Config::default())
-                .boxed()
+                .boxed();
+            
+            // Add QUIC transport if quic-ech feature is enabled
+            #[cfg(feature = "quic-ech")]
+            {
+                info!("Adding QUIC+ECH transport layer...");
+                let quic_transport = network::build_quic_transport(&local_key)?;
+                libp2p::core::transport::OrTransport::new(quic_transport, base_transport)
+                    .map(|either, _| match either {
+                        futures::future::Either::Left(conn) => conn,
+                        futures::future::Either::Right(conn) => conn,
+                    })
+                    .boxed()
+            }
+            #[cfg(not(feature = "quic-ech"))]
+            {
+                base_transport
+            }
         }
         #[cfg(not(feature = "mixnet-default"))]
         {
-            // v1.0-rc behaviour: plain TCP
+            // v1.0-rc behaviour: plain TCP (optionally with QUIC)
             info!("Building TCP transport (no mixnet, no Tor)...");
-            libp2p::tcp::tokio::Transport::new(libp2p::tcp::Config::default())
+            let tcp_transport = libp2p::tcp::tokio::Transport::new(libp2p::tcp::Config::default())
                 .upgrade(libp2p::core::upgrade::Version::V1)
                 .authenticate(libp2p::noise::Config::new(&local_key)?)
                 .multiplex(libp2p::yamux::Config::default())
-                .boxed()
+                .boxed();
+            
+            // Add QUIC transport if quic-ech feature is enabled
+            #[cfg(feature = "quic-ech")]
+            {
+                info!("🚀 Adding QUIC+ECH transport layer for low-latency connections...");
+                let quic_transport = network::build_quic_transport(&local_key)?;
+                // QUIC is tried first, then falls back to TCP
+                libp2p::core::transport::OrTransport::new(quic_transport, tcp_transport)
+                    .map(|either, _| match either {
+                        futures::future::Either::Left(conn) => conn,
+                        futures::future::Either::Right(conn) => conn,
+                    })
+                    .boxed()
+            }
+            #[cfg(not(feature = "quic-ech"))]
+            {
+                tcp_transport
+            }
         }
     };
 
@@ -148,9 +201,22 @@ async fn main() -> Result<()> {
         libp2p::swarm::Config::with_tokio_executor(),
     );
 
-    // Listen
+    // Listen on TCP
     let listen_addr: libp2p::Multiaddr = args.listen.parse()?;
-    swarm.listen_on(listen_addr)?;
+    swarm.listen_on(listen_addr.clone())?;
+    
+    // Also listen on QUIC if feature enabled
+    #[cfg(feature = "quic-ech")]
+    {
+        // Parse the listen address to create a QUIC variant
+        // e.g., /ip4/0.0.0.0/tcp/4001 -> /ip4/0.0.0.0/udp/4001/quic-v1
+        if let Some(quic_addr) = tcp_to_quic_multiaddr(&listen_addr) {
+            match swarm.listen_on(quic_addr.clone()) {
+                Ok(_) => info!("📡 QUIC+ECH listening on {:?}", quic_addr),
+                Err(e) => info!("⚠️ Could not listen on QUIC: {} (TCP still active)", e),
+            }
+        }
+    }
 
     info!("Node started, Peer ID: {}", local_peer_id);
     if args.fallback {
@@ -159,7 +225,12 @@ async fn main() -> Result<()> {
         #[cfg(feature = "mixnet-default")]
         info!("🕸️ Running with mixnet (default) via NYM");
         #[cfg(not(feature = "mixnet-default"))]
-        info!("Running in v1.0-rc mode (TCP only)");
+        {
+            #[cfg(feature = "quic-ech")]
+            info!("🚀 Running with QUIC+ECH transport enabled");
+            #[cfg(not(feature = "quic-ech"))]
+            info!("Running in v1.0-rc mode (TCP only)");
+        }
     }
 
     // Run swarm loop
@@ -176,4 +247,29 @@ async fn main() -> Result<()> {
             }
         }
     }
+}
+
+/// Convert a TCP multiaddr to a QUIC multiaddr
+/// e.g., /ip4/0.0.0.0/tcp/4001 -> /ip4/0.0.0.0/udp/4001/quic-v1
+#[cfg(feature = "quic-ech")]
+fn tcp_to_quic_multiaddr(addr: &libp2p::Multiaddr) -> Option<libp2p::Multiaddr> {
+    use libp2p::multiaddr::Protocol;
+    
+    let mut protocols: Vec<Protocol<'_>> = addr.iter().collect();
+    
+    // Find TCP protocol and convert to UDP + QUIC
+    for i in 0..protocols.len() {
+        if let Protocol::Tcp(port) = protocols[i] {
+            protocols[i] = Protocol::Udp(port);
+            protocols.insert(i + 1, Protocol::QuicV1);
+            
+            let mut new_addr = libp2p::Multiaddr::empty();
+            for p in protocols {
+                new_addr.push(p);
+            }
+            return Some(new_addr);
+        }
+    }
+    
+    None
 }

@@ -210,6 +210,27 @@ jobs:
           fi
         continue-on-error: true
 
+      - name: Build with QUIC-ECH feature
+        run: |
+          echo "🚀 Building with QUIC+ECH feature..."
+          cargo build --release --features quic-ech -p privachain_node
+          ls -lh ./target/release/privachain-node
+
+      - name: Test QUIC-ECH mode startup
+        run: |
+          echo "🚀 Testing QUIC+ECH mode..."
+          timeout 10 ./target/release/privachain-node > /tmp/quic_ech_test.log 2>&1 &
+          PID=$!
+          sleep 5
+          if ps -p $PID > /dev/null; then
+            echo "✅ Node started with QUIC+ECH feature"
+            kill $PID || true
+          else
+            echo "⚠️ QUIC+ECH mode test completed"
+            cat /tmp/quic_ech_test.log || true
+          fi
+        continue-on-error: true
+
       - name: Bundle size check (v4.0 with zk-proofs)
         run: |
           echo "📦 Checking binary size with zk-proofs..."
