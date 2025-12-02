@@ -175,7 +175,7 @@ async fn main() -> Result<()> {
             // Add QUIC transport if quic-ech feature is enabled
             #[cfg(feature = "quic-ech")]
             {
-                info!("🚀 Adding QUIC+ECH transport layer for low-latency connections...");
+                info!("Adding QUIC+ECH transport layer for low-latency connections");
                 let quic_transport = network::build_quic_transport(&local_key)?;
                 // QUIC is tried first, then falls back to TCP
                 libp2p::core::transport::OrTransport::new(quic_transport, tcp_transport)

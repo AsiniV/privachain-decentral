@@ -141,18 +141,21 @@ pub async fn fetch_ech_config_from_ipfs(
 
 /// Check if a CID is valid (basic validation)
 fn is_valid_cid(cid: &str) -> bool {
-    // CIDv0: starts with "Qm" and is 46 chars
+    // CIDv0: starts with "Qm" and is 46 chars, uses base58 encoding
     // CIDv1: variable format, typically starts with "b" or "z"
     if cid.is_empty() {
         return false;
     }
     
+    // Base58 alphabet (excludes 0, O, I, l for readability)
+    const BASE58_CHARS: &str = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+    
     // CIDv0 check
     if cid.starts_with("Qm") && cid.len() == 46 {
-        return cid.chars().all(|c| c.is_ascii_alphanumeric());
+        return cid.chars().all(|c| BASE58_CHARS.contains(c));
     }
     
-    // CIDv1 check (simplified - starts with lowercase letter)
+    // CIDv1 check (simplified - starts with lowercase letter, uses base32/base36/base58)
     if cid.starts_with(|c: char| c.is_ascii_lowercase()) && cid.len() >= 10 {
         return cid.chars().all(|c| c.is_ascii_alphanumeric());
     }
