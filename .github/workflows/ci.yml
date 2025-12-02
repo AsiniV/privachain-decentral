@@ -369,9 +369,9 @@ jobs:
           
           echo "✅ Server started with PID $SERVER_PID"
           
-          # Run load test
+          # Run load test - server listens on port 33333 by default
           cd loadtest
-          ./loader -target "127.0.0.1:4001" -count 10000 -timeout 2s -max-drop 1.0 || {
+          ./loader -target "127.0.0.1:33333" -count 10000 -timeout 2s -max-drop 1.0 || {
             echo "⚠️ Load test completed with warnings"
           }
           

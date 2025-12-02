@@ -21,29 +21,23 @@ const ECH_VERSION: u16 = 0xfe0d;
 /// Default public name for the outer ClientHello
 const DEFAULT_PUBLIC_NAME: &str = "cloudflare-ech.com";
 
-/// Generate a new X25519 key pair for ECH
+/// Generate a new X25519 key pair for ECH using proper cryptographic implementation
 fn generate_x25519_keypair() -> ([u8; 32], [u8; 32]) {
     use rand::RngCore;
+    use x25519_dalek::{StaticSecret, PublicKey};
     
-    // Generate random private key
-    let mut private_key = [0u8; 32];
-    rand::thread_rng().fill_bytes(&mut private_key);
+    // Generate random bytes for the private key
+    let mut private_key_bytes = [0u8; 32];
+    rand::thread_rng().fill_bytes(&mut private_key_bytes);
     
-    // Clamp private key for X25519
-    private_key[0] &= 248;
-    private_key[31] &= 127;
-    private_key[31] |= 64;
+    // Create the secret key from random bytes (x25519-dalek handles clamping internally)
+    let secret = StaticSecret::from(private_key_bytes);
     
-    // Compute public key (simplified - in production use a proper X25519 lib)
-    // For now, we'll use a placeholder derivation
-    let mut public_key = [0u8; 32];
-    public_key.copy_from_slice(&private_key);
+    // Derive the public key from the secret key
+    let public = PublicKey::from(&secret);
     
-    // In a real implementation, this would use x25519_dalek or similar:
-    // let secret = x25519_dalek::StaticSecret::from(private_key);
-    // let public = x25519_dalek::PublicKey::from(&secret);
-    
-    (private_key, public_key)
+    // Return both keys as byte arrays
+    (secret.to_bytes(), public.to_bytes())
 }
 
 /// Build an ECHConfigList structure
@@ -154,10 +148,28 @@ mod tests {
         let (private_key, public_key) = generate_x25519_keypair();
         assert_eq!(private_key.len(), 32);
         assert_eq!(public_key.len(), 32);
-        // Check clamping
-        assert_eq!(private_key[0] & 7, 0);
-        assert_eq!(private_key[31] & 128, 0);
-        assert_eq!(private_key[31] & 64, 64);
+        
+        // Verify private and public keys are different (security check)
+        assert_ne!(private_key, public_key, "Private and public keys must be different");
+        
+        // Verify keys are not all zeros
+        assert!(private_key.iter().any(|&b| b != 0), "Private key should not be all zeros");
+        assert!(public_key.iter().any(|&b| b != 0), "Public key should not be all zeros");
+    }
+
+    #[test]
+    fn test_keypair_derivation_is_deterministic() {
+        // For the same private key, we should get the same public key
+        use x25519_dalek::{StaticSecret, PublicKey};
+        
+        let private_bytes = [42u8; 32];
+        let secret1 = StaticSecret::from(private_bytes);
+        let secret2 = StaticSecret::from(private_bytes);
+        
+        let public1 = PublicKey::from(&secret1);
+        let public2 = PublicKey::from(&secret2);
+        
+        assert_eq!(public1.to_bytes(), public2.to_bytes());
     }
 
     #[test]
@@ -183,8 +195,7 @@ mod tests {
         let public_name = "test.example.com";
         let config_list = build_ech_config_list(&public_key, public_name);
         
-        // Config should contain the public name
-        let config_str = String::from_utf8_lossy(&config_list);
+        // Config should contain the public name as bytes
         assert!(config_list.windows(public_name.len())
             .any(|w| w == public_name.as_bytes()));
     }

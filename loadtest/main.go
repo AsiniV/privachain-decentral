@@ -5,7 +5,7 @@
 // UDP connections to verify server can handle high connection counts.
 //
 // Build: go build -o loader
-// Usage: ./loader [-target 127.0.0.1:4433] [-count 10000] [-timeout 2s]
+// Usage: ./loader [-target 127.0.0.1:33333] [-count 10000] [-timeout 2s]
 //
 // The test opens concurrent UDP connections and sends a QUIC-like probe
 // to verify the server can accept connections at scale.
@@ -24,7 +24,7 @@ import (
 
 // Default configuration
 const (
-	DefaultTarget     = "127.0.0.1:4433"
+	DefaultTarget     = "127.0.0.1:33333"
 	DefaultCount      = 10000
 	DefaultTimeout    = 2 * time.Second
 	DefaultMaxDropPct = 0.1 // 0.1% max drop rate

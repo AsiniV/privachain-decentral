@@ -240,16 +240,28 @@ pub async fn fetch_ech_config_from_ipns(
 }
 
 /// Check if an IPNS key is valid (basic validation)
+///
+/// IPNS keys can have several formats depending on the version and encoding:
+/// - "k51..." for CIDv1-encoded ed25519 keys (libp2p-key multicodec)
+/// - "k2k..." for CIDv1-encoded secp256k1 keys
+/// - "Qm..." for legacy peer ID format (CIDv0 base58btc)
+/// - "12D3..." for peer ID format (base58btc encoded ed25519)
+///
+/// These prefixes are based on the IPFS/IPNS specification:
+/// https://docs.ipfs.tech/concepts/ipns/
+/// https://github.com/multiformats/cid
+///
+/// Last updated: 2025-01 (IPFS Kubo v0.24.0)
 fn is_valid_ipns_key(key: &str) -> bool {
-    // IPNS keys typically start with:
-    // - "k51" for CIDv1-encoded keys
-    // - "Qm" for legacy peer ID format (CIDv0)
-    // - "12D3" for peer ID format (base58 encoded)
     if key.is_empty() || key.len() < 10 {
         return false;
     }
     
-    // Check for known IPNS key prefixes
+    // Known IPNS key prefixes (may need updates with new IPFS versions)
+    // k51: CIDv1 ed25519 keys (most common for IPNS)
+    // k2k: CIDv1 secp256k1 keys
+    // Qm: Legacy CIDv0 peer IDs
+    // 12D3: Base58btc encoded ed25519 peer IDs
     let valid_prefixes = ["k51", "k2k", "Qm", "12D3"];
     if !valid_prefixes.iter().any(|p| key.starts_with(p)) {
         return false;

@@ -38,6 +38,7 @@ fn main() {
     // Check if running as root (required for packet capture)
     #[cfg(unix)]
     {
+        // SAFETY: geteuid() is a simple FFI call with no side effects and always succeeds
         if unsafe { libc::geteuid() } != 0 {
             eprintln!("⚠️  Warning: This test requires root privileges for packet capture.");
             eprintln!("   Run with: sudo ./target/release/test_ech_hide");
