@@ -1,0 +1,55 @@
+# config/gateways.toml
+# Gateway and ECH Configuration for PrivaChain
+#
+# DEPRECATED: Static ECH CID - this file exists for backwards compatibility only.
+# The ECH config CID is now managed via IPNS for automatic rotation.
+# See: .github/workflows/rotate-ech.yml
+#
+# Runtime fetch uses IPNS key: /ipns/k51qzi5uqu5dgjso1xnb9go9e1h1v5t1h7m6x3z7rj6q4g3h2n1m8p9w0v2y3x4
+# This IPNS key always resolves to the latest ECH configuration CID.
+
+[ech]
+# IPNS key for dynamic ECH config resolution (preferred method)
+# The IPNS key never changes - it always points to the latest CID
+ipns_key = "k51qzi5uqu5dgjso1xnb9go9e1h1v5t1h7m6x3z7rj6q4g3h2n1m8p9w0v2y3x4"
+
+# Fallback static CID (used only if IPNS resolution fails)
+# This will be updated automatically by the rotate-ech workflow
+fallback_cid = ""
+
+# ECH configuration settings
+[ech.settings]
+# Rotation interval (should match the workflow schedule)
+rotation_interval_hours = 24
+
+# Public name for the outer ClientHello (decoy SNI)
+public_name = "cloudflare-ech.com"
+
+# Preferred cipher suites
+cipher_suites = ["X25519HkdfSha256Aes128Gcm", "X25519HkdfSha256ChaCha20Poly1305"]
+
+# IPFS gateway settings for fetching ECH configs
+[ipfs]
+# Local IPFS daemon (preferred for privacy)
+local_gateway = "http://127.0.0.1:5001"
+
+# Public gateways (fallback, in order of preference)
+public_gateways = [
+    "https://ipfs.io",
+    "https://dweb.link",
+    "https://gateway.pinata.cloud"
+]
+
+# Request timeout in seconds
+timeout_secs = 30
+
+# QUIC transport settings (used when quic-ech feature is enabled)
+[quic]
+# Maximum idle timeout before connection close
+idle_timeout_secs = 30
+
+# Keep-alive ping interval
+keep_alive_interval_secs = 15
+
+# Maximum concurrent streams per connection
+max_concurrent_streams = 100

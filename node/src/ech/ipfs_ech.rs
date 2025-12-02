@@ -6,6 +6,21 @@
 //! ECH configs can be published to IPFS and clients can fetch them using the CID.
 //! For dynamic updates, IPNS can be used to provide a stable name that resolves
 //! to the latest ECH config CID.
+//!
+//! ## IPNS-based Fetching (Recommended)
+//!
+//! The preferred method is to use IPNS which provides a stable key that always
+//! points to the latest ECH configuration:
+//!
+//! ```ignore
+//! use privachain_node::ech::fetch_ech_config_from_ipns;
+//!
+//! // The IPNS key never changes - it always resolves to the latest CID
+//! let config = fetch_ech_config_from_ipns(
+//!     "k51qzi5uqu5dgjso1xnb9go9e1h1v5t1h7m6x3z7rj6q4g3h2n1m8p9w0v2y3x4",
+//!     None,
+//! ).await?;
+//! ```
 
 use super::config::{EchConfiguration, EchSuite};
 use std::time::Duration;
@@ -24,6 +39,10 @@ pub enum EchFetchError {
     #[error("Invalid CID format: {0}")]
     InvalidCid(String),
     
+    /// Invalid IPNS key format
+    #[error("Invalid IPNS key format: {0}")]
+    InvalidIpnsKey(String),
+    
     /// Failed to parse ECH config
     #[error("Failed to parse ECH config: {0}")]
     ParseError(String),
@@ -35,6 +54,10 @@ pub enum EchFetchError {
     /// Network error
     #[error("Network error: {0}")]
     NetworkError(String),
+    
+    /// IPNS resolution failed
+    #[error("IPNS resolution failed: {0}")]
+    IpnsResolutionError(String),
 }
 
 /// IPFS gateway configuration
@@ -137,6 +160,164 @@ pub async fn fetch_ech_config_from_ipfs(
 
     // Parse the ECH config
     parse_ech_config(&bytes, cid)
+}
+
+/// Fetch ECH configuration from IPNS key
+///
+/// IPNS provides a stable name that always resolves to the latest ECH configuration.
+/// This is the preferred method as it doesn't require code changes when ECH configs
+/// are rotated.
+///
+/// # Arguments
+/// * `ipns_key` - The IPNS key (e.g., "k51qzi5uqu5dgjso1xnb9go9e1h1v5t1h7m6x3z7rj6q4g3h2n1m8p9w0v2y3x4")
+/// * `gateway_config` - Optional gateway configuration (uses local gateway by default)
+///
+/// # Returns
+/// The parsed ECH configuration, or an error if fetching failed
+///
+/// # Example
+/// ```ignore
+/// use privachain_node::ech::fetch_ech_config_from_ipns;
+///
+/// // The IPNS key is constant - it always points to the latest config
+/// let config = fetch_ech_config_from_ipns(
+///     "k51qzi5uqu5dgjso1xnb9go9e1h1v5t1h7m6x3z7rj6q4g3h2n1m8p9w0v2y3x4",
+///     None,
+/// ).await?;
+/// ```
+pub async fn fetch_ech_config_from_ipns(
+    ipns_key: &str,
+    gateway_config: Option<IpfsGatewayConfig>,
+) -> EchConfigResult {
+    // Validate IPNS key format
+    if !is_valid_ipns_key(ipns_key) {
+        return Err(EchFetchError::InvalidIpnsKey(ipns_key.to_string()));
+    }
+
+    let config = gateway_config.unwrap_or_default();
+    
+    // Build the IPNS gateway URL
+    // Format: /ipns/{key} resolves to the current CID
+    let url = format!("{}/ipns/{}", config.gateway_url.trim_end_matches('/'), ipns_key);
+    
+    tracing::info!("Fetching ECH config from IPNS: {}", ipns_key);
+    tracing::debug!("IPNS URL: {}", url);
+
+    // Create HTTP client with timeout (IPNS resolution can be slower)
+    let ipns_timeout = Duration::from_secs(config.timeout.as_secs().saturating_mul(2).max(60));
+    let client = reqwest::Client::builder()
+        .timeout(ipns_timeout)
+        .build()
+        .map_err(|e| EchFetchError::NetworkError(e.to_string()))?;
+
+    // Fetch the config via IPNS
+    let response = client
+        .get(&url)
+        .send()
+        .await
+        .map_err(|e| {
+            if e.is_timeout() {
+                EchFetchError::Timeout(ipns_timeout)
+            } else {
+                EchFetchError::IpnsResolutionError(e.to_string())
+            }
+        })?;
+
+    if !response.status().is_success() {
+        return Err(EchFetchError::IpnsResolutionError(format!(
+            "IPNS resolution returned status {}",
+            response.status()
+        )));
+    }
+
+    let bytes = response
+        .bytes()
+        .await
+        .map_err(|e| EchFetchError::NetworkError(e.to_string()))?;
+
+    // Parse the ECH config (use IPNS key as identifier since CID changes)
+    parse_ech_config(&bytes, ipns_key)
+}
+
+/// Check if an IPNS key is valid (basic validation)
+///
+/// IPNS keys can have several formats depending on the version and encoding:
+/// - "k51..." for CIDv1-encoded ed25519 keys (libp2p-key multicodec)
+/// - "k2k..." for CIDv1-encoded secp256k1 keys
+/// - "Qm..." for legacy peer ID format (CIDv0 base58btc)
+/// - "12D3..." for peer ID format (base58btc encoded ed25519)
+///
+/// These prefixes are based on the IPFS/IPNS specification:
+/// https://docs.ipfs.tech/concepts/ipns/
+/// https://github.com/multiformats/cid
+///
+/// Last updated: 2025-01 (IPFS Kubo v0.24.0)
+fn is_valid_ipns_key(key: &str) -> bool {
+    if key.is_empty() || key.len() < 10 {
+        return false;
+    }
+    
+    // Known IPNS key prefixes (may need updates with new IPFS versions)
+    // k51: CIDv1 ed25519 keys (most common for IPNS)
+    // k2k: CIDv1 secp256k1 keys
+    // Qm: Legacy CIDv0 peer IDs
+    // 12D3: Base58btc encoded ed25519 peer IDs
+    let valid_prefixes = ["k51", "k2k", "Qm", "12D3"];
+    if !valid_prefixes.iter().any(|p| key.starts_with(p)) {
+        return false;
+    }
+    
+    // Check characters are valid (base32/base58)
+    key.chars().all(|c| c.is_ascii_alphanumeric())
+}
+
+/// Fetch ECH config with fallback from IPNS to CID
+///
+/// Tries IPNS first (for latest config), falls back to static CID if IPNS fails.
+/// This provides resilience while still preferring dynamic updates.
+///
+/// # Arguments
+/// * `ipns_key` - The IPNS key for dynamic resolution (preferred)
+/// * `fallback_cid` - Optional static CID to use if IPNS fails
+/// * `gateway_config` - Optional gateway configuration
+///
+/// # Returns
+/// The parsed ECH configuration from either IPNS or fallback CID
+pub async fn fetch_ech_config_with_fallback(
+    ipns_key: &str,
+    fallback_cid: Option<&str>,
+    gateway_config: Option<IpfsGatewayConfig>,
+) -> EchConfigResult {
+    // Try IPNS first
+    match fetch_ech_config_from_ipns(ipns_key, gateway_config.clone()).await {
+        Ok(config) => {
+            tracing::info!("ECH config fetched from IPNS successfully");
+            Ok(config)
+        }
+        Err(ipns_err) => {
+            tracing::warn!("IPNS fetch failed: {}, trying fallback CID", ipns_err);
+            
+            // Try fallback CID if provided
+            if let Some(cid) = fallback_cid {
+                if !cid.is_empty() {
+                    match fetch_ech_config_from_ipfs(cid, gateway_config).await {
+                        Ok(config) => {
+                            tracing::info!("ECH config fetched from fallback CID");
+                            Ok(config)
+                        }
+                        Err(cid_err) => {
+                            tracing::error!("Both IPNS and fallback CID failed");
+                            Err(cid_err)
+                        }
+                    }
+                } else {
+                    Err(ipns_err)
+                }
+            } else {
+                Err(ipns_err)
+            }
+        }
+    }
 }
 
 /// Check if a CID is valid (basic validation)
@@ -285,6 +466,21 @@ mod tests {
     }
 
     #[test]
+    fn test_is_valid_ipns_key() {
+        // Valid IPNS keys
+        assert!(is_valid_ipns_key("k51qzi5uqu5dgjso1xnb9go9e1h1v5t1h7m6x3z7rj6q4g3h2n1m8p9w0v2y3x4"));
+        assert!(is_valid_ipns_key("k2k4r8k9fh4g7d8s9a0f3g5h2j4k6l8m0n2p4q6r8s0t2v4w6x8y0z2"));
+        assert!(is_valid_ipns_key("QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"));
+        assert!(is_valid_ipns_key("12D3KooWDpJ7As7BWAwRMfu1VU2WCqNjvq387JEYKDBj4kx6nXTN"));
+        
+        // Invalid IPNS keys
+        assert!(!is_valid_ipns_key("")); // Empty
+        assert!(!is_valid_ipns_key("short")); // Too short
+        assert!(!is_valid_ipns_key("invalid-key-format")); // Contains invalid chars
+        assert!(!is_valid_ipns_key("xyz123456789")); // Wrong prefix
+    }
+
+    #[test]
     fn test_gateway_config_default() {
         let config = IpfsGatewayConfig::default();
         assert_eq!(config.gateway_url, "http://127.0.0.1:5001");
@@ -324,5 +520,12 @@ mod tests {
         let short_bytes = vec![0x00, 0x01];
         let result = parse_ech_config(&short_bytes, "QmShort");
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_ipns_key_validation_edge_cases() {
+        // Boundary cases
+        assert!(!is_valid_ipns_key("k51234567")); // Exactly 9 chars (< 10)
+        assert!(is_valid_ipns_key("k512345678")); // Exactly 10 chars (>= 10)
     }
 }
