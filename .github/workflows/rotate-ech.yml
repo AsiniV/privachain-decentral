@@ -50,7 +50,7 @@ jobs:
           
           # Known SHA256 checksum for kubo v0.24.0 linux-amd64
           # Obtained from https://dist.ipfs.tech/kubo/v0.24.0/
-          EXPECTED_SHA256="cfd61e5e44e2a89f50f71b0a9d5c15d4dfa168b93b9d0d66a4e0f2ae7c7be8c2"
+          EXPECTED_SHA256="b696ea293995eb2ec0cf3e66df50c8d2789ac2549d5d7553a3f47fe94f8d2a5a"
           
           wget -q "$IPFS_URL"
           
