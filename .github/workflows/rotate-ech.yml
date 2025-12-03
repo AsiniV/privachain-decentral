@@ -108,7 +108,7 @@ jobs:
           
           # Add to IPFS and get CID
           CID=$(ipfs add -q ech-config.bin)
-          echo "CID=$CID" >> $GITHUB_OUTPUT
+          echo "CID=$CID" >> "$GITHUB_OUTPUT"
           
           echo "✅ Pinned to IPFS with CID: $CID"
           
@@ -117,10 +117,15 @@ jobs:
       
       - name: Publish to IPNS
         id: ipns
-        if: ${{ env.IPNS_KEY_NAME != '' }}
         env:
           IPNS_KEY_NAME: ${{ secrets.IPNS_KEY_NAME }}
         run: |
+          # Skip if IPNS_KEY_NAME is not set
+          if [ -z "$IPNS_KEY_NAME" ]; then
+            echo "⚠️ IPNS_KEY_NAME secret not configured, skipping IPNS publish"
+            exit 0
+          fi
+          
           echo "🌐 Publishing to IPNS..."
           
           # Publish to IPNS with 24-hour TTL
@@ -191,9 +196,11 @@ jobs:
       
       - name: Summary
         run: |
-          echo "## ECH Rotation Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **CID**: \`${{ steps.ipfs.outputs.CID }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Status**: ✅ Success" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "The new ECH configuration has been pinned to IPFS and a PR has been created." >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## ECH Rotation Summary"
+            echo ""
+            echo "- **CID**: \`${{ steps.ipfs.outputs.CID }}\`"
+            echo "- **Status**: ✅ Success"
+            echo ""
+            echo "The new ECH configuration has been pinned to IPFS and a PR has been created."
+          } >> "$GITHUB_STEP_SUMMARY"
