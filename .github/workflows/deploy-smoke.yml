@@ -22,11 +22,11 @@ jobs:
     permissions:
       contents: read
       actions: read
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Install system dependencies
         run: |
           set -e
@@ -41,7 +41,7 @@ jobs:
             exit 1
           }
           echo "✅ System dependencies installed"
-      
+
       - name: Install Osmosis binary
         run: |
           set -e
@@ -67,51 +67,51 @@ jobs:
               sleep 5
             fi
           done
-          
+
           if [ "$success" = false ]; then
             echo "❌ Failed to download Osmosis binary after 5 attempts"
             exit 1
           fi
-          
+
           if [[ ! -f osmosisd ]]; then
             echo "❌ Osmosis binary not found after download"
             exit 1
           fi
-          
+
           # Verify the downloaded file is not empty
           if [[ ! -s osmosisd ]]; then
             echo "❌ Osmosis binary is empty (size: $(stat -c%s osmosisd 2>/dev/null || echo 0) bytes)"
             exit 1
           fi
-          
+
           chmod +x osmosisd
           sudo mv osmosisd /usr/local/bin/
-          
+
           # Verify installation
           if ! command -v osmosisd &> /dev/null; then
             echo "❌ osmosisd not found in PATH after installation"
             exit 1
           fi
-          
+
           echo "✅ Osmosis binary installed: $(osmosisd version)"
-      
+
       - name: Install I2P router (i2pd)
         run: |
           set -e
           echo "Installing i2pd I2P router..."
-          
+
           # Add i2pd repository
           sudo apt update || {
             echo "❌ apt update failed"
             exit 1
           }
-          
+
           # Install i2pd
           sudo apt install -y i2pd || {
             echo "❌ Failed to install i2pd"
             exit 1
           }
-          
+
           # Configure SAM bridge
           echo "Configuring SAM bridge..."
           sudo mkdir -p /etc/i2pd
@@ -121,21 +121,21 @@ jobs:
           address = 127.0.0.1
           port = 7656
           EOFCONFIG
-          
+
           # Start i2pd service
           sudo systemctl start i2pd || {
             echo "⚠️  Failed to start i2pd service, trying manual start"
             sudo i2pd --daemon --sam.enabled=true --sam.address=127.0.0.1 --sam.port=7656 &
             sleep 5
           }
-          
+
           # Verify SAM bridge is listening
           if netstat -tuln 2>/dev/null | grep -q ":7656" || ss -tuln 2>/dev/null | grep -q ":7656"; then
             echo "✅ I2P router installed and SAM bridge running on port 7656"
           else
             echo "⚠️  SAM bridge may not be running on port 7656"
           fi
-      
+
       - name: Install Filebase CLI
         run: |
           set -e
@@ -173,12 +173,12 @@ jobs:
                 sleep 5
               fi
             done
-            
+
             if [ "$success" = false ]; then
               echo "❌ Failed to download Filebase CLI after 5 attempts"
               exit 1
             fi
-            
+
             if [[ -f filebase ]]; then
               # Verify the downloaded file is not empty
               if [[ ! -s filebase ]]; then
@@ -193,13 +193,13 @@ jobs:
               exit 1
             fi
           fi
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-      
+
       - name: Install Node.js dependencies
         run: |
           set -e
@@ -208,20 +208,20 @@ jobs:
             echo "❌ Failed to install Node.js dependencies"
             exit 1
           }
-          
+
           # Verify critical dependencies are installed
           if [[ ! -d "node_modules" ]]; then
             echo "❌ node_modules directory not found after installation"
             exit 1
           fi
-          
+
           echo "✅ Node.js dependencies installed"
-      
+
       - name: Setup Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: stable
-      
+
       - name: Cache cargo-make
         uses: actions/cache@v4
         with:
@@ -231,7 +231,7 @@ jobs:
           key: ${{ runner.os }}-cargo-make-v0.37.20
           restore-keys: |
             ${{ runner.os }}-cargo-make-
-      
+
       - name: Install cargo-make
         run: |
           set -e
@@ -246,14 +246,14 @@ jobs:
             echo "✅ cargo-make is already installed"
             cargo make --version
           fi
-          
+
           # Verify cargo-make is in PATH and working
           if ! cargo make --version &> /dev/null; then
             echo "❌ cargo-make installation verification failed"
             exit 1
           fi
           echo "✅ cargo-make verified: $(cargo make --version)"
-      
+
 
       - name: Make scripts executable
         run: |
@@ -262,7 +262,7 @@ jobs:
           chmod +x scripts/full_deploy.sh scripts/smoke_real.sh
           chmod +x cosmos/scripts/*.sh
           chmod +x ipfs/scripts/*.sh
-          
+
           # Verify critical scripts exist
           for script in scripts/full_deploy.sh scripts/smoke_real.sh cosmos/scripts/deploy_all.sh ipfs/scripts/upload_car.sh; do
             if [[ ! -f "$script" ]]; then
@@ -271,7 +271,7 @@ jobs:
             fi
           done
           echo "✅ All deployment scripts verified"
-      
+
       - name: Full deploy (dry-run)
         if: (github.event_name == 'workflow_dispatch' && inputs.dry_run) || github.event_name == 'push'
         env:
@@ -287,7 +287,7 @@ jobs:
             echo "❌ Dry-run deployment failed"
             exit 1
           }
-      
+
       - name: Full deploy (mainnet)
         if: github.event_name == 'workflow_dispatch' && !inputs.dry_run && inputs.use_mainnet
         env:
@@ -303,7 +303,7 @@ jobs:
             echo "❌ Mainnet deployment failed"
             exit 1
           }
-      
+
       - name: Full deploy (testnet)
         if: github.event_name == 'workflow_dispatch' && !inputs.dry_run && !inputs.use_mainnet
         env:
@@ -319,7 +319,7 @@ jobs:
             echo "❌ Testnet deployment failed"
             exit 1
           }
-      
+
       - name: Upload artifacts
         if: always()
         uses: actions/upload-artifact@v4
