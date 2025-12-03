@@ -169,6 +169,7 @@ jobs:
           fi
 
       - name: Create Pull Request
+        if: steps.ipfs.outputs.CID != ''
         uses: peter-evans/create-pull-request@v6
         with:
           commit-message: "chore: rotate ECH config to CID ${{ steps.ipfs.outputs.CID }}"
@@ -192,7 +193,7 @@ jobs:
             ### Auto-merge
             This PR can be auto-merged if CI passes. The ECH config is distributed
             via IPNS, so clients will automatically pick up the new config.
-          branch: rotate-ech-${{ github.run_number }}
+          branch: "rotate-ech-${{ github.run_number }}"
           base: main
           delete-branch: true
           labels: |
