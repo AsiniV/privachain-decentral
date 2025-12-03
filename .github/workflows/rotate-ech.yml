@@ -101,6 +101,9 @@ jobs:
           echo "✅ ECH config generated successfully"
           ls -la ech-config.bin
 
+          # Output the generation timestamp
+          echo "TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> "$GITHUB_OUTPUT"
+
       - name: Pin to IPFS
         id: ipfs
         run: |
@@ -177,7 +180,7 @@ jobs:
 
             ### Details
             - **New CID**: `${{ steps.ipfs.outputs.CID }}`
-            - **Generated**: ${{ github.run_id }} (Run #${{ github.run_number }})
+            - **Generated**: ${{ steps.generate.outputs.TIMESTAMP }}
             - **Workflow Run**: [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
             ### Verification
@@ -208,14 +211,24 @@ jobs:
           rm -rf kubo/
 
       - name: Summary
+        if: always()
         env:
           IPFS_CID: ${{ steps.ipfs.outputs.CID }}
+          GEN_TIMESTAMP: ${{ steps.generate.outputs.TIMESTAMP }}
         run: |
           {
             echo "## ECH Rotation Summary"
             echo ""
-            echo "- **CID**: \`${IPFS_CID:-N/A}\`"
-            echo "- **Status**: ✅ Success"
-            echo ""
-            echo "The new ECH configuration has been pinned to IPFS and a PR has been created."
+            if [ -n "$IPFS_CID" ]; then
+              echo "- **CID**: \`$IPFS_CID\`"
+              echo "- **Generated**: ${GEN_TIMESTAMP:-Unknown}"
+              echo "- **Status**: ✅ Success"
+              echo ""
+              echo "The new ECH configuration has been pinned to IPFS and a PR has been created."
+            else
+              echo "- **CID**: Failed to generate"
+              echo "- **Status**: ❌ Failed"
+              echo ""
+              echo "ECH configuration generation or IPFS pinning failed. Check the workflow logs."
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
