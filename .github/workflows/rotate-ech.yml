@@ -17,16 +17,16 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-      
+
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
-      
+
       - name: Cache Rust dependencies
         uses: actions/cache@v4
         with:
@@ -40,20 +40,20 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-ech-
             ${{ runner.os }}-cargo-
-      
+
       - name: Install IPFS
         run: |
           # Download and install IPFS with checksum verification
           IPFS_VERSION="v0.24.0"
           IPFS_FILE="kubo_${IPFS_VERSION}_linux-amd64.tar.gz"
           IPFS_URL="https://dist.ipfs.tech/kubo/${IPFS_VERSION}/${IPFS_FILE}"
-          
+
           # Known SHA256 checksum for kubo v0.24.0 linux-amd64
           # Obtained from https://dist.ipfs.tech/kubo/v0.24.0/
           EXPECTED_SHA256="b696ea293995eb2ec0cf3e66df50c8d2789ac2549d5d7553a3f47fe94f8d2a5a"
-          
+
           wget -q "$IPFS_URL"
-          
+
           # Verify checksum
           ACTUAL_SHA256=$(sha256sum "$IPFS_FILE" | awk '{print $1}')
           if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
@@ -65,11 +65,11 @@ jobs:
           else
             echo "✅ IPFS checksum verified"
           fi
-          
+
           tar -xzf "$IPFS_FILE"
           sudo mv kubo/ipfs /usr/local/bin/
           ipfs --version
-      
+
       - name: Initialize IPFS
         run: |
           ipfs init --profile server
@@ -77,130 +77,159 @@ jobs:
           ipfs daemon --enable-pubsub-experiment &
           sleep 10  # Wait for daemon to start
           ipfs id
-      
+
       - name: Generate ECH config
         id: generate
         run: |
           echo "🔐 Generating new ECH configuration..."
-          
+
           # Build the ECH keygen binary
           cargo build --release --bin ech-keygen --features quic-ech -p privachain_node
-          
+
           # Generate the ECH config
           ./target/release/ech-keygen > ech-config.bin 2>ech-keygen.log
-          
+
           # Display generation log
           cat ech-keygen.log
-          
+
           # Verify the config was generated
           if [ ! -s ech-config.bin ]; then
             echo "❌ ECH config generation failed - empty file"
             exit 1
           fi
-          
+
           echo "✅ ECH config generated successfully"
           ls -la ech-config.bin
-      
+
+          # Output the generation timestamp
+          echo "TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> "$GITHUB_OUTPUT"
+
       - name: Pin to IPFS
         id: ipfs
         run: |
           echo "📌 Pinning ECH config to IPFS..."
-          
+
           # Add to IPFS and get CID
           CID=$(ipfs add -q ech-config.bin)
           echo "CID=$CID" >> "$GITHUB_OUTPUT"
-          
+
           echo "✅ Pinned to IPFS with CID: $CID"
-          
+
           # Verify the pin
           ipfs pin ls | grep "$CID" || echo "Warning: Pin verification failed"
-      
+
       - name: Publish to IPNS
         id: ipns
         env:
           IPNS_KEY_NAME: ${{ secrets.IPNS_KEY_NAME }}
+          IPFS_CID: ${{ steps.ipfs.outputs.CID }}
         run: |
           # Skip if IPNS_KEY_NAME is not set
           if [ -z "$IPNS_KEY_NAME" ]; then
             echo "⚠️ IPNS_KEY_NAME secret not configured, skipping IPNS publish"
             exit 0
           fi
-          
+
+          # Skip if CID is empty
+          if [ -z "$IPFS_CID" ]; then
+            echo "❌ IPFS CID is empty, cannot publish to IPNS"
+            exit 1
+          fi
+
           echo "🌐 Publishing to IPNS..."
-          
+
           # Publish to IPNS with 24-hour TTL
           # Note: IPNS key must be pre-created: ipfs key gen ech
-          ipfs name publish --key="$IPNS_KEY_NAME" /ipfs/${{ steps.ipfs.outputs.CID }} --ttl=24h || {
+          ipfs name publish --key="$IPNS_KEY_NAME" "/ipfs/$IPFS_CID" --ttl=24h || {
             echo "⚠️ IPNS publish failed (key may not exist)"
             echo "   To create: ipfs key gen ech"
           }
-      
+
       - name: Update gateways.toml
+        env:
+          IPFS_CID: ${{ steps.ipfs.outputs.CID }}
         run: |
           echo "📝 Updating config/gateways.toml with new CID..."
-          
-          CID="${{ steps.ipfs.outputs.CID }}"
-          
+
+          # Verify CID is set
+          if [ -z "$IPFS_CID" ]; then
+            echo "❌ IPFS CID is empty, cannot update gateways.toml"
+            exit 1
+          fi
+
           # Update the fallback_cid in gateways.toml
           if [ -f config/gateways.toml ]; then
             # Use sed to update the fallback_cid line
-            sed -i "s/fallback_cid = \".*\"/fallback_cid = \"$CID\"/" config/gateways.toml
-            
+            sed -i "s/fallback_cid = \".*\"/fallback_cid = \"$IPFS_CID\"/" config/gateways.toml
+
             echo "✅ Updated gateways.toml:"
             grep -A2 "fallback_cid" config/gateways.toml
           else
             echo "⚠️ gateways.toml not found, skipping update"
           fi
-      
+
       - name: Create Pull Request
+        if: steps.ipfs.outputs.CID != ''
         uses: peter-evans/create-pull-request@v6
         with:
           commit-message: "chore: rotate ECH config to CID ${{ steps.ipfs.outputs.CID }}"
           title: "🔐 Rotate ECH config (CID: ${{ steps.ipfs.outputs.CID }})"
           body: |
             ## ECH Configuration Rotation
-            
+
             This PR updates the ECH (Encrypted Client Hello) configuration.
-            
+
             ### Details
             - **New CID**: `${{ steps.ipfs.outputs.CID }}`
-            - **Generated**: ${{ github.event.repository.updated_at }}
+            - **Generated**: ${{ steps.generate.outputs.TIMESTAMP }}
             - **Workflow Run**: [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            
+
             ### Verification
             Fetch the config from IPFS:
             ```bash
             ipfs cat ${{ steps.ipfs.outputs.CID }} > ech-config.bin
             ```
-            
+
             ### Auto-merge
             This PR can be auto-merged if CI passes. The ECH config is distributed
             via IPNS, so clients will automatically pick up the new config.
-          branch: rotate-ech-${{ steps.ipfs.outputs.CID }}
+          branch: "rotate-ech-${{ github.run_number }}"
           base: main
           delete-branch: true
           labels: |
             automated
             security
             ech
-      
+
       - name: Cleanup
         if: always()
         run: |
           # Stop IPFS daemon
           ipfs shutdown || true
-          
+
           # Remove temporary files
           rm -f ech-config.bin ech-keygen.log kubo_*.tar.gz
           rm -rf kubo/
-      
+
       - name: Summary
+        if: always()
+        env:
+          IPFS_CID: ${{ steps.ipfs.outputs.CID }}
+          GEN_TIMESTAMP: ${{ steps.generate.outputs.TIMESTAMP }}
         run: |
           {
             echo "## ECH Rotation Summary"
             echo ""
-            echo "- **CID**: \`${{ steps.ipfs.outputs.CID }}\`"
-            echo "- **Status**: ✅ Success"
-            echo ""
-            echo "The new ECH configuration has been pinned to IPFS and a PR has been created."
+            if [ -n "$IPFS_CID" ]; then
+              echo "- **CID**: \`$IPFS_CID\`"
+              echo "- **Generated**: ${GEN_TIMESTAMP:-Unknown}"
+              echo "- **Status**: ✅ Success"
+              echo ""
+              echo "The new ECH configuration has been pinned to IPFS and a PR has been created."
+            else
+              echo "- **CID**: Failed to generate"
+              echo "- **Status**: ❌ Failed"
+              echo ""
+              echo "ECH configuration generation or IPFS pinning failed. Check the workflow logs."
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
