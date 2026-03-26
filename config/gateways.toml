@@ -15,7 +15,7 @@ ipns_key = "k51qzi5uqu5dgjso1xnb9go9e1h1v5t1h7m6x3z7rj6q4g3h2n1m8p9w0v2y3x4"
 
 # Fallback static CID (used only if IPNS resolution fails)
 # This will be updated automatically by the rotate-ech workflow
-fallback_cid = ""
+fallback_cid = "QmZgKYLTN5zLBdZ39iXNZgdqsLxo6Qo52nW5vuub7wjZag"
 
 # ECH configuration settings
 [ech.settings]
